@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <IsPackable>False</IsPackable>
+  </PropertyGroup>
+
+  <Import Project="..\..\build\ReferenceAssemblies.props" />
+  <Import Project="..\..\build\Rx.props" />
+  <Import Project="..\..\build\Avalonia.props" />
+  <Import Project="..\..\build\Avalonia.Desktop.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\v00v.MainApp\v00v.MainApp.csproj" />
+  </ItemGroup>
+
+</Project>

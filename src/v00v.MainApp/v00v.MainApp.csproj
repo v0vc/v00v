@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <IsPackable>False</IsPackable>
+  </PropertyGroup>
+
+  <Import Project="..\..\build\ReferenceAssemblies.props" />
+  <Import Project="..\..\build\Rx.props" />
+  <Import Project="..\..\build\Avalonia.props" />
+  <Import Project="..\..\build\EmbedXaml.props" />
+  
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="obj\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\v00v.Views\v00v.Views.csproj" />
+  </ItemGroup>
+
+</Project>
