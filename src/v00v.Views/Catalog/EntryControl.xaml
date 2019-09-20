@@ -1,0 +1,35 @@
+﻿<UserControl 
+    x:Class="v00v.Views.Catalog.EntryControl"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    
+    <Grid ColumnDefinitions="auto,*,auto" ToolTip.Tip="{Binding SubTitle, Mode=OneWay}">
+
+        <Border Grid.ColumnSpan="3" />
+
+        <Panel Grid.Row="0" Grid.Column="0">
+            <Ellipse Width="30" Height="30">
+                <Ellipse.Fill>
+                    <ImageBrush Source="{Binding Thumb, Mode=OneWay}" />
+                </Ellipse.Fill>
+            </Ellipse>
+        </Panel>
+
+        <Panel Classes="Title" Grid.Column="1" Height="24" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title, Mode=OneWay}"
+                       TextWrapping="NoWrap" 
+                       VerticalAlignment="Center" 
+                       FontSize="15" />
+        </Panel>
+
+        <Panel Classes="Indicator" Grid.Column="2" Height="24" VerticalAlignment="Center">
+            <Border IsVisible="{Binding HasNew}">
+                <TextBlock Text="{Binding Count}" VerticalAlignment="Center" />
+            </Border>
+        </Panel>
+    </Grid>
+        
+    
+    
+</UserControl>

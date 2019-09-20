@@ -13,9 +13,16 @@
   <Import Project="..\..\build\Rx.props" />
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\EmbedXaml.props" />
+  <Import Project="..\..\build\DynamicData.props" />
+  <Import Project="..\..\build\LazyCache.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\v00v.Model\v00v.Model.csproj" />
+    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
   </ItemGroup>
 
 </Project>

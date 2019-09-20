@@ -1,0 +1,190 @@
+﻿<UserControl
+    x:Class="v00v.Views.Catalog.CatalogControl"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:catalog="clr-namespace:v00v.Views.Catalog"
+    xmlns:enums="clr-namespace:v00v.Model.Enums;assembly=v00v.Model"
+    xmlns:markup="clr-namespace:Portable.Xaml.Markup;assembly=Avalonia.Markup.Xaml"
+    xmlns:converters="clr-namespace:v00v.Model.Converters;assembly=v00v.Model">
+    
+    <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
+        <Grid.Resources>
+            <converters:EnumBooleanConverter x:Key="EnumBooleanConverter" />
+        </Grid.Resources>
+        <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Text="{Binding SearchText, Mode=TwoWay}" />
+        
+        <ListBox Grid.Row="1" Grid.ColumnSpan="2"
+            Items="{Binding Entries}"
+            SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
+            BorderThickness="0"
+            ScrollViewer.VerticalScrollBarVisibility="Visible"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            Background="Transparent" VirtualizationMode="Simple">
+
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <catalog:EntryControl />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+        </ListBox>
+
+        <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
+            <Expander.Header >
+                <StackPanel Orientation="Horizontal"  IsEnabled="{Binding !AddDisable}" Height="25">
+                    <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
+                        <Panel>
+                            <Ellipse />
+                            <!--<Image Source="resm:v0v.Application.Icons.Light.Plus32.png?assembly=v0v.Application" />-->
+                        </Panel>
+                    </Button>
+                    <ComboBox Height="25" Width="110" Margin="0,0,0,0" ToolTip.Tip="Tag" 
+                              VerticalAlignment="Bottom" 
+                              VirtualizationMode="Simple" 
+                              Items="{Binding Tags}" SelectedItem="{Binding SelectedTag}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Text}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Command="{Binding SyncChannelsCommand, Mode=OneTime}" ToolTip.Tip="Sync">
+                        <Panel>
+                            <Ellipse />
+                            <!--<Image Source="resm:v0v.Application.Icons.Light.Settings32.png?assembly=v0v.Application" />-->
+                        </Panel>
+                    </Button>
+                </StackPanel>
+            </Expander.Header>
+
+            <Border BorderBrush="#000000" BorderThickness="0.2">
+                <StackPanel Orientation="Horizontal" Height="25">
+                    <RadioButton GroupName="Sort" Margin="5,0,10,0" ToolTip.Tip="By title"/>
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs"  />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs diff" />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views" />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views diff"/>
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By count"  />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By date" />
+                </StackPanel>
+            </Border>
+        </Expander>
+    </Grid>
+    
+    <UserControl.Styles>
+
+        <Style Selector="ComboBox">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#1b2333" />
+            <Setter Property="BorderBrush" Value="#3a455a" />
+        </Style>
+
+        <Style Selector="ComboBox /template/ Border">
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="10,2,8,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#ffffff" />
+            <Setter Property="Background" Value="#1b2333" />
+            <Setter Property="BorderBrush" Value="#3a455a" />
+        </Style>
+        
+        <Style Selector="TextBox /template/ Border">
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        
+        <Style Selector="Button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Margin" Value="6,2,6,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        
+        <Style Selector="Button Image">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="Opacity" Value="0.8" />
+        </Style>
+        
+        <Style Selector="Button Ellipse">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Fill" Value="#435270" />
+            <Setter Property="Opacity" Value="0.8" />
+        </Style>
+        
+        <Style Selector="ListBox">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        
+        <Style Selector="ListBoxItem Grid">
+            <Setter Property="Margin" Value="6,2,3,2"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem Grid > Border">
+            <Setter Property="CornerRadius" Value="15,10,10,15" />
+            <Setter Property="Padding" Value="3,0,8,0" />
+        </Style>
+        
+        <Style Selector="ListBoxItem:selected Grid > Border">
+            <Setter Property="Background" Value="#435270" />
+        </Style>
+        
+        <Style Selector="ListBoxItem Panel.Title">
+            <Setter Property="Margin" Value="6,3,2,3"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem Panel.Indicator">
+            <Setter Property="Margin" Value="2,3,5,3"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem TextBlock">
+            <Setter Property="Foreground" Value="#92a3b3"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem:selected TextBlock">
+            <Setter Property="Foreground" Value="#ffffff"/>
+        </Style>
+        
+        <Style Selector="ListBoxItem Panel.Indicator > Border">
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Background" Value="#435270" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+        
+        <Style Selector="ListBoxItem Panel.Indicator > Border > TextBlock">
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+        
+        <Style Selector="ListBoxItem:selected Panel.Indicator > Border">
+            <Setter Property="Background" Value="#242e44" />
+        </Style>
+
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#1b2333"/>
+        </Style>
+
+    </UserControl.Styles>
+    
+</UserControl>

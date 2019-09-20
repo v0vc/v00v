@@ -1,0 +1,28 @@
+﻿<UserControl 
+    x:Class="v00v.Views.Playlists.PlaylistEntryControl"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns="https://github.com/avaloniaui">
+    
+    <Grid ColumnDefinitions="auto,*,auto">
+        
+        <Border Grid.ColumnSpan="3" />
+
+        <Image Grid.Row="0" Grid.Column="0"
+               Source="{Binding Thumb, Mode=OneWay}" 
+               Stretch="Fill" Width="30" Height="30"
+               VerticalAlignment="Top"
+               HorizontalAlignment="Center" />
+
+        <Panel Classes="Title" Grid.Column="1" Height="24" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title, Mode=OneWay}" 
+                       TextWrapping="NoWrap" VerticalAlignment="Center" 
+                       FontSize="15" ToolTip.Tip="{Binding Title}" />
+        </Panel>
+        
+        <Panel Classes="Indicator" Grid.Column="2" Height="24" VerticalAlignment="Center">
+            <Border IsVisible="{Binding HasNew}">
+                <TextBlock Text="{Binding Count}" VerticalAlignment="Center" />
+            </Border>
+        </Panel>
+    </Grid>
+</UserControl>

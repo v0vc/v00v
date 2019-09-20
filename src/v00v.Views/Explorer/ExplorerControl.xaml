@@ -1,0 +1,166 @@
+﻿<UserControl
+    x:Class="v00v.Views.Explorer.ExplorerControl"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:explorer="clr-namespace:v00v.Views.Explorer">
+
+    <Grid RowDefinitions="*,auto" Background="#242e44">
+        <!--<Grid.Resources>
+            <converters:EnumBooleanConverter x:Key="EnumBooleanConverter" />
+        </Grid.Resources>-->
+        <ListBox Grid.Row="0" Name="ItemList"
+                 Items="{Binding Items}"
+                 SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
+                 VirtualizationMode="Simple"
+                 BorderThickness="0"
+                 ScrollViewer.VerticalScrollBarVisibility="Visible"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+            <!--<ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel VerticalAlignment="Top" />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>-->
+
+            <ListBox.DataTemplates>
+                <DataTemplate>
+                    <explorer:ItemControl />
+                </DataTemplate>
+            </ListBox.DataTemplates>
+
+            <!--<Menu>
+             
+                <MenuItem Header="To:Watched" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Watched}" IsVisible="{Binding !SelectedEntry.Watched}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Checkmark32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="To:Planned" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Planned}" IsVisible="{Binding !SelectedEntry.Planned}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Time32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Run" Command="{Binding RunItemCommand, Mode=OneWay}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.VideoPlay32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Copy Link" Command="{Binding CopyItemCommand, Mode=OneWay}" CommandParameter="link">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Edit32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Copy Title" Command="{Binding CopyItemCommand, Mode=OneWay}" CommandParameter="title">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Copy32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Go to Parent" Command="{Binding SelectChannelCommand, Mode=OneWay}" IsVisible="{Binding IsStateChannel}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.LeftArrow32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Download">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                    <MenuItem Header="HD" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="hd">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.VideoHd32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Audio Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="audio">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Audio32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Video Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="video">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.VideoOnly32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Subtitles Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="subs">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Sub32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Notset}" IsVisible="{Binding SelectedEntry.WatchStateSet}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Delete" Command="{Binding DeleteItemFileCommand, Mode=OneWay}" IsVisible="{Binding SelectedEntry.Downloaded}">
+                    <MenuItem.Icon>
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                
+            </Menu>-->
+        </ListBox>
+
+        <Expander HorizontalAlignment="Stretch" ExpandDirection="Up" Grid.Row="1">
+            <Expander.Header >
+                <Grid ColumnDefinitions="*,auto,auto" HorizontalAlignment="Stretch" Width="{Binding $parent[Grid].Bounds.Width}">
+                    <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By date" />
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By views"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By likes"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By dislikes"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By comment"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By duration"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By title"/>
+                        <RadioButton GroupName="Sort" ToolTip.Tip="By view diff"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Items.Count}" Margin="0,0,40,0" VerticalAlignment="Center" Foreground="#92a3b3"/>
+                </Grid>
+            </Expander.Header>
+            <TextBox Width="{Binding $parent[Grid].Bounds.Width}" Height="150" Margin="3"
+                     Text="{Binding SelectedEntry.LogText, Mode=OneWay}" 
+                     TextWrapping="Wrap" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+            />
+        </Expander>
+    </Grid>
+    
+    <UserControl.Styles>
+
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Width" Value="150" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#ffffff" />
+            <Setter Property="Background" Value="#1b2333" />
+            <Setter Property="BorderBrush" Value="#3a455a" />
+        </Style>
+
+        <Style Selector="TextBox /template/ Border">
+            <Setter Property="CornerRadius" Value="3" />
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="ListBoxItem:selected Grid">
+            <Setter Property="Background" Value="#E6E6FA"/>
+        </Style>
+
+        <Style Selector="ListBoxItem Grid">
+            <Setter Property="Height" Value="51"/>
+        </Style>
+
+    </UserControl.Styles>
+
+</UserControl>

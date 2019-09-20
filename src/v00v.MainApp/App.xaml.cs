@@ -1,13 +1,16 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using v00v.Views;
+using Microsoft.EntityFrameworkCore;
+using v00v.Services.Database;
 using v00v.Views.Application;
 
 namespace v00v.MainApp
 {
     public class App : Application
     {
+        #region Methods
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -15,15 +18,24 @@ namespace v00v.MainApp
 
         public override void OnFrameworkInitializationCompleted()
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
+            var db = AvaloniaLocator.Current.GetService<IContextFactory>();
+            using VideoContext context = db.CreateVideoContext();
+            context.Database.Migrate();
+
+
+            switch (ApplicationLifetime)
             {
-                desktopLifetime.MainWindow = new MainWindow();
+                case IClassicDesktopStyleApplicationLifetime desktopLifetime:
+                    desktopLifetime.MainWindow = new MainWindow();
+                    break;
+                case ISingleViewApplicationLifetime singleViewLifetime:
+                    singleViewLifetime.MainView = new MainView();
+                    break;
             }
-            else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewLifetime)
-            {
-                singleViewLifetime.MainView = new MainView();
-            }
+
             base.OnFrameworkInitializationCompleted();
         }
+
+        #endregion
     }
 }

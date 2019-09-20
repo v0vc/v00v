@@ -17,11 +17,11 @@
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />
   </ItemGroup>
-  
+ 
   <ItemGroup>
     <ProjectReference Include="..\v00v.ViewModel\v00v.ViewModel.csproj" />
   </ItemGroup>
-  
+ 
   <ItemGroup>
     <None Update="Application\MainView.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -29,10 +29,28 @@
     <None Update="Application\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <None Update="Catalog\CatalogControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Catalog\EntryControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Explorer\ExplorerControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Explorer\ItemControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
     <None Update="MainView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
     <None Update="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Playlists\PlaylistControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Playlists\PlaylistEntryControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>

@@ -19,6 +19,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
     <ProjectReference Include="..\v00v.Views\v00v.Views.csproj" />
   </ItemGroup>
 

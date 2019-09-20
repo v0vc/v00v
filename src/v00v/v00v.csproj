@@ -12,6 +12,7 @@
   <Import Project="..\..\build\Avalonia.Desktop.props" />
   <ItemGroup>
     <ProjectReference Include="..\v00v.MainApp\v00v.MainApp.csproj" />
+    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
   </ItemGroup>
 
 </Project>

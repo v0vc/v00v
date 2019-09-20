@@ -1,9 +1,32 @@
 ﻿<UserControl x:Class="v00v.Views.Application.MainView"
              xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:catalog="clr-namespace:v00v.Views.Catalog"
+             xmlns:explorer="clr-namespace:v00v.Views.Explorer"
+             xmlns:playlist="clr-namespace:v00v.Views.Playlists">
     <Panel>
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,*,auto">
-            <TextBlock Text ="::"/>
+
+            <catalog:CatalogControl
+                DataContext="{Binding CatalogModel}"
+                Grid.Column="0"
+                Grid.RowSpan="3" />
+
+            <Carousel Grid.Column="1" Grid.Row="1" SelectedIndex="{Binding PageIndex}">
+
+                <explorer:ExplorerControl
+                    DataContext="{Binding CatalogModel.ExplorerModel}" />
+
+                <!--<startup:StartupControl />-->
+
+            </Carousel>
+
+
+            <playlist:PlaylistControl
+                DataContext="{Binding CatalogModel.PlaylistModel}"
+                Grid.Column="2" 
+                Grid.RowSpan="3"/>
         </Grid>
+
     </Panel>
 </UserControl>
