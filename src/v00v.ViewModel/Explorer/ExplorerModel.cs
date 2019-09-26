@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
+using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Core;
@@ -26,6 +30,7 @@ namespace v00v.ViewModel.Explorer
         private readonly ReadOnlyObservableCollection<Item> _entries;
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
+        private readonly IYoutubeService _youtubeService;
 
         #endregion
 
@@ -40,7 +45,8 @@ namespace v00v.ViewModel.Explorer
         #region Constructors
 
         public ExplorerModel(Channel channel, CatalogModel catalogModel) : this(AvaloniaLocator.Current.GetService<IItemRepository>(),
-                                                                                AvaloniaLocator.Current.GetService<IPopupController>())
+                                                                                AvaloniaLocator.Current.GetService<IPopupController>(),
+                                                                                AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
             _catalogModel = catalogModel;
 
@@ -61,13 +67,14 @@ namespace v00v.ViewModel.Explorer
 
             _cleanUp = new CompositeDisposable(All, loader, _catalogModel);
 
-            OpenCommand = new Command(OpenItem);
+            OpenCommand = new Command(async x => await OpenItem(x));
         }
 
-        private ExplorerModel(IItemRepository itemRepository, IPopupController popupController)
+        private ExplorerModel(IItemRepository itemRepository, IPopupController popupController, IYoutubeService youtubeService)
         {
             _itemRepository = itemRepository;
             _popupController = popupController;
+            _youtubeService = youtubeService;
         }
 
         #endregion
@@ -177,9 +184,29 @@ namespace v00v.ViewModel.Explorer
             });
         }
 
-        private void OpenItem(object item)
+        private async Task OpenItem(object o)
         {
-            _popupController.Show(new ItemPopupContext((Item)item));
+            var item = (Item)o;
+            if (item.Description == null)
+            {
+                item.Description = await _itemRepository.GetItemDescription(item.Id);
+            }
+
+            if (item.LargeThumb == null)
+            {
+                var th = await _youtubeService.GetStreamFromUrl($"http://img.youtube.com/vi/{item.Id}/0.jpg");
+
+                //var th = new byte[0];
+                if (th.Length > 0)
+                {
+                    using (var ms = new MemoryStream(th))
+                    {
+                        item.LargeThumb = new Bitmap(ms);
+                    }
+                }
+            }
+
+            _popupController.Show(new ItemPopupContext(item));
         }
 
         #endregion

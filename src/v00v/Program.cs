@@ -3,6 +3,7 @@ using AutoMapper;
 using Avalonia;
 using Avalonia.Logging.Serilog;
 using v00v.MainApp;
+using v00v.Services.ContentProvider;
 using v00v.Services.Database;
 using v00v.Services.Persistence;
 using v00v.Services.Persistence.Mappers;
@@ -20,6 +21,8 @@ namespace v00v
         [STAThread]
         private static void Main(string[] args)
         {
+            AvaloniaLocator.CurrentMutable.Bind<IYoutubeService>().ToSingleton<YoutubeService>();
+
             AvaloniaLocator.CurrentMutable.Bind<IPopupController>().ToSingleton<PopupController>();
 
             AvaloniaLocator.CurrentMutable.Bind<IContextFactory>().ToSingleton<ContextFactory>();

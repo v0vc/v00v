@@ -24,7 +24,9 @@
 
             <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Width="51" Height="51" VerticalAlignment="Top"
                     BorderThickness="0" Padding="0" Background="Transparent" BorderBrush="Transparent"
-                    Command="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl},Path=DataContext.OpenCommand, Mode=OneTime}" CommandParameter="{Binding}">
+                    Command="{Binding $parent[ListBox].DataContext.OpenCommand, Mode=OneTime}" 
+                    CommandParameter="{Binding}"
+                    >
                 <Image Source="{Binding Thumb, Mode=OneWay}" Opacity="{Binding OpacityThumb}" 
                        Stretch="Fill"  
                        VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -58,8 +60,7 @@
 
             <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15" IsVisible="{Binding !Downloaded}">
                 <Button Background="#bdacd1" IsVisible="{Binding !IsWorking}"
-                        Command="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl},
-                             Path=DataContext.DownloadCommand, Mode=OneWay}" CommandParameter="{Binding}">
+                        Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneWay}" CommandParameter="{Binding}">
                     <!--<Image Source="resm:v0v.Application.Icons.Dark.Download32.png?assembly=v0v.Application"/>-->
                 </Button>
                 <ProgressBar IsVisible="{Binding IsWorking}"
