@@ -50,16 +50,10 @@
             </StackPanel>
 
             <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" Margin="0,0,5,0">
-
                 <TextBlock Text="{Binding LikeCount}" FontSize="9.5" HorizontalAlignment="Right" />
                 <TextBlock Text="{Binding DislikeCount}" FontSize="9.5" HorizontalAlignment="Right" />
                 <TextBlock Text="{Binding Comments}" FontSize="9.5" HorizontalAlignment="Right" />
                 <TextBlock Text="{Binding ViewDiff}" FontSize="9.5" HorizontalAlignment="Right" />
-
-                <!--<TextBlock Text="{Binding ViewCount, StringFormat=views : {0}}" FontSize="9.5" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                <TextBlock Text="{Binding LikeCount, StringFormat=likes : {0}}" FontSize="9.5" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                <TextBlock Text="{Binding DislikeCount, StringFormat=dislikes : {0}}" FontSize="9.5" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                <TextBlock Text="{Binding Comments, StringFormat=comments : {0}}" FontSize="9.5" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Right" />-->
             </StackPanel>
 
             <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15" IsVisible="{Binding !Downloaded}">

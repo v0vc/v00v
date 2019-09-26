@@ -9,14 +9,9 @@ namespace v00v.Views.Application
     {
         public MainWindow()
         {
-            InitializeComponent();
+            AvaloniaXamlLoader.Load(this);
             DataContext = new MainWindowViewModel();
             this.AttachDevTools();
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

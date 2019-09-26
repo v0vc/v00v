@@ -1,29 +1,44 @@
-﻿using System.Windows.Input;
+﻿using System;
+using Avalonia;
 using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Core;
+using v00v.ViewModel.Popup;
 
 namespace v00v.ViewModel
 {
     public class MainWindowViewModel : ViewModelBase
     {
+        #region Static and Readonly Fields
+
+        private readonly IPopupController _popupController;
+
+        #endregion
+
         #region Fields
 
-        private int _count;
-        private double _position;
+        private PopupModel _popupModel;
 
         #endregion
 
         #region Constructors
 
-        public MainWindowViewModel()
+        public MainWindowViewModel() : this(AvaloniaLocator.Current.GetService<IPopupController>())
         {
-            Count = 0;
-            Position = 100.0;
-            MoveLeftCommand = new Command((param) => Position -= 5.0);
-            MoveRightCommand = new Command((param) => Position += 5.0);
-            ResetMoveCommand = new Command((param) => Position = 100.0);
+            PopupModel = PopupModel.Hidden();
+
+            var trigger = _popupController?.Trigger;
+
+            trigger?.Subscribe(context =>
+            {
+                PopupModel = context == null ? PopupModel.Hidden() : PopupModel.NoHidden(context, _popupController);
+            });
+
             CatalogModel = new CatalogModel();
-            PageIndex = 0;
+        }
+
+        private MainWindowViewModel(IPopupController popupController)
+        {
+            _popupController = popupController;
         }
 
         #endregion
@@ -31,33 +46,13 @@ namespace v00v.ViewModel
         #region Properties
 
         public CatalogModel CatalogModel { get; set; }
-
         public byte PageIndex { get; set; }
-        public int Count
+
+        public PopupModel PopupModel
         {
-            get => _count;
-            set => Update(ref _count, value);
+            get => _popupModel;
+            set => Update(ref _popupModel, value);
         }
-
-        public ICommand MoveLeftCommand { get; set; }
-
-        public ICommand MoveRightCommand { get; set; }
-
-        public double Position
-        {
-            get => _position;
-            set => Update(ref _position, value);
-        }
-
-        public ICommand ResetMoveCommand { get; set; }
-
-        #endregion
-
-        #region Methods
-
-        public void DecrementCount(object sender, object parameter) => Count--;
-
-        public void IncrementCount() => Count++;
 
         #endregion
     }

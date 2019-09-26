@@ -1,0 +1,119 @@
+﻿<UserControl
+    x:Class="v00v.Views.Popup.PopupControl"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:itemmodel="clr-namespace:v00v.ViewModel.Popup.Item;assembly=v00v.ViewModel"
+    xmlns:itemview="clr-namespace:v00v.Views.Popup.Item"
+    >
+    <!--FocusManager.FocusedElement="{Binding ElementName=grid}"-->
+    <!--<UserControl.KeyBindings>
+        <KeyBinding Command="{Binding Context.CloseCommand}" Gesture="Escape"/>
+    </UserControl.KeyBindings>-->
+
+    <Grid Name="grid"
+        RowDefinitions="auto,*"
+        ColumnDefinitions="*,auto,*">
+        
+        <Rectangle
+            Grid.RowSpan="3"
+            Grid.ColumnSpan="3"
+            Fill="#000000"
+            Opacity="0.75" />
+        
+        <Border
+            Grid.Column="1"
+            Grid.Row="0"
+            Margin="0,24,0,0"
+            Background="#ffffff"
+            BorderThickness="1"
+            BorderBrush="#00c8ff"
+            CornerRadius="2">
+            
+            <Grid
+                RowDefinitions="auto,auto,auto"
+                ColumnDefinitions="auto,*,auto">
+                
+                <Border
+                    Classes="Title"
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Grid.ColumnSpan="3">
+                    <TextBlock
+                        Foreground="#444444"
+                        FontWeight="Medium"
+                        Text="{Binding Context.Title}"
+                        VerticalAlignment="Center" />
+                    
+                </Border>
+                
+                <Button
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Command="{Binding Context.CloseCommand}"
+                    Width="16"
+                    Height="16"
+                    Margin="8"
+                    Background="Transparent"
+                    BorderThickness="1">
+                    
+                    <!--<Image
+                        Source="resm:v0v.Application.Icons.Dark.X32.png?assembly=v0v.Application"
+                        Width="16"
+                        Height="16"
+                        Opacity="0.66" />-->
+                    <Image
+                        Width="16"
+                        Height="16"
+                        Opacity="0.66" />
+
+                </Button>
+                
+                <Carousel
+                    Grid.Row="2"
+                    Grid.ColumnSpan="3"
+                    MinWidth="380"
+                    MinHeight="20"
+                    Margin="12,10,12,12"
+                    Items="{Binding Contexts}"
+                    SelectedItem="{Binding Context}">
+                    
+                    <Carousel.DataTemplates>
+
+                        <!--<DataTemplate DataType="{x:Type channelmodel:ChannelPopupContext}">
+                            <channelview:ChannelPopupControl />
+                        </DataTemplate>-->
+
+                        <DataTemplate DataType="{x:Type itemmodel:ItemPopupContext}">
+                            <itemview:ItemPopupControl />
+                        </DataTemplate>
+                        
+                    </Carousel.DataTemplates>
+                    
+                </Carousel>
+                
+            </Grid>
+            
+        </Border>
+        
+    </Grid>
+    
+    <UserControl.Styles>
+        
+        <Style Selector="Border.Title">
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="10,0,10,0"/>
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Background" Value="#fafafa" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="#dddddd" />
+            <!-- <Setter Property="CornerRadius" Value="8,8,0,0" /> -->
+        </Style>
+        
+        <Style Selector="Border.Title TextBlock">
+            <!-- <Setter Property="Foreground" Value="#ffffff" /> -->
+            <!-- <Setter Property="FontSize" Value="13" /> -->
+        </Style>
+        
+    </UserControl.Styles>
+    
+</UserControl>

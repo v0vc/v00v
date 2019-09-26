@@ -7,11 +7,6 @@ namespace v00v.Views.Application
     {
         public MainView()
         {
-            InitializeComponent();
-        }
-
-        private void InitializeComponent()
-        {
             AvaloniaXamlLoader.Load(this);
         }
     }

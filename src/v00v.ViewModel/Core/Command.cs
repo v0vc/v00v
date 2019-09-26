@@ -5,16 +5,30 @@ namespace v00v.ViewModel.Core
 {
     public class Command : ICommand
     {
-        private Action<object> _execute;
-        private Predicate<object> _canExecute;
+        #region Events
 
         public event EventHandler CanExecuteChanged;
+
+        #endregion
+
+        #region Static and Readonly Fields
+
+        private readonly Predicate<object> _canExecute;
+        private readonly Action<object> _execute;
+
+        #endregion
+
+        #region Constructors
 
         public Command(Action<object> execute = null, Predicate<object> canExecute = null)
         {
             _execute = execute;
             _canExecute = canExecute;
         }
+
+        #endregion
+
+        #region Methods
 
         public virtual void NotifyCanExecuteChanged()
         {
@@ -30,5 +44,7 @@ namespace v00v.ViewModel.Core
         {
             _execute?.Invoke(parameter);
         }
+
+        #endregion
     }
 }

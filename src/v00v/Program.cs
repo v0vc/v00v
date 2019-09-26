@@ -7,6 +7,7 @@ using v00v.Services.Database;
 using v00v.Services.Persistence;
 using v00v.Services.Persistence.Mappers;
 using v00v.Services.Persistence.Repositories;
+using v00v.ViewModel.Popup;
 
 namespace v00v
 {
@@ -19,6 +20,8 @@ namespace v00v
         [STAThread]
         private static void Main(string[] args)
         {
+            AvaloniaLocator.CurrentMutable.Bind<IPopupController>().ToSingleton<PopupController>();
+
             AvaloniaLocator.CurrentMutable.Bind<IContextFactory>().ToSingleton<ContextFactory>();
 
             AvaloniaLocator.CurrentMutable.Bind<IMapper>().ToConstant(new MapperConfiguration(mc =>

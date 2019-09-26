@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
@@ -11,6 +12,8 @@ using v00v.Model.Enums;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Core;
+using v00v.ViewModel.Popup;
+using v00v.ViewModel.Popup.Item;
 
 namespace v00v.ViewModel.Explorer
 {
@@ -22,6 +25,7 @@ namespace v00v.ViewModel.Explorer
         private readonly IDisposable _cleanUp;
         private readonly ReadOnlyObservableCollection<Item> _entries;
         private readonly IItemRepository _itemRepository;
+        private readonly IPopupController _popupController;
 
         #endregion
 
@@ -35,7 +39,8 @@ namespace v00v.ViewModel.Explorer
 
         #region Constructors
 
-        public ExplorerModel(Channel channel, CatalogModel catalogModel) : this(AvaloniaLocator.Current.GetService<IItemRepository>())
+        public ExplorerModel(Channel channel, CatalogModel catalogModel) : this(AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                                                                AvaloniaLocator.Current.GetService<IPopupController>())
         {
             _catalogModel = catalogModel;
 
@@ -55,11 +60,14 @@ namespace v00v.ViewModel.Explorer
                 .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _entries).DisposeMany().Subscribe();
 
             _cleanUp = new CompositeDisposable(All, loader, _catalogModel);
+
+            OpenCommand = new Command(OpenItem);
         }
 
-        private ExplorerModel(IItemRepository itemRepository)
+        private ExplorerModel(IItemRepository itemRepository, IPopupController popupController)
         {
             _itemRepository = itemRepository;
+            _popupController = popupController;
         }
 
         #endregion
@@ -69,6 +77,7 @@ namespace v00v.ViewModel.Explorer
         public SourceCache<Item, string> All { get; }
 
         public IEnumerable<Item> Items => _entries;
+        public ICommand OpenCommand { get; }
 
         public string SearchText
         {
@@ -166,6 +175,11 @@ namespace v00v.ViewModel.Explorer
                         return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                 }
             });
+        }
+
+        private void OpenItem(object item)
+        {
+            _popupController.Show(new ItemPopupContext((Item)item));
         }
 
         #endregion

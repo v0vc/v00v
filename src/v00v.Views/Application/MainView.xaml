@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:catalog="clr-namespace:v00v.Views.Catalog"
              xmlns:explorer="clr-namespace:v00v.Views.Explorer"
-             xmlns:playlist="clr-namespace:v00v.Views.Playlists">
+             xmlns:playlist="clr-namespace:v00v.Views.Playlists"
+             xmlns:popup="clr-namespace:v00v.Views.Popup"
+             >
     <Panel>
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,*,auto">
 
@@ -21,12 +23,15 @@
 
             </Carousel>
 
-
             <playlist:PlaylistControl
                 DataContext="{Binding CatalogModel.PlaylistModel}"
                 Grid.Column="2" 
                 Grid.RowSpan="3"/>
         </Grid>
+
+        <popup:PopupControl
+            DataContext="{Binding PopupModel}" 
+            IsVisible="{Binding IsVisible}"/>
 
     </Panel>
 </UserControl>

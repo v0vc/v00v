@@ -1,0 +1,38 @@
+﻿<UserControl
+    x:Class="v00v.Views.Popup.Item.ItemPopupControl"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:controls="clr-namespace:v00v.Views.Controls"
+    >
+
+    <Grid MaxWidth="480" MinWidth="480" RowDefinitions="auto,auto">
+
+        <Image Grid.Row="0" 
+               Source="{Binding Thumb, Mode=OneTime}" 
+               Stretch="Fill" 
+               VerticalAlignment="Center"
+               HorizontalAlignment="Left"
+               Width="{Binding ImageWidth}" Height="{Binding ImageHeight}"
+               />
+
+        <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight}" Margin="0,3,0,0"
+                                  IsReadOnly="True"
+                                  IsVisible="True"
+                                  Watermark="Description"
+                                  Text="{Binding Description, Mode=OneTime}" 
+                                  TextWrapping="Wrap"
+                                  TextAlignment="Left"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                  />
+    </Grid>
+    
+    <UserControl.Styles>
+
+        <Style Selector="TextBox /template/ Border">
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        
+    </UserControl.Styles>
+    
+</UserControl>
