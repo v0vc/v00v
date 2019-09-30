@@ -27,11 +27,11 @@ namespace v00v
         {
             Register();
 
-            PreAppStart(false);
+            //PreAppStart(false);
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            Shutdown();
+            //Shutdown();
         }
 
         private static void PreAppStart(bool needMigrate)

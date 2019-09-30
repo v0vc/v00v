@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -71,7 +72,24 @@ namespace v00v.ViewModel.Explorer
             _cleanUp = new CompositeDisposable(All, loader, _catalogModel);
 
             OpenCommand = new Command(async x => await OpenItem(x));
+
             DownloadCommand = new Command(async x => await Download("simple", (Item)x));
+
+            DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
+
+            RunItemCommand = new Command(x => SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
+                                                                     _configuration.GetValue<string>("AppSettings:BaseDir")));
+
+            CopyItemCommand = new Command(async x => await CopyItem((string)x));
+
+            IsParentState = channel.IsStateChannel;
+            if (IsParentState)
+            {
+                GoToParentCommand =
+                    new Command(x => _catalogModel.SelectedEntry = _catalogModel.Entries.First(y => y.Id == SelectedEntry.ChannelId));
+            }
+
+            DeleteItemCommand = new Command(async x => await DeleteItem());
         }
 
         private ExplorerModel(IItemRepository itemRepository,
@@ -90,26 +108,26 @@ namespace v00v.ViewModel.Explorer
         #region Properties
 
         public SourceCache<Item, string> All { get; }
-
+        public ICommand CopyItemCommand { get; }
+        public ICommand DeleteItemCommand { get; }
         public ICommand DownloadCommand { get; }
-
+        public ICommand DownloadItemCommand { get; }
+        public ICommand GoToParentCommand { get; }
+        public bool IsParentState { get; }
         public IEnumerable<Item> Items => _entries;
         public ICommand OpenCommand { get; }
-
+        public ICommand RunItemCommand { get; }
         public string SearchText
         {
             get => _searchText;
             set => Update(ref _searchText, value);
         }
-
         public Item SelectedEntry { get; set; }
-
         public string SelectedPlaylistId
         {
             get => _selectedPlaylistId;
             set => Update(ref _selectedPlaylistId, value);
         }
-
         public SortingEnum SortingEnum { get; set; } = SortingEnum.Timestamp;
 
         #endregion
@@ -137,23 +155,15 @@ namespace v00v.ViewModel.Explorer
 
         public async Task Download(string par, Item item)
         {
-            if (item.Downloaded)
+            bool skip = par == "subs";
+            item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
+            var success = await item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
+                                              _configuration.GetValue<string>("AppSettings:YouParam"),
+                                              par,
+                                              skip);
+            if (success && !skip)
             {
-                item.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
-                             _configuration.GetValue<string>("AppSettings:BaseDir"));
-            }
-            else
-            {
-                bool skip = par == "subs";
-                item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
-                var success = await item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
-                                                  _configuration.GetValue<string>("AppSettings:YouParam"),
-                                                  par,
-                                                  skip);
-                if (success && !skip)
-                {
-                    await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-                }
+                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
             }
         }
 
@@ -186,6 +196,60 @@ namespace v00v.ViewModel.Explorer
             }
 
             return x => _catalogModel.PlaylistModel.SelectedEntry.Items.Contains(x.Id);
+        }
+
+        private async Task CopyItem(string par)
+        {
+            if (SelectedEntry != null)
+            {
+                string res = null;
+                switch (par)
+                {
+                    case "link":
+                        res = SelectedEntry.Link;
+                        break;
+                    case "title":
+                        res = SelectedEntry.Title;
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(res))
+                {
+                    await Application.Current.Clipboard.SetTextAsync(res);
+                }
+            }
+        }
+
+        private async Task DeleteItem()
+        {
+            if (SelectedEntry != null && SelectedEntry.Downloaded)
+            {
+                await DeleteItem(SelectedEntry);
+            }
+        }
+
+        private async Task DeleteItem(Item item)
+        {
+            item.Downloaded = false;
+            await _itemRepository.UpdateItemFileName(item.Id, null);
+            if (item.FileName != null)
+            {
+                var fn = new FileInfo(Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"),
+                                                   item.ChannelId,
+                                                   item.FileName));
+                if (fn.Exists)
+                {
+                    try
+                    {
+                        fn.Delete();
+                        await item.Log($"{fn.FullName} deleted").ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        await item.Log($"Error {e.Message}").ConfigureAwait(false);
+                    }
+                }
+            }
         }
 
         private IObservable<SortExpressionComparer<Item>> GetSorter()

@@ -7,7 +7,7 @@
         <KeyBinding Command="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl},Path=DataContext.RunItemCommand, Mode=OneWay}" Gesture="Enter"/>
     </UserControl.KeyBindings>-->
     <Border BorderBrush="#242e44" BorderThickness="0.2">
-        <Grid RowDefinitions="auto,auto" ColumnDefinitions="auto,*,auto,15" >
+        <Grid RowDefinitions="auto,auto" ColumnDefinitions="auto,*,auto,auto" >
             <!--<Grid.Resources>
                 <converters:EnumBooleanConverter x:Key="EnumBooleanConverter" />
             </Grid.Resources>
@@ -58,7 +58,7 @@
                 <TextBlock Text="{Binding ViewDiff}" FontSize="9.5" HorizontalAlignment="Right" />
             </StackPanel>
 
-            <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3">
+            <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15" IsVisible="{Binding !Downloaded}">
                 <Button Background="#bdacd1" IsVisible="{Binding !IsWorking}"
                         Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneWay}" CommandParameter="{Binding}">
                     <!--<Image Source="resm:v0v.Application.Icons.Dark.Download32.png?assembly=v0v.Application"/>-->

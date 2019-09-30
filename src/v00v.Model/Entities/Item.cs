@@ -27,6 +27,7 @@ namespace v00v.Model.Entities
 
         #region Fields
 
+        private bool _downloaded;
         private bool _isWorking;
         private double _percentage;
         private Process _proc;
@@ -45,7 +46,11 @@ namespace v00v.Model.Entities
 
         public long DislikeCount { get; set; }
 
-        public bool Downloaded { get; set; }
+        public bool Downloaded
+        {
+            get => _downloaded;
+            set => Update(ref _downloaded, value);
+        }
 
         public int Duration { get; set; }
 
