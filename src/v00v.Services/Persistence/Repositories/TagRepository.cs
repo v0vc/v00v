@@ -123,10 +123,12 @@ namespace v00v.Services.Persistence.Repositories
                         return res.Select(x => _mapper.Map<Model.Entities.Tag>(x));
                     }
 
-                    var dres = (await context.ChannelTags.AsNoTracking().GroupBy(x => x.TagId)
-                            .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2).ToListAsync())
+                    var dres = (await context.ChannelTags.AsNoTracking().ToListAsync()).GroupBy(x => x.TagId)
+                        .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2)
                         .Select(x => new Tag { Id = x.Item1, Text = res.First(y => y.Id == x.Item1).Text }).ToList();
+
                     dres.AddRange(res.Where(x => !dres.Select(y => y.Id).Contains(x.Id)));
+
                     return dres.Select(x => _mapper.Map<Model.Entities.Tag>(x));
                 }
                 catch (Exception exception)

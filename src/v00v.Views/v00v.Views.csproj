@@ -47,6 +47,12 @@
     <None Update="Popup\Item\ItemPopupControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <None Update="Popup\Item\ChannelPopupControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Update="Popup\Item\TagItemControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
   </ItemGroup>
   
 </Project>

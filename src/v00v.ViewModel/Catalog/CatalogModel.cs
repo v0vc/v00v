@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
@@ -15,6 +16,8 @@ using v00v.Services.Persistence;
 using v00v.ViewModel.Core;
 using v00v.ViewModel.Explorer;
 using v00v.ViewModel.Playlists;
+using v00v.ViewModel.Popup;
+using v00v.ViewModel.Popup.Channel;
 
 namespace v00v.ViewModel.Catalog
 {
@@ -26,7 +29,7 @@ namespace v00v.ViewModel.Catalog
         private readonly IDisposable _cleanUp;
         private readonly ReadOnlyObservableCollection<Channel> _entries;
         private readonly ITagRepository _tagRepository;
-
+        private readonly IPopupController _popupController;
         #endregion
 
         #region Fields
@@ -42,7 +45,8 @@ namespace v00v.ViewModel.Catalog
         #region Constructors
 
         public CatalogModel() : this(AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                                     AvaloniaLocator.Current.GetService<ITagRepository>())
+                                     AvaloniaLocator.Current.GetService<ITagRepository>(),
+                                     AvaloniaLocator.Current.GetService<IPopupController>())
         {
             All = new SourceCache<Channel, string>(m => m.Id);
 
@@ -93,10 +97,12 @@ namespace v00v.ViewModel.Catalog
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
         }
 
-        private CatalogModel(IChannelRepository channelRepository, ITagRepository tagRepository)
+        private CatalogModel(IChannelRepository channelRepository, ITagRepository tagRepository, IPopupController popupController)
         {
             _channelRepository = channelRepository;
             _tagRepository = tagRepository;
+            _popupController = popupController;
+            AddChannelCommand = new Command(x => _popupController.Show(new ChannelPopupContext(null, this)));
         }
 
         #endregion
@@ -141,6 +147,7 @@ namespace v00v.ViewModel.Catalog
 
         public IAppCache ViewModelCache { get; } = new CachingService();
 
+        public ICommand AddChannelCommand { get; }
         #endregion
 
         #region Static Methods

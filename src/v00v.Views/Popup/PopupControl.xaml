@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:itemmodel="clr-namespace:v00v.ViewModel.Popup.Item;assembly=v00v.ViewModel"
     xmlns:itemview="clr-namespace:v00v.Views.Popup.Item"
+    xmlns:channelmodel="clr-namespace:v00v.ViewModel.Popup.Channel;assembly=v00v.ViewModel"
+    xmlns:channelview="clr-namespace:v00v.Views.Popup.Channel"
     >
     <!--FocusManager.FocusedElement="{Binding ElementName=grid}"-->
     <!--<UserControl.KeyBindings>
@@ -54,7 +56,9 @@
                     Height="16"
                     Margin="8"
                     Background="Transparent"
-                    BorderThickness="1">
+                    BorderThickness="1"
+                    IsEnabled="{Binding !Context.IsWorking}"
+                    >
                     
                     <!--<Image
                         Source="resm:v0v.Application.Icons.Dark.X32.png?assembly=v0v.Application"
@@ -79,9 +83,9 @@
                     
                     <Carousel.DataTemplates>
 
-                        <!--<DataTemplate DataType="{x:Type channelmodel:ChannelPopupContext}">
+                        <DataTemplate DataType="{x:Type channelmodel:ChannelPopupContext}">
                             <channelview:ChannelPopupControl />
-                        </DataTemplate>-->
+                        </DataTemplate>
 
                         <DataTemplate DataType="{x:Type itemmodel:ItemPopupContext}">
                             <itemview:ItemPopupControl />

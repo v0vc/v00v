@@ -3,14 +3,12 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:catalog="clr-namespace:v00v.Views.Catalog"
-    xmlns:enums="clr-namespace:v00v.Model.Enums;assembly=v00v.Model"
-    xmlns:markup="clr-namespace:Portable.Xaml.Markup;assembly=Avalonia.Markup.Xaml"
-    xmlns:converters="clr-namespace:v00v.Model.Converters;assembly=v00v.Model">
+    >
     
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
-        <Grid.Resources>
+        <!--<Grid.Resources>
             <converters:EnumBooleanConverter x:Key="EnumBooleanConverter" />
-        </Grid.Resources>
+        </Grid.Resources>-->
         <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Text="{Binding SearchText, Mode=TwoWay}" />
         
         <ListBox Grid.Row="1" Grid.ColumnSpan="2"
@@ -31,7 +29,7 @@
 
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header >
-                <StackPanel Orientation="Horizontal"  IsEnabled="{Binding !AddDisable}" Height="25">
+                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !AddDisable}" Height="25">
                     <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />
