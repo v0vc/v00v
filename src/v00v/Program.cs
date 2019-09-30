@@ -1,8 +1,10 @@
 ﻿using System;
+using System.IO;
 using AutoMapper;
 using Avalonia;
 using Avalonia.Logging.Serilog;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using v00v.MainApp;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
@@ -20,20 +22,6 @@ namespace v00v
 
         public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect().LogToDebug();
 
-        private static void AppShutdown()
-        {
-            var applog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
-            applog.SetStatus(AppStatus.AppClosed, "App closed");
-            var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
-            var closedCount = applog.GetStatusCount(AppStatus.AppClosed).GetAwaiter().GetResult();
-            if (closedCount % 10 == 0 && closedCount != 0)
-            {
-                context.Database.ExecuteSqlCommand($"VACUUM");
-            }
-            context.Dispose();
-            AvaloniaLocator.Current.GetService<IPopupController>().Trigger.Dispose();
-        }
-
         [STAThread]
         private static void Main(string[] args)
         {
@@ -43,7 +31,7 @@ namespace v00v
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            AppShutdown();
+            Shutdown();
         }
 
         private static void PreAppStart(bool needMigrate)
@@ -93,6 +81,25 @@ namespace v00v
 
             AvaloniaLocator.CurrentMutable.Bind<IAppLogRepository>()
                 .ToConstant(new AppLogRepository(AvaloniaLocator.Current.GetService<IContextFactory>()));
+
+            AvaloniaLocator.CurrentMutable.Bind<IConfigurationRoot>()
+                .ToConstant(new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json")
+                                .Build());
+        }
+
+        private static void Shutdown()
+        {
+            var applog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
+            applog.SetStatus(AppStatus.AppClosed, "App closed");
+            var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
+            var closedCount = applog.GetStatusCount(AppStatus.AppClosed).GetAwaiter().GetResult();
+            if (closedCount % 10 == 0 && closedCount != 0)
+            {
+                context.Database.ExecuteSqlCommand($"VACUUM");
+            }
+
+            context.Dispose();
+            AvaloniaLocator.Current.GetService<IPopupController>().Trigger.Dispose();
         }
 
         #endregion

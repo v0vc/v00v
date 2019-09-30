@@ -10,12 +10,13 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
+using Microsoft.Extensions.Configuration;
+using v00v.Model.Core;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
-using v00v.ViewModel.Core;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Item;
 
@@ -27,6 +28,7 @@ namespace v00v.ViewModel.Explorer
 
         private readonly CatalogModel _catalogModel;
         private readonly IDisposable _cleanUp;
+        private readonly IConfiguration _configuration;
         private readonly ReadOnlyObservableCollection<Item> _entries;
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
@@ -46,7 +48,8 @@ namespace v00v.ViewModel.Explorer
 
         public ExplorerModel(Channel channel, CatalogModel catalogModel) : this(AvaloniaLocator.Current.GetService<IItemRepository>(),
                                                                                 AvaloniaLocator.Current.GetService<IPopupController>(),
-                                                                                AvaloniaLocator.Current.GetService<IYoutubeService>())
+                                                                                AvaloniaLocator.Current.GetService<IYoutubeService>(),
+                                                                                AvaloniaLocator.Current.GetService<IConfigurationRoot>())
         {
             _catalogModel = catalogModel;
 
@@ -68,13 +71,18 @@ namespace v00v.ViewModel.Explorer
             _cleanUp = new CompositeDisposable(All, loader, _catalogModel);
 
             OpenCommand = new Command(async x => await OpenItem(x));
+            DownloadCommand = new Command(async x => await Download("simple", (Item)x));
         }
 
-        private ExplorerModel(IItemRepository itemRepository, IPopupController popupController, IYoutubeService youtubeService)
+        private ExplorerModel(IItemRepository itemRepository,
+            IPopupController popupController,
+            IYoutubeService youtubeService,
+            IConfiguration configuration)
         {
             _itemRepository = itemRepository;
             _popupController = popupController;
             _youtubeService = youtubeService;
+            _configuration = configuration;
         }
 
         #endregion
@@ -82,6 +90,8 @@ namespace v00v.ViewModel.Explorer
         #region Properties
 
         public SourceCache<Item, string> All { get; }
+
+        public ICommand DownloadCommand { get; }
 
         public IEnumerable<Item> Items => _entries;
         public ICommand OpenCommand { get; }
@@ -123,6 +133,28 @@ namespace v00v.ViewModel.Explorer
         public void Dispose()
         {
             _cleanUp?.Dispose();
+        }
+
+        public async Task Download(string par, Item item)
+        {
+            if (item.Downloaded)
+            {
+                item.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
+                             _configuration.GetValue<string>("AppSettings:BaseDir"));
+            }
+            else
+            {
+                bool skip = par == "subs";
+                item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
+                var success = await item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
+                                                  _configuration.GetValue<string>("AppSettings:YouParam"),
+                                                  par,
+                                                  skip);
+                if (success && !skip)
+                {
+                    await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+                }
+            }
         }
 
         private Func<Item, bool> BuildPlFilter(string playlistId)

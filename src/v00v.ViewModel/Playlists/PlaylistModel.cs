@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
+using v00v.Model.Core;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
-using v00v.ViewModel.Core;
 using v00v.ViewModel.Explorer;
 
 namespace v00v.ViewModel.Playlists

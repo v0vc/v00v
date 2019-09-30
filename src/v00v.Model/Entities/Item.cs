@@ -27,6 +27,8 @@ namespace v00v.Model.Entities
 
         #region Fields
 
+        private bool _isWorking;
+        private double _percentage;
         private Process _proc;
 
         #endregion
@@ -55,7 +57,11 @@ namespace v00v.Model.Entities
 
         public string Id { get; set; }
 
-        public bool IsWorking { get; set; } = false;
+        public bool IsWorking
+        {
+            get => _isWorking;
+            set => Update(ref _isWorking, value);
+        }
 
         public IBitmap LargeThumb { get; set; }
 
@@ -67,7 +73,11 @@ namespace v00v.Model.Entities
 
         public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
 
-        public double Percentage { get; set; }
+        public double Percentage
+        {
+            get => _percentage;
+            set => Update(ref _percentage, value);
+        }
 
         public string SaveDir { get; set; }
 
@@ -154,10 +164,10 @@ namespace v00v.Model.Entities
 
         #region Methods
 
-        public async Task<bool> Download(string youdl, string param, bool skip)
+        public async Task<bool> Download(string youdl, string youparam, string par, bool skip)
         {
             IsWorking = true;
-            var startInfo = new ProcessStartInfo(youdl, param)
+            var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam))
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 UseShellExecute = false,
@@ -241,6 +251,32 @@ namespace v00v.Model.Entities
 
             _proc.OutputDataReceived -= OutputDataReceived;
             _proc.Dispose();
+        }
+
+        private string MakeParam(string par, string youParam)
+        {
+            string param = string.Empty;
+            var basePar = $"{SaveDir}\\{Id}.%(ext)s\" \"{Link}\" {youParam}";
+            switch (par)
+            {
+                case "simple":
+                    param = $"-f best, -o \"{basePar}";
+                    break;
+                case "hd":
+                    param = $"-f bestvideo+bestaudio, -o \"{basePar}";
+                    break;
+                case "video":
+                    param = $"-f bestvideo, -o \"{basePar}";
+                    break;
+                case "audio":
+                    param = $"--extract-audio -o \"{basePar} --audio-format mp3";
+                    break;
+                case "subs":
+                    param = $"-o \"{basePar} --all-subs --skip-download";
+                    break;
+            }
+
+            return param;
         }
 
         #endregion

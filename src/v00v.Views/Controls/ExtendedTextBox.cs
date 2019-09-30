@@ -7,7 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Styling;
-using v00v.ViewModel.Core;
+using v00v.Model.Core;
 
 namespace v00v.Views.Controls
 {

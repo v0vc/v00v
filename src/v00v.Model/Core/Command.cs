@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace v00v.ViewModel.Core
+namespace v00v.Model.Core
 {
     public class Command : ICommand
     {

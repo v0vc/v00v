@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
+using v00v.Model.Core;
 using v00v.Model.Entities;
-using v00v.ViewModel.Core;
 
 namespace v00v.ViewModel.Popup.Channel
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Avalonia;
+using v00v.Model.Core;
 using v00v.ViewModel.Catalog;
-using v00v.ViewModel.Core;
 using v00v.ViewModel.Popup;
 
 namespace v00v.ViewModel

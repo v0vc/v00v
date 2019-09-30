@@ -8,11 +8,11 @@ using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
+using v00v.Model.Core;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
-using v00v.ViewModel.Core;
 
 namespace v00v.ViewModel.Popup.Channel
 {
