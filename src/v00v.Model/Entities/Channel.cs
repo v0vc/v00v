@@ -7,6 +7,12 @@ namespace v00v.Model.Entities
 {
     public class Channel : BaseEntity
     {
+        #region Fields
+
+        private int _count;
+
+        #endregion
+
         #region Properties
 
         public virtual List<Item> Items { get; } = new List<Item>();
@@ -17,7 +23,11 @@ namespace v00v.Model.Entities
 
         public virtual List<Tag> Tags { get; } = new List<Tag>();
 
-        public int Count { get; set; }
+        public int Count
+        {
+            get => _count;
+            set => Update(ref _count, value);
+        }
 
         public string ExCache => "e" + Id;
 

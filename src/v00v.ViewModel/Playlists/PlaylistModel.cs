@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
@@ -18,12 +18,10 @@ using v00v.ViewModel.Explorer;
 
 namespace v00v.ViewModel.Playlists
 {
-    public class PlaylistModel : ViewModelBase, IDisposable
+    public class PlaylistModel : ViewModelBase
     {
         #region Static and Readonly Fields
 
-        private readonly CatalogModel _catalogModel;
-        private readonly IDisposable _cleanUp;
         private readonly ReadOnlyObservableCollection<Playlist> _entries;
         private readonly ExplorerModel _explorerModel;
         private readonly IPlaylistRepository _playlistRepository;
@@ -33,7 +31,6 @@ namespace v00v.ViewModel.Playlists
         #region Fields
 
         private string _searchText;
-
         private Playlist _selectedEntry;
 
         #endregion
@@ -45,7 +42,6 @@ namespace v00v.ViewModel.Playlists
                                                                                                                      IPlaylistRepository
                                                                                                                  >())
         {
-            _catalogModel = catalogModel;
             _explorerModel = explorerModel;
 
             All = new SourceCache<Playlist, string>(m => m.Id);
@@ -104,7 +100,7 @@ namespace v00v.ViewModel.Playlists
                 }
             }
 
-            var selector = this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
+            this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
             {
                 if (entry != null)
                 {
@@ -118,21 +114,22 @@ namespace v00v.ViewModel.Playlists
                 else
                 {
                     _explorerModel.SelectedPlaylistId = null;
-                    if (_catalogModel.SelectedEntry.IsStateChannel)
+                    if (catalogModel.SelectedEntry.IsStateChannel)
                     {
                         _explorerModel.All.Clear();
-                        _explorerModel.All.AddOrUpdate(_catalogModel.SelectedEntry.Items);
+                        _explorerModel.All.AddOrUpdate(catalogModel.SelectedEntry.Items);
                     }
                 }
             });
 
-            IDisposable loader = All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
+            All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Sort(SortExpressionComparer<Playlist>.Ascending(t => t.Order), SortOptimisations.ComparesImmutableValuesOnly, 25)
                 .Bind(out _entries).DisposeMany().Subscribe();
 
-            _cleanUp = new CompositeDisposable(All, selector, loader, _catalogModel, _explorerModel);
+            CopyItemCommand = new Command(async x => await CopyItem((string)x));
+            DownloadItemCommand = new Command(x => DownloadItem((string)x));
+            DeleteCommand = new Command(x => DeleteFiles());
         }
-
         private PlaylistModel(IPlaylistRepository playlistRepository)
         {
             _playlistRepository = playlistRepository;
@@ -143,15 +140,15 @@ namespace v00v.ViewModel.Playlists
         #region Properties
 
         public SourceCache<Playlist, string> All { get; }
-
+        public ICommand CopyItemCommand { get; }
+        public ICommand DeleteCommand { get; }
+        public ICommand DownloadItemCommand { get; }
         public IEnumerable<Playlist> Entries => _entries;
-
         public string SearchText
         {
             get => _searchText;
             set => Update(ref _searchText, value);
         }
-
         public Playlist SelectedEntry
         {
             get => _selectedEntry;
@@ -161,7 +158,6 @@ namespace v00v.ViewModel.Playlists
         #endregion
 
         #region Static Methods
-
         private static Func<Playlist, bool> BuildFilter(string searchText)
         {
             if (string.IsNullOrWhiteSpace(searchText))
@@ -175,12 +171,57 @@ namespace v00v.ViewModel.Playlists
         #endregion
 
         #region Methods
-
-        public void Dispose()
+        private async Task CopyItem(string par)
         {
-            _cleanUp?.Dispose();
-        }
+            if (SelectedEntry == null)
+            {
+                return;
+            }
 
+            string res = null;
+            switch (par)
+            {
+                case "link":
+                    res = SelectedEntry.Link;
+                    break;
+                case "title":
+                    res = SelectedEntry.Title;
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(res))
+            {
+                await Application.Current.Clipboard.SetTextAsync(res);
+            }
+        }
+        private void DeleteFiles()
+        {
+            if (SelectedEntry == null)
+            {
+                return;
+            }
+
+            Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id) && x.Downloaded),
+                             new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
+                             async x =>
+                             {
+                                 await _explorerModel.DeleteItem(x);
+                             });
+        }
+        private void DownloadItem(string par)
+        {
+            if (SelectedEntry == null)
+            {
+                return;
+            }
+
+            Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
+                             new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
+                             async x =>
+                             {
+                                 await _explorerModel.Download(par, x);
+                             });
+        }
         private async Task FillPlaylistItems(Playlist playlist)
         {
             _explorerModel.All.Clear();

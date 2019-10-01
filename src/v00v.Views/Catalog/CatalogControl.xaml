@@ -25,11 +25,51 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
 
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Edit" Command="{Binding EditChannelCommand, Mode=OneWay}" IsVisible="{Binding !SelectedEntry.IsStateChannel}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Edit32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Sync" Command="{Binding SyncChannelCommand, Mode=OneWay}" IsVisible="{Binding !SelectedEntry.IsStateChannel}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Network32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Reload" Command="{Binding ReloadCommand, Mode=OneWay}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Refresh32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Delete" Command="{Binding DeleteChannelCommand, Mode=OneWay}" IsEnabled="{Binding !IsWorking}" IsVisible="{Binding !SelectedEntry.IsStateChannel}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Trash32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Clear" Command="{Binding ClearAddedCommand, Mode=OneWay}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Xmark32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Backup" Command="{Binding BackupCommand, Mode=OneWay}" IsVisible="{Binding SelectedEntry.IsStateChannel}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Backup32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                    <MenuItem Header="Restore" Command="{Binding RestoreCommand, Mode=OneWay}" IsVisible="{Binding SelectedEntry.IsStateChannel}">
+                        <!--<MenuItem.Icon>
+                            <Image Source="resm:v0v.Application.Icons.Dark.Restore32.png?assembly=v0v.Application"/>
+                        </MenuItem.Icon>-->
+                    </MenuItem>
+                </ContextMenu>
+            </ListBox.ContextMenu>
+
         </ListBox>
 
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header >
-                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !AddDisable}" Height="25">
+                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking}" Height="25">
                     <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />

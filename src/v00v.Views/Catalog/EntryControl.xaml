@@ -24,7 +24,7 @@
         </Panel>
 
         <Panel Classes="Indicator" Grid.Column="2" Height="24" VerticalAlignment="Center">
-            <Border IsVisible="{Binding HasNew}">
+            <Border IsVisible="{Binding HasNew, Mode=TwoWay}">
                 <TextBlock Text="{Binding Count}" VerticalAlignment="Center" />
             </Border>
         </Panel>

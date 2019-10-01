@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -23,12 +22,11 @@ using v00v.ViewModel.Popup.Item;
 
 namespace v00v.ViewModel.Explorer
 {
-    public class ExplorerModel : ViewModelBase, IDisposable
+    public class ExplorerModel : ViewModelBase
     {
         #region Static and Readonly Fields
 
         private readonly CatalogModel _catalogModel;
-        private readonly IDisposable _cleanUp;
         private readonly IConfiguration _configuration;
         private readonly ReadOnlyObservableCollection<Item> _entries;
         private readonly IItemRepository _itemRepository;
@@ -65,11 +63,9 @@ namespace v00v.ViewModel.Explorer
 
             All.AddOrUpdate(channel.Items);
 
-            IDisposable loader = All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
+            All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedPlaylistId).Select(BuildPlFilter))
                 .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _entries).DisposeMany().Subscribe();
-
-            _cleanUp = new CompositeDisposable(All, loader, _catalogModel);
 
             OpenCommand = new Command(async x => await OpenItem(x));
 
@@ -148,11 +144,29 @@ namespace v00v.ViewModel.Explorer
 
         #region Methods
 
-        public void Dispose()
+        public async Task DeleteItem(Item item)
         {
-            _cleanUp?.Dispose();
+            item.Downloaded = false;
+            await _itemRepository.UpdateItemFileName(item.Id, null);
+            if (item.FileName != null)
+            {
+                var fn = new FileInfo(Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"),
+                                                   item.ChannelId,
+                                                   item.FileName));
+                if (fn.Exists)
+                {
+                    try
+                    {
+                        fn.Delete();
+                        await item.Log($"{fn.FullName} deleted").ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        await item.Log($"Error {e.Message}").ConfigureAwait(false);
+                    }
+                }
+            }
         }
-
         public async Task Download(string par, Item item)
         {
             bool skip = par == "subs";
@@ -166,7 +180,6 @@ namespace v00v.ViewModel.Explorer
                 await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
             }
         }
-
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
             if (playlistId == null)
@@ -197,7 +210,6 @@ namespace v00v.ViewModel.Explorer
 
             return x => _catalogModel.PlaylistModel.SelectedEntry.Items.Contains(x.Id);
         }
-
         private async Task CopyItem(string par)
         {
             if (SelectedEntry != null)
@@ -219,7 +231,6 @@ namespace v00v.ViewModel.Explorer
                 }
             }
         }
-
         private async Task DeleteItem()
         {
             if (SelectedEntry != null && SelectedEntry.Downloaded)
@@ -227,31 +238,6 @@ namespace v00v.ViewModel.Explorer
                 await DeleteItem(SelectedEntry);
             }
         }
-
-        private async Task DeleteItem(Item item)
-        {
-            item.Downloaded = false;
-            await _itemRepository.UpdateItemFileName(item.Id, null);
-            if (item.FileName != null)
-            {
-                var fn = new FileInfo(Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"),
-                                                   item.ChannelId,
-                                                   item.FileName));
-                if (fn.Exists)
-                {
-                    try
-                    {
-                        fn.Delete();
-                        await item.Log($"{fn.FullName} deleted").ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        await item.Log($"Error {e.Message}").ConfigureAwait(false);
-                    }
-                }
-            }
-        }
-
         private IObservable<SortExpressionComparer<Item>> GetSorter()
         {
             return this.WhenValueChanged(x => x.SortingEnum).Select(x =>
@@ -279,7 +265,6 @@ namespace v00v.ViewModel.Explorer
                 }
             });
         }
-
         private async Task OpenItem(object o)
         {
             var item = (Item)o;

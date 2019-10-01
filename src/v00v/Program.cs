@@ -7,11 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using v00v.MainApp;
 using v00v.Model.Enums;
+using v00v.Services.Backup;
 using v00v.Services.ContentProvider;
 using v00v.Services.Database;
 using v00v.Services.Persistence;
 using v00v.Services.Persistence.Mappers;
 using v00v.Services.Persistence.Repositories;
+using v00v.Services.Synchronization;
 using v00v.ViewModel.Popup;
 
 namespace v00v
@@ -84,7 +86,17 @@ namespace v00v
 
             AvaloniaLocator.CurrentMutable.Bind<IConfigurationRoot>()
                 .ToConstant(new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json")
-                                .Build());
+                                .AddJsonFile("backup.json", true, false).Build());
+
+            AvaloniaLocator.CurrentMutable.Bind<ISyncService>()
+                .ToConstant(new SyncService(AvaloniaLocator.Current.GetService<IYoutubeService>(),
+                                            AvaloniaLocator.Current.GetService<IChannelRepository>()));
+
+            AvaloniaLocator.CurrentMutable.Bind<IBackupService>()
+                .ToConstant(new BackupService(AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
+                                              AvaloniaLocator.Current.GetService<IYoutubeService>(),
+                                              AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                              AvaloniaLocator.Current.GetService<IChannelRepository>()));
         }
 
         private static void Shutdown()
