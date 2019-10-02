@@ -328,6 +328,11 @@ namespace v00v.Services.Database.Migrations
                 columns: new[] { "Id", "Text" },
                 values: new object[] { 28, "электротранспорт" });
 
+            migrationBuilder.InsertData(
+                table: "Tags",
+                columns: new[] { "Id", "Text" },
+                values: new object[] { 29, "рыбалка" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Channels_SiteId",
                 table: "Channels",

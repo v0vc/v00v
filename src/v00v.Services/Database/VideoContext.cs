@@ -5,32 +5,15 @@ namespace v00v.Services.Database
 {
     public sealed class VideoContext : DbContext
     {
-        #region Constructors
-
-        public VideoContext()
-        {
-            Database?.Migrate();
-            // ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-        }
-
-        #endregion
-
         #region Properties
 
         public DbSet<AppLog> AppLogs { get; set; }
-
         public DbSet<Channel> Channels { get; set; }
-
         public DbSet<ChannelTag> ChannelTags { get; set; }
-
         public DbSet<ItemPlaylist> ItemPlaylists { get; set; }
-
         public DbSet<Item> Items { get; set; }
-
         public DbSet<Playlist> Playlists { get; set; }
-
         public DbSet<Site> Sites { get; set; }
-
         public DbSet<Tag> Tags { get; set; }
 
         #endregion
@@ -40,7 +23,8 @@ namespace v00v.Services.Database
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-            optionsBuilder.EnableSensitiveDataLogging();
+            //optionsBuilder.EnableSensitiveDataLogging();
+            //optionsBuilder.UseLazyLoadingProxies();
             optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
         }
 
@@ -80,6 +64,7 @@ namespace v00v.Services.Database
             modelBuilder.Entity<Tag>().HasData(new Tag { Id = 26, Text = "оффроад" });
             modelBuilder.Entity<Tag>().HasData(new Tag { Id = 27, Text = "мультики" });
             modelBuilder.Entity<Tag>().HasData(new Tag { Id = 28, Text = "электротранспорт" });
+            modelBuilder.Entity<Tag>().HasData(new Tag { Id = 29, Text = "рыбалка" });
 
             modelBuilder.Entity<Site>().HasData(new Site { Id = 1, Title = "youtube.com" });
         }

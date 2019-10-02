@@ -1,8 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Microsoft.EntityFrameworkCore;
-using v00v.Services.Database;
 using v00v.Views.Application;
 
 namespace v00v.MainApp
@@ -18,11 +16,6 @@ namespace v00v.MainApp
 
         public override void OnFrameworkInitializationCompleted()
         {
-            var db = AvaloniaLocator.Current.GetService<IContextFactory>();
-            using VideoContext context = db.CreateVideoContext();
-            context.Database.Migrate();
-
-
             switch (ApplicationLifetime)
             {
                 case IClassicDesktopStyleApplicationLifetime desktopLifetime:

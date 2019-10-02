@@ -29,19 +29,20 @@ namespace v00v
         {
             Register();
 
-            //PreAppStart(false);
+            PreAppStart(true);
 
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            //Shutdown();
+            Shutdown();
         }
 
         private static void PreAppStart(bool needMigrate)
         {
             if (needMigrate)
             {
-                var db = AvaloniaLocator.Current.GetService<VideoContext>();
-                db.Database.Migrate();
+                var db = AvaloniaLocator.Current.GetService<IContextFactory>();
+                using VideoContext context = db.CreateVideoContext();
+                context.Database.Migrate();
             }
 
             var appLog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
@@ -107,7 +108,7 @@ namespace v00v
             var closedCount = applog.GetStatusCount(AppStatus.AppClosed).GetAwaiter().GetResult();
             if (closedCount % 10 == 0 && closedCount != 0)
             {
-                context.Database.ExecuteSqlCommand($"VACUUM");
+                context.Database.ExecuteSqlCommandAsync("VACUUM");
             }
 
             context.Dispose();

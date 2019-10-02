@@ -15,8 +15,8 @@ namespace v00v.Model.Extensions
             return new ChannelStruct
             {
                 ChannelId = channel.Id,
-                Pls = channel.Playlists.Select(x => new Tuple<string, List<string>>(x.Id, x.Items)).ToHashSet(),
-                Items = channel.Items.Select(x => new ItemPrivacy { Id = x.Id, Status = x.SyncState }).ToHashSet()
+                //Pls = channel.Playlists.Select(x => new Tuple<string, List<string>>(x.Id, x.Items)),
+                Items = channel.Items.Select(x => x.Id).ToList()
             };
         }
 

@@ -336,10 +336,10 @@ namespace v00v.Services.ContentProvider
                 ).SelectTokens("$..items.[*]").Select(rec => rec.SelectToken("snippet.resourceId.videoId")?.Value<string>())
                 .Where(x => x != null).Distinct().ToList();
 
-            diff.AddedItems.AddRange(uploadvids.Except(cs.Items.Select(x => x.Id))
+            diff.AddedItems.AddRange(uploadvids.Except(cs.Items)
                                          .Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
 
-            diff.DeletedItems.AddRange(cs.Items.Select(x => x.Id).Except(uploadvids));
+            diff.DeletedItems.AddRange(cs.Items.Except(uploadvids));
 
             if (!syncPls)
             {
@@ -376,11 +376,11 @@ namespace v00v.Services.ContentProvider
                     continue;
                 }
 
-                if (pid != null && cs.PlIds.Contains(pid))
+                if (pid != null && cs.Playlists.Contains(pid))
                 {
                     diff.ExistPls.Add(pid, vids.Select(x => new ItemPrivacy { Id = x.Key, Status = GetState(x.Value) }).ToList());
                 }
-                else if (pid != null && !cs.PlIds.Contains(pid))
+                else if (pid != null && !cs.Playlists.Contains(pid))
                 {
                     diff.AddedPls.Add(new Playlist
                                       {
@@ -394,12 +394,12 @@ namespace v00v.Services.ContentProvider
             }
 
             diff.ExistPls.Add(upId, uploadvids.Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }).ToList());
-            diff.DeletedPls.AddRange(cs.PlIds.Where(z => z != upId)
+            diff.DeletedPls.AddRange(cs.Playlists.Where(z => z != upId)
                                          .Except(diff.ExistPls.Select(x => x.Key).Union(diff.AddedPls.Select(x => x.Key.Id))));
 
             var rawIds = diff.AddedPls.SelectMany(x => x.Value.Select(y => y.Id))
-                .Union(diff.ExistPls.SelectMany(x => x.Value.Select(y => y.Id)))
-                .Except(diff.AddedItems.Select(x => x.Id).Union(cs.Items.Select(x => x.Id))).ToList();
+                .Union(diff.ExistPls.SelectMany(x => x.Value.Select(y => y.Id))).Except(diff.AddedItems.Select(x => x.Id).Union(cs.Items))
+                .ToList();
 
             var unlistedTasks = rawIds.SplitList()
                 .Select(vid =>
@@ -422,14 +422,13 @@ namespace v00v.Services.ContentProvider
 
             foreach (KeyValuePair<Playlist, List<ItemPrivacy>> pair in diff.AddedPls)
             {
-                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items.Select(z => z.Id)).Union(diff.AddedItems.Select(x => x.Id))
+                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id))
                                          .Contains(y.Id));
             }
 
             foreach (KeyValuePair<string, List<ItemPrivacy>> pair in diff.ExistPls.Where(x => x.Key != upId))
             {
-                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items.Select(z => z.Id)).Union(diff.AddedItems.Select(x => x.Id))
-                                         .Contains(y.Id));
+                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id)).Contains(y.Id));
             }
 
             diff.DeletedItems.RemoveAll(x => diff.ExistPls.SelectMany(y => y.Value).Select(y => y.Id)

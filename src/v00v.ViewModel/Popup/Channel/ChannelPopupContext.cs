@@ -9,6 +9,7 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using v00v.Model.Core;
+using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -31,9 +32,10 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Fields
 
+        private string _closeText;
+
         private string _filterTag;
         private TagModel _selectedTag;
-        private string _closeText;
 
         #endregion
 
@@ -56,6 +58,11 @@ namespace v00v.ViewModel.Popup.Channel
             ChannelId = channel?.Id;
             ChannelTitle = channel?.Title;
             IsChannelEnabled = channel == null;
+            AddTagCommand = new Command(x => AddTag());
+            SaveTagCommand = new Command(async x => await SaveTag());
+            CloseChannelCommand = channel == null
+                ? new Command(async x => await AddChannel())
+                : new Command(async x => await EditChannel(channel));
         }
 
         private ChannelPopupContext(IPopupController popupController,
@@ -69,9 +76,6 @@ namespace v00v.ViewModel.Popup.Channel
             _channelRepository = channelRepository;
             _appLogRepository = appLogRepository;
             _youtubeService = youtubeService;
-            AddTagCommand = new Command(x => AddTag());
-            SaveTagCommand = new Command(async x => await SaveTag());
-            CloseChannelCommand = new Command(async x => await SaveChannel());
         }
 
         #endregion
@@ -126,24 +130,7 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Methods
 
-        private void AddTag()
-        {
-            var tag = new TagModel { TagText = string.Empty, IsEditable = true, IsRemovable = true };
-            tag.RemoveCommand = new Command(x => RemoveTag(tag));
-            All.Add(tag);
-            SelectedTag = tag;
-        }
-
-        private void RemoveTag(TagModel tag)
-        {
-            All.Remove(tag);
-            if (tag.IsSaved && !string.IsNullOrEmpty(tag.TagText))
-            {
-                _tagRepository.DeleteTag(tag.TagText);
-            }
-        }
-
-        private async Task SaveChannel()
+        private async Task AddChannel()
         {
             IsWorking = true;
             CloseText = "Working...";
@@ -169,6 +156,45 @@ namespace v00v.ViewModel.Popup.Channel
             if (res > 0)
             {
                 await _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{channel.Id}:{channel.Title}");
+            }
+        }
+
+        private void AddTag()
+        {
+            var tag = new TagModel { TagText = string.Empty, IsEditable = true, IsRemovable = true };
+            tag.RemoveCommand = new Command(x => RemoveTag(tag));
+            All.Add(tag);
+            SelectedTag = tag;
+        }
+
+        private async Task EditChannel(Model.Entities.Channel channel)
+        {
+            IsWorking = true;
+            CloseText = "Working...";
+            IsChannelEnabled = false;
+
+            channel.Title = ChannelTitle.Trim();
+
+            channel.Tags.Clear();
+            channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
+
+            CatalogModel.All.AddOrUpdate(channel);
+            CatalogModel.SelectedEntry = channel;
+            _popupController.Hide();
+
+            var res = await _channelRepository.SaveChannel(ChannelId, channel.Title, channel.Tags.Select(x => x.Id));
+            if (res > 0)
+            {
+                await _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
+            }
+        }
+
+        private void RemoveTag(TagModel tag)
+        {
+            All.Remove(tag);
+            if (tag.IsSaved && !string.IsNullOrEmpty(tag.TagText))
+            {
+                _tagRepository.DeleteTag(tag.TagText);
             }
         }
 

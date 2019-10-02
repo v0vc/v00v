@@ -92,7 +92,8 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        int res = await context.Database.ExecuteSqlCommandAsync($"DELETE FROM [Channels] WHERE Id={channelId}");
+                        //int res = await context.Database.ExecuteSqlRawAsync($"DELETE FROM [Channels] WHERE [Id]='{channelId}'");
+                        int res = await context.Database.ExecuteSqlCommandAsync($"DELETE FROM [Channels] WHERE [Id]='{channelId}'");
                         //await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
@@ -124,37 +125,6 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<ChannelStruct>> GetChannelsStruct(IEnumerable<string> channelIds, bool syncPls)
-        {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
-            {
-                try
-                {
-                    return await (syncPls
-                            ? context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
-                                .ThenInclude(post => post.Items).AsNoTracking().Where(x => channelIds.Contains(x.Id))
-                            : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Where(x => channelIds.Contains(x.Id)))
-                        .Select(ch => new ChannelStruct
-                        {
-                            ChannelId = ch.Id,
-                            ChannelTitle = ch.Title,
-                            Items =
-                                ch.Items.Select(y => new ItemPrivacy { Id = y.Id, Status = (SyncState)y.SyncState }).ToHashSet(),
-                            Pls = syncPls
-                                ? ch.Playlists
-                                    .Select(x => new Tuple<string, List<string>>(x.Id, x.Items.Select(y => y.ItemId).ToList()))
-                                    .ToHashSet()
-                                : null
-                        }).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
-            }
-        }
-
         public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
@@ -163,42 +133,12 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     return await (syncPls
                         ? context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
-                            .ThenInclude(post => post.Items).AsNoTracking()
                         : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()).Select(ch => new ChannelStruct
                     {
                         ChannelId = ch.Id,
                         ChannelTitle = ch.Title,
-                        Items = ch.Items
-                            .Select(y =>
-                                        new
-                                            ItemPrivacy
-                                            {
-                                                Id
-                                                    = y
-                                                        .Id,
-                                                Status
-                                                    = (
-                                                        SyncState
-                                                    )y
-                                                        .SyncState
-                                            })
-                            .ToHashSet(),
-                        Pls = syncPls
-                            ? ch.Playlists
-                                .Select(x =>
-                                            new
-                                                Tuple
-                                                <string
-                                                    , List
-                                                    <string
-                                                    >>(x
-                                                           .Id,
-                                                       x.Items
-                                                           .Select(y =>
-                                                                       y.ItemId)
-                                                           .ToList()))
-                                .ToHashSet()
-                            : null
+                        Items = ch.Items.Select(y => y.Id),
+                        Playlists = syncPls ? ch.Playlists.Select(x => x.Id) : null
                     }).ToListAsync();
                 }
                 catch (Exception exception)
@@ -411,8 +351,9 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         int res = channelId != null
-                            ? await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET Count={count} WHERE Id={channelId}")
-                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET Count={count}");
+                            ? await
+                                context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
+                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}'");
 
                         //await context.SaveChangesAsync();
                         transaction.Commit();
@@ -439,8 +380,8 @@ namespace v00v.Services.Persistence.Repositories
                         int res = channelId != null
                             ? await
                                 context.Database
-                                    .ExecuteSqlCommandAsync($"UPDATE [Items] SET SyncState={state} WHERE ChannelId={channelId} AND SyncState=1")
-                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET SyncState={state} WHERE SyncState=1");
+                                    .ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [ChannelId]='{channelId}' AND [SyncState]=1")
+                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
 
                         //await context.SaveChangesAsync();
                         transaction.Commit();

@@ -10,6 +10,7 @@ namespace v00v.Model.Entities
         #region Fields
 
         private int _count;
+        private string _title;
 
         #endregion
 
@@ -57,7 +58,11 @@ namespace v00v.Model.Entities
 
         public DateTimeOffset Timestamp { get; set; }
 
-        public string Title { get; set; }
+        public string Title
+        {
+            get => _title;
+            set => Update(ref _title, value);
+        }
 
         public byte Type { get; set; }
 

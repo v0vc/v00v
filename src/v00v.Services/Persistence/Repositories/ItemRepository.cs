@@ -132,7 +132,7 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         int res = await
-                            context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET WatchState={state} WHERE Id={itemId}");
+                            context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{state}' WHERE [Id]='{itemId}'");
 
                         //context.SaveChanges();
                         transaction.Commit();
@@ -181,7 +181,8 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         int res =
-                            await context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET FileName={filename} WHERE Id={itemId}");
+                            await context.Database
+                                .ExecuteSqlCommandAsync($"UPDATE [Items] SET [FileName]='{filename}' WHERE [Id]='{itemId}'");
                         //await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
@@ -248,7 +249,8 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         int res =
-                            await context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET WatchState={watch} WHERE Id={parsedId}");
+                            await context.Database
+                                .ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{watch}' WHERE [Id]='{parsedId}'");
 
                         //await context.SaveChangesAsync();
                         transaction.Commit();

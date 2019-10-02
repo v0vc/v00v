@@ -116,6 +116,7 @@ namespace v00v.ViewModel.Catalog
             ClearAddedCommand = new Command(async x => await ClearAdded());
             BackupCommand = new Command(async x => await BackupChannels());
             RestoreCommand = new Command(async x => await RestoreChannels());
+            SyncChannelsCommand = new Command(async x => await SyncChannels());
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -181,6 +182,7 @@ namespace v00v.ViewModel.Catalog
             set => Update(ref _selectedTag, value);
         }
         public ICommand SyncChannelCommand { get; }
+        public ICommand SyncChannelsCommand { get; }
         public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
         public IAppCache ViewModelCache { get; } = new CachingService();
 
@@ -457,7 +459,7 @@ namespace v00v.ViewModel.Catalog
                         pl.Items.AddRange(value.Select(x => x.Id));
                     }
                 }
-
+                _explorerModel.All.AddOrUpdate(diff.NewItems);
                 //SetErroSyncChannels(diff.ErrorSyncChannels);
 
                 //SelectChannel(true, Entries.First(x => x.Id == oldId));
@@ -475,6 +477,42 @@ namespace v00v.ViewModel.Catalog
             //                                  diff == null
             //                                      ? "Finished full sync with error"
             //                                      : $"Finish full sync: {sw.Elapsed.Duration()}");
+
+            IsWorking = false;
+        }
+
+        private async Task SyncChannels()
+        {
+            IsWorking = true;
+
+            var oldId = SelectedEntry.IsStateChannel ? null : SelectedEntry.Id;
+            //_mainWindowModel.WindowTitle = $"Working {Entries.Count(x => !x.IsStateChannel)} channels..";
+            //Stopwatch sw = Stopwatch.StartNew();
+
+            //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted,
+            //                                  $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
+
+            SyncDiff diff = await _syncService.Sync(true, Entries);
+
+            foreach (KeyValuePair<string, ChannelStats> channel in diff.Channels)
+            {
+                ViewModelCache.Remove("e" + channel.Key);
+            }
+            
+            //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished,
+            //                                  diff == null
+            //                                      ? "Finished simple sync with error"
+            //                                      : $"Finished simple sync: {sw.Elapsed.Duration()}");
+
+            //if (diff != null)
+            //{
+            //    SetErroSyncChannels(diff.ErrorSyncChannels);
+            //}
+
+            SelectedEntry = oldId == null ? BaseChannel : Entries.First(x => x.Id == oldId);
+
+            //_mainWindowModel.WindowTitle =
+            //    $"Finished : {_stateChannel.Count} : Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
 
             IsWorking = false;
         }

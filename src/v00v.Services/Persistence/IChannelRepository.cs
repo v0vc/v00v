@@ -18,8 +18,6 @@ namespace v00v.Services.Persistence
 
         Task<List<Channel>> GetChannels();
 
-        Task<List<ChannelStruct>> GetChannelsStruct(IEnumerable<string> channelIds, bool syncPls);
-
         Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls);
 
         Task<int> GetItemsCount(SyncState state, string channelId = null);

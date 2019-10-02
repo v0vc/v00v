@@ -6,6 +6,8 @@ namespace v00v.Model.Entities
 {
     public class Playlist : BaseEntity
     {
+        private int _count;
+
         #region Properties
 
         public virtual Channel Channel { get; set; }
@@ -14,7 +16,11 @@ namespace v00v.Model.Entities
 
         public string ChannelId { get; set; }
 
-        public int Count { get; set; }
+        public int Count
+        {
+            get => _count;
+            set => Update(ref _count, value);
+        }
 
         public bool HasFullLoad { get; set; } = false;
 

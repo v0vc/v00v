@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
@@ -29,44 +30,30 @@ namespace v00v.Services.Synchronization
 
         #endregion
 
-        #region Static Methods
+        //#region Static Methods
 
-        private static void Log(string text)
-        {
-            Console.WriteLine($"{DateTime.Now}:{text}");
-        }
+        //private static void Log(string text)
+        //{
+        //    Console.WriteLine($"{DateTime.Now}:{text}");
+        //}
 
-        #endregion
+        //#endregion
 
         #region Methods
 
         public async Task<SyncDiff> Sync(bool syncPls, IReadOnlyCollection<Channel> channels)
         {
-            List<ChannelStruct> channelStructs;
-            if (channels != null)
-            {
-                channelStructs =
-                    await _channelRepository.GetChannelsStruct(channels.Where(x => !x.IsStateChannel && !x.Loaded).Select(x => x.Id),
-                                                               syncPls);
-                if (channels.Any(x => x.Loaded))
-                {
-                    channelStructs.AddRange(channels.Where(x => !x.IsStateChannel && x.Loaded).Select(x => x.ToChannelStruct()));
-                }
-            }
-            else
-            {
-                channelStructs = await _channelRepository.GetChannelsStruct(syncPls);
-            }
+            var channelStructs = await _channelRepository.GetChannelsStruct(syncPls);
 
             if (channelStructs.Count == 0)
             {
-                Log("nothing to sync");
+                //Log("nothing to sync");
                 return null;
             }
 
             var res = new SyncDiff(syncPls);
 
-            Log($"channels:{channelStructs.Count}, start sync..");
+            //Log($"channels:{channelStructs.Count}, start sync..");
 
             try
             {
@@ -98,7 +85,7 @@ namespace v00v.Services.Synchronization
                     }
                 }
 
-                Log($"new items:{res.Items.Count}");
+                //Log($"new items:{res.Items.Count}");
 
                 if (res.Items.Count > 0)
                 {
@@ -108,7 +95,7 @@ namespace v00v.Services.Synchronization
                 if (syncPls)
                 {
                     res.NewPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.AddedPls).Select(x => x.Key));
-                    Log($"new playlist:{res.NewPlaylists.Count}");
+                    //Log($"new playlist:{res.NewPlaylists.Count}");
                     if (res.NewPlaylists.Count > 0)
                     {
                         await _youtubeService.FillThumbs(res.NewPlaylists);
@@ -120,10 +107,10 @@ namespace v00v.Services.Synchronization
                     }
 
                     res.DeletedPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.DeletedPls));
-                    Log($"deleted playlist:{res.DeletedPlaylists.Count}");
+                    //Log($"deleted playlist:{res.DeletedPlaylists.Count}");
                     res.ExistPlaylists = diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.ExistPls)
                         .ToDictionary(x => x.Key, y => y.Value);
-                    Log($"existed playlist:{res.ExistPlaylists.Count}");
+                    //Log($"existed playlist:{res.ExistPlaylists.Count}");
                 }
 
                 foreach (IGrouping<string, KeyValuePair<string, SyncPrivacy>> pair in res.Items.GroupBy(x => x.Value.ChannelId))
@@ -156,13 +143,13 @@ namespace v00v.Services.Synchronization
 
                 if (res.TrueDiff)
                 {
-                    Log("save to db..");
+                    //Log("save to db..");
                     int rows = await _channelRepository.StoreDiff(res);
-                    Log($"saved {rows} rows");
+                    //Log($"saved {rows} rows");
                 }
                 else
                 {
-                    Log("nothing to save");
+                    //Log("nothing to save");
                 }
 
                 return res;
