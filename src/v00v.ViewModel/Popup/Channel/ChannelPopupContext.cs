@@ -9,7 +9,6 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using v00v.Model.Core;
-using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -33,7 +32,6 @@ namespace v00v.ViewModel.Popup.Channel
         #region Fields
 
         private string _closeText;
-
         private string _filterTag;
         private TagModel _selectedTag;
 
@@ -58,6 +56,11 @@ namespace v00v.ViewModel.Popup.Channel
             ChannelId = channel?.Id;
             ChannelTitle = channel?.Title;
             IsChannelEnabled = channel == null;
+            if (channel != null && channel.SubTitle == null)
+            {
+                channel.SubTitle = _channelRepository.GetChannelSubtitle(channel.Id).GetAwaiter().GetResult();
+            }
+            SubTitle = channel?.SubTitle;
             AddTagCommand = new Command(x => AddTag());
             SaveTagCommand = new Command(async x => await SaveTag());
             CloseChannelCommand = channel == null
@@ -111,6 +114,8 @@ namespace v00v.ViewModel.Popup.Channel
             get => _selectedTag;
             set => Update(ref _selectedTag, value);
         }
+
+        public string SubTitle { get; set; }
 
         #endregion
 

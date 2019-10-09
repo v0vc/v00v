@@ -13,6 +13,7 @@ namespace v00v.Services.Persistence.Mappers
         {
             CreateMap<Channel, Model.Entities.Channel>().ForMember(dto => dto.Playlists, o => o.MapFrom(src => src.Playlists))
                 .ForMember(dto => dto.Items, o => o.MapFrom(src => src.Items))
+                .ForMember(dto => dto.SubTitle, o => o.Ignore())
                 //.ForMember(dto => dto.Title, o => o.MapFrom(src => src.Title.ArrangeToUi()))
                 .ForMember(dto => dto.Tags, o => o.MapFrom(src => src.Tags.Select(x => new Tag { Id = x.TagId })));
 

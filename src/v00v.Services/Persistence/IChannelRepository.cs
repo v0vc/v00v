@@ -20,6 +20,8 @@ namespace v00v.Services.Persistence
 
         Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls);
 
+        Task<string> GetChannelSubtitle(string channelId);
+
         Task<int> GetItemsCount(SyncState state, string channelId = null);
 
         Task<int> SaveChannel(string channelId, string newTitle, IEnumerable<int> tags);

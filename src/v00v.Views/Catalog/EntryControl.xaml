@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     
-    <Grid ColumnDefinitions="auto,*,auto" ToolTip.Tip="{Binding SubTitle, Mode=OneWay}">
+    <Grid ColumnDefinitions="auto,*,auto">
 
         <Border Grid.ColumnSpan="3" />
 

@@ -137,9 +137,30 @@ namespace v00v.Services.Persistence.Repositories
                     {
                         ChannelId = ch.Id,
                         ChannelTitle = ch.Title,
-                        Items = ch.Items.Select(y => y.Id),
-                        Playlists = syncPls ? ch.Playlists.Select(x => x.Id) : null
+                        Items =
+                            ch.Items.Select(y =>
+                                                y.Id),
+                        Playlists = syncPls
+                            ? ch.Playlists
+                                .Select(x => x.Id)
+                            : null
                     }).ToListAsync();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    throw;
+                }
+            }
+        }
+
+        public async Task<string> GetChannelSubtitle(string channelId)
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                try
+                {
+                    return (await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId))?.SubTitle;
                 }
                 catch (Exception exception)
                 {
@@ -352,7 +373,8 @@ namespace v00v.Services.Persistence.Repositories
                     {
                         int res = channelId != null
                             ? await
-                                context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
+                                context.Database
+                                    .ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
                             : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}'");
 
                         //await context.SaveChangesAsync();
@@ -381,7 +403,8 @@ namespace v00v.Services.Persistence.Repositories
                             ? await
                                 context.Database
                                     .ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [ChannelId]='{channelId}' AND [SyncState]=1")
-                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
+                            : await
+                                context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
 
                         //await context.SaveChangesAsync();
                         transaction.Commit();

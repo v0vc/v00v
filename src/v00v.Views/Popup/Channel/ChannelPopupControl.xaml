@@ -4,11 +4,12 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:channeltag="clr-namespace:v00v.Views.Popup.Channel"
     xmlns:controls="clr-namespace:v00v.Views.Controls">
-    
+
     <Grid
         RowDefinitions="auto,auto,auto,auto,auto,auto">
 
         <controls:ExtendedTextBox
+            ToolTip.Tip="{Binding SubTitle, Mode=OneWay}"
             IsReadOnly="{Binding !IsChannelEnabled}"
             IsVisible="True"
             Watermark="Id (required)"
