@@ -15,39 +15,24 @@
             IsVisible="{Binding IsSaved}"
             IsChecked="{Binding IsEnabled, Mode=TwoWay}"
             Grid.Column="0" />
-
-        <!--<CheckBox
-            IsVisible="{Binding IsSaved}"
-            IsChecked="{Binding IsEnabled, Mode=OneWay}"
-            Command="{Binding EnableCommand}"
-            CommandParameter="{Binding}"
-            Grid.Column="0" />-->
         
         <TextBlock
             Text="{Binding TagText}"
             Grid.Column="1" />
         
-        <!--<TextBlock
-            Text="{Binding Label}"
-            Grid.Column="1" />-->
-        
         <TextBlock
             IsVisible="{Binding !IsSaved}"
             Text=" * "
             Grid.Column="2" />
-        
-        <!--<TextBlock
-            Text="{Binding Port}"
-            Grid.Column="3" />-->
 
         <Button
             Grid.Column="4"
             IsVisible="{Binding IsRemovable}"
             Command="{Binding RemoveCommand}"
             CommandParameter="{Binding}"
-            BorderThickness="1">
-            <!--<Image
-                Source="resm:v0v.Application.Icons.Dark.Trash32.png?assembly=v0v.Application" />-->
+            BorderThickness="0">
+            <Image
+                Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp" />
         </Button>
         
     </Grid>

@@ -11,7 +11,7 @@
 
   <Import Project="..\..\build\ReferenceAssemblies.props" />
   <Import Project="..\..\build\Ef.props" />
-  <Import Project="..\..\build\Newton.props" />
+  <Import Project="..\..\build\NewtonSoft.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />
@@ -19,10 +19,6 @@
   
   <ItemGroup>
     <ProjectReference Include="..\v00v.Model\v00v.Model.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Synchronization\" />
   </ItemGroup>
 
 </Project>

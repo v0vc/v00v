@@ -56,20 +56,15 @@
                     Height="16"
                     Margin="8"
                     Background="Transparent"
-                    BorderThickness="1"
+                    BorderThickness="0"
                     IsEnabled="{Binding !Context.IsWorking}"
                     >
                     
-                    <!--<Image
-                        Source="resm:v0v.Application.Icons.Dark.X32.png?assembly=v0v.Application"
-                        Width="16"
-                        Height="16"
-                        Opacity="0.66" />-->
                     <Image
+                        Source="resm:v00v.MainApp.Icons.Dark.X32.png?assembly=v00v.MainApp"
                         Width="16"
                         Height="16"
                         Opacity="0.66" />
-
                 </Button>
                 
                 <Carousel

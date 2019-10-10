@@ -25,6 +25,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "props", "props", "{40A43022
 		build\EmbedXaml.props = build\EmbedXaml.props
 		build\ReferenceAssemblies.props = build\ReferenceAssemblies.props
 		build\Rx.props = build\Rx.props
+		build\DynamicData.props = build\DynamicData.props
+		build\Ef.props = build\Ef.props
+		build\EmbedIcons.props = build\EmbedIcons.props
+		build\ExtJson.props = build\ExtJson.props
+		build\LazyCache.props = build\LazyCache.props
+		build\NewtonSoft.props = build\NewtonSoft.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{721A55B7-C5B0-44E2-803A-56E291C672FE}"

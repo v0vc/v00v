@@ -61,7 +61,7 @@
             <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15" IsVisible="{Binding !Downloaded}">
                 <Button Background="#bdacd1" IsVisible="{Binding !IsWorking}"
                         Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneWay}" CommandParameter="{Binding}">
-                    <!--<Image Source="resm:v0v.Application.Icons.Dark.Download32.png?assembly=v0v.Application"/>-->
+                    <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp"/>
                 </Button>
                 <ProgressBar IsVisible="{Binding IsWorking}"
                              Value="{Binding Percentage, Mode=TwoWay}"

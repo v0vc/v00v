@@ -13,11 +13,12 @@
   <Import Project="..\..\build\Rx.props" />
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\EmbedXaml.props" />
+  <Import Project="..\..\build\EmbedIcons.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />
   </ItemGroup>
-  
+   
   <ItemGroup>
     <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
     <ProjectReference Include="..\v00v.Views\v00v.Views.csproj" />
