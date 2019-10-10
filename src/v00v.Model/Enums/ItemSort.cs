@@ -1,14 +1,14 @@
 ﻿namespace v00v.Model.Enums
 {
-    public enum SortingEnum
+    public enum ItemSort
     {
         Timestamp,
         View,
         Like,
         Dislike,
         Comment,
-        Diff,
         Duration,
-        Title
+        Title,
+        Diff
     }
 }

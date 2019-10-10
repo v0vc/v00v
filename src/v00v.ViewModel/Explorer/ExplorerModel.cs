@@ -37,8 +37,8 @@ namespace v00v.ViewModel.Explorer
 
         #region Fields
 
+        private ItemSort _itemSort;
         private string _searchText;
-
         private string _selectedPlaylistId;
 
         #endregion
@@ -65,7 +65,7 @@ namespace v00v.ViewModel.Explorer
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedPlaylistId).Select(BuildPlFilter))
-                .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _entries).DisposeMany().Subscribe();
+                .Sort(GetSorter(), SortOptimisations.IgnoreEvaluates, 25).Bind(out _entries).DisposeMany().Subscribe();
 
             OpenCommand = new Command(async x => await OpenItem(x));
 
@@ -86,6 +86,8 @@ namespace v00v.ViewModel.Explorer
             }
 
             DeleteItemCommand = new Command(async x => await DeleteItem());
+
+            SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
         }
 
         private ExplorerModel(IItemRepository itemRepository,
@@ -111,20 +113,32 @@ namespace v00v.ViewModel.Explorer
         public ICommand GoToParentCommand { get; }
         public bool IsParentState { get; }
         public IEnumerable<Item> Items => _entries;
+
+        public ItemSort ItemSort
+        {
+            get => _itemSort;
+            set => Update(ref _itemSort, value);
+        }
+
+        public ItemSort ItemSortBase { get; set; }
         public ICommand OpenCommand { get; }
         public ICommand RunItemCommand { get; }
+
         public string SearchText
         {
             get => _searchText;
             set => Update(ref _searchText, value);
         }
+
         public Item SelectedEntry { get; set; }
+
         public string SelectedPlaylistId
         {
             get => _selectedPlaylistId;
             set => Update(ref _selectedPlaylistId, value);
         }
-        public SortingEnum SortingEnum { get; set; } = SortingEnum.Timestamp;
+
+        public ICommand SetSortCommand { get; }
 
         #endregion
 
@@ -167,6 +181,7 @@ namespace v00v.ViewModel.Explorer
                 }
             }
         }
+
         public async Task Download(string par, Item item)
         {
             bool skip = par == "subs";
@@ -180,6 +195,7 @@ namespace v00v.ViewModel.Explorer
                 await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
             }
         }
+
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
             if (playlistId == null)
@@ -202,14 +218,9 @@ namespace v00v.ViewModel.Explorer
                 }
             }
 
-            if (playlistId == _catalogModel.SelectedEntry.Id)
-            {
-                return x => x.ChannelId == _catalogModel.SelectedEntry.Id
-                            && (x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted);
-            }
-
             return x => _catalogModel.PlaylistModel.SelectedEntry.Items.Contains(x.Id);
         }
+
         private async Task CopyItem(string par)
         {
             if (SelectedEntry != null)
@@ -231,6 +242,7 @@ namespace v00v.ViewModel.Explorer
                 }
             }
         }
+
         private async Task DeleteItem()
         {
             if (SelectedEntry != null && SelectedEntry.Downloaded)
@@ -238,33 +250,36 @@ namespace v00v.ViewModel.Explorer
                 await DeleteItem(SelectedEntry);
             }
         }
+
         private IObservable<SortExpressionComparer<Item>> GetSorter()
         {
-            return this.WhenValueChanged(x => x.SortingEnum).Select(x =>
+            return this.WhenValueChanged(x => x.ItemSort).Select(x =>
             {
                 switch (x)
                 {
-                    case SortingEnum.Timestamp:
+                    case ItemSort.Timestamp:
                         return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
-                    case SortingEnum.View:
+                    case ItemSort.View:
                         return SortExpressionComparer<Item>.Descending(t => t.ViewCount);
-                    case SortingEnum.Like:
+                    case ItemSort.Like:
                         return SortExpressionComparer<Item>.Descending(t => t.LikeCount);
-                    case SortingEnum.Dislike:
+                    case ItemSort.Dislike:
                         return SortExpressionComparer<Item>.Descending(t => t.DislikeCount);
-                    case SortingEnum.Comment:
+                    case ItemSort.Comment:
                         return SortExpressionComparer<Item>.Descending(t => t.Comments);
-                    case SortingEnum.Duration:
+                    case ItemSort.Duration:
                         return SortExpressionComparer<Item>.Ascending(t => t.Duration);
-                    case SortingEnum.Diff:
+                    case ItemSort.Diff:
                         return SortExpressionComparer<Item>.Descending(t => t.ViewDiff);
-                    case SortingEnum.Title:
+                    case ItemSort.Title:
                         return SortExpressionComparer<Item>.Ascending(t => t.Title);
+
                     default:
                         return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                 }
             });
         }
+
         private async Task OpenItem(object o)
         {
             var item = (Item)o;
@@ -275,9 +290,16 @@ namespace v00v.ViewModel.Explorer
 
             if (item.LargeThumb == null)
             {
-                var th = await _youtubeService.GetStreamFromUrl($"http://img.youtube.com/vi/{item.Id}/0.jpg");
+                byte[] th;
+                try
+                {
+                    th = await _youtubeService.GetStreamFromUrl(item.ThumbLink);
+                }
+                catch
+                {
+                    th = new byte[0];
+                }
 
-                //var th = new byte[0];
                 if (th.Length > 0)
                 {
                     using (var ms = new MemoryStream(th))

@@ -42,6 +42,7 @@ namespace v00v.ViewModel.Catalog
 
         #region Fields
 
+        private ChannelSort _channelSort;
         private ExplorerModel _explorerModel;
         private bool _isWorking;
         private PlaylistModel _playlistModel;
@@ -99,9 +100,9 @@ namespace v00v.ViewModel.Catalog
                     ExplorerModel.SearchText = null;
                 }
 
-                if (ExplorerModel.SortingEnum != SortingEnum.Timestamp)
+                if (ExplorerModel.ItemSort != ItemSort.Timestamp)
                 {
-                    ExplorerModel.SortingEnum = SortingEnum.Timestamp;
+                    ExplorerModel.ItemSort = ItemSort.Timestamp;
                 }
             });
 
@@ -117,6 +118,7 @@ namespace v00v.ViewModel.Catalog
             BackupCommand = new Command(async x => await BackupChannels());
             RestoreCommand = new Command(async x => await RestoreChannels());
             SyncChannelsCommand = new Command(async x => await SyncChannels());
+            SetSortCommand = new Command(x => ChannelSort = (ChannelSort)Enum.Parse(typeof(ChannelSort), (string)x));
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -144,43 +146,59 @@ namespace v00v.ViewModel.Catalog
         public SourceCache<Channel, string> All { get; }
         public ICommand BackupCommand { get; }
         public Channel BaseChannel { get; set; }
-        public ChannelSort ChannelSort { get; set; } = ChannelSort.Title;
+
+        public ChannelSort ChannelSort
+        {
+            get => _channelSort;
+            set => Update(ref _channelSort, value);
+        }
+
         public ICommand ClearAddedCommand { get; }
         public ICommand DeleteChannelCommand { get; }
         public ICommand EditChannelCommand { get; }
         public IReadOnlyCollection<Channel> Entries => _entries;
+
         public ExplorerModel ExplorerModel
         {
             get => _explorerModel;
             set => Update(ref _explorerModel, value);
         }
+
         public bool IsWorking
         {
             get => _isWorking;
             set => Update(ref _isWorking, value);
         }
+
         public PlaylistModel PlaylistModel
         {
             get => _playlistModel;
             set => Update(ref _playlistModel, value);
         }
+
         public ICommand ReloadCommand { get; }
         public ICommand RestoreCommand { get; }
+
         public string SearchText
         {
             get => _searchText;
             set => Update(ref _searchText, value);
         }
+
         public Channel SelectedEntry
         {
             get => _selectedEntry;
             set => Update(ref _selectedEntry, value);
         }
+
         public Tag SelectedTag
         {
             get => _selectedTag;
             set => Update(ref _selectedTag, value);
         }
+
+        public ICommand SetSortCommand { get; }
+
         public ICommand SyncChannelCommand { get; }
         public ICommand SyncChannelsCommand { get; }
         public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
@@ -459,6 +477,7 @@ namespace v00v.ViewModel.Catalog
                         pl.Items.AddRange(value.Select(x => x.Id));
                     }
                 }
+
                 _explorerModel.All.AddOrUpdate(diff.NewItems);
                 //SetErroSyncChannels(diff.ErrorSyncChannels);
 
@@ -498,7 +517,7 @@ namespace v00v.ViewModel.Catalog
             {
                 ViewModelCache.Remove("e" + channel.Key);
             }
-            
+
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished,
             //                                  diff == null
             //                                      ? "Finished simple sync with error"

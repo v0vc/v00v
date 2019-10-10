@@ -2,11 +2,11 @@
 {
     public enum ChannelSort
     {
+        Title,
         View,
         ViewDiff,
         Subs,
         SubsDiff,
-        Title,
         Count,
         LastDate
     }

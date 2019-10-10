@@ -31,6 +31,8 @@ namespace v00v.Model.Entities
         private bool _isWorking;
         private double _percentage;
         private Process _proc;
+        private SyncState _syncState;
+        private WatchState _watchState;
 
         #endregion
 
@@ -73,7 +75,6 @@ namespace v00v.Model.Entities
         public long LikeCount { get; set; }
 
         public string Link => $"https://www.youtube.com/watch?v={Id}";
-
         public string LogText { get; set; }
 
         public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
@@ -86,9 +87,14 @@ namespace v00v.Model.Entities
 
         public string SaveDir { get; set; }
 
-        public SyncState SyncState { get; set; }
+        public SyncState SyncState
+        {
+            get => _syncState;
+            set => Update(ref _syncState, value);
+        }
 
         public IBitmap Thumb => CreateThumb(Thumbnail);
+        public string ThumbLink => $"http://img.youtube.com/vi/{Id}/0.jpg";
 
         public byte[] Thumbnail { get; set; }
 
@@ -102,7 +108,11 @@ namespace v00v.Model.Entities
 
         public long ViewDiff { get; set; }
 
-        public WatchState WatchState { get; set; }
+        public WatchState WatchState
+        {
+            get => _watchState;
+            set => Update(ref _watchState, value);
+        }
 
         public bool WatchStateSet => WatchState == WatchState.Planned || WatchState == WatchState.Watched;
 

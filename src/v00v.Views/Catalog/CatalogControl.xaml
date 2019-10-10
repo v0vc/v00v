@@ -6,18 +6,16 @@
     >
     
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
-        <!--<Grid.Resources>
-            <converters:EnumBooleanConverter x:Key="EnumBooleanConverter" />
-        </Grid.Resources>-->
         <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Text="{Binding SearchText, Mode=TwoWay}" />
-        
-        <ListBox Grid.Row="1" Grid.ColumnSpan="2"
+
+        <ListBox Grid.Row="1" Grid.ColumnSpan="2" BorderThickness="0"
             Items="{Binding Entries}"
             SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
-            BorderThickness="0"
+            VirtualizationMode="Simple"
             ScrollViewer.VerticalScrollBarVisibility="Visible"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            Background="Transparent" VirtualizationMode="Simple">
+            Background="Transparent" 
+            >
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -97,13 +95,35 @@
 
             <Border BorderBrush="#000000" BorderThickness="0.2">
                 <StackPanel Orientation="Horizontal" Height="25">
-                    <RadioButton GroupName="Sort" Margin="5,0,10,0" ToolTip.Tip="By title"/>
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs"  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs diff" />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views" />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views diff"/>
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By count"  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By date" />
+                    <RadioButton GroupName="Sort" Margin="5,0,10,0" ToolTip.Tip="By title"
+                                 IsChecked="True" 
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="Title"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="Subs"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs diff"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="SubsDiff"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="View"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views diff"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="ViewDiff"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By count"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="Count"
+                                 />
+                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By date"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="LastDate"
+                                 />
                 </StackPanel>
             </Border>
         </Expander>
