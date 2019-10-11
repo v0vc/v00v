@@ -202,7 +202,7 @@ namespace v00v.ViewModel.Catalog
         public ICommand SyncChannelCommand { get; }
         public ICommand SyncChannelsCommand { get; }
         public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
-        public IAppCache ViewModelCache { get; } = new CachingService();
+        private IAppCache ViewModelCache { get; } = new CachingService();
 
         #endregion
 
@@ -236,6 +236,20 @@ namespace v00v.ViewModel.Catalog
         #endregion
 
         #region Methods
+
+        public ExplorerModel GetCachedExplorerModel(string channelId)
+        {
+            return ViewModelCache.Get<ExplorerModel>(channelId == null
+                                                         ? BaseChannel.ExCache
+                                                         : All.Items.Single(x => x.Id == channelId).ExCache);
+        }
+
+        public PlaylistModel GetCachedPlaylistModel(string channelId)
+        {
+            return ViewModelCache.Get<PlaylistModel>(channelId == null
+                                                         ? BaseChannel.PlCache
+                                                         : All.Items.Single(x => x.Id == channelId).PlCache);
+        }
 
         private async Task BackupChannels()
         {

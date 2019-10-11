@@ -17,6 +17,7 @@ using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
+using v00v.ViewModel.Playlists;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Item;
 
@@ -88,6 +89,8 @@ namespace v00v.ViewModel.Explorer
             DeleteItemCommand = new Command(async x => await DeleteItem());
 
             SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
+
+            SetItemWatchStateCommand = new Command(async x => await SetItemState((WatchState)x));
         }
 
         private ExplorerModel(IItemRepository itemRepository,
@@ -138,6 +141,7 @@ namespace v00v.ViewModel.Explorer
             set => Update(ref _selectedPlaylistId, value);
         }
 
+        public ICommand SetItemWatchStateCommand { get; }
         public ICommand SetSortCommand { get; }
 
         #endregion
@@ -310,6 +314,81 @@ namespace v00v.ViewModel.Explorer
             }
 
             _popupController.Show(new ItemPopupContext(item));
+        }
+
+        private async Task SetItemState(WatchState par)
+        {
+            if (SelectedEntry == null || par == SelectedEntry.WatchState)
+            {
+                return;
+            }
+
+            var id = SelectedEntry.Id;
+            var item = All.Items.Single(x => x.Id == id);
+            var oldState = item.WatchState;
+
+            item.WatchState = par;
+            var res = await _itemRepository.SetItemsWatchState(par, item.Id);
+            if (res != 1)
+            {
+                return;
+            }
+
+            All.AddOrUpdate(item);
+            Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? null : item.ChannelId)?.All
+                .Items.FirstOrDefault(x => x.Id == id);
+            if (citem != null)
+            {
+                citem.WatchState = par;
+            }
+
+            PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
+
+            if (plmodel == null)
+            {
+                return;
+            }
+
+            switch (par)
+            {
+                case WatchState.Notset:
+
+                    var pln = plmodel.All.Items.Single(x => x.State == oldState);
+                    pln.Count -= 1;
+                    pln.StateItems?.RemoveAll(x => x.Id == item.Id);
+
+                    break;
+
+                case WatchState.Watched:
+
+                    var plw = plmodel.All.Items.Single(x => x.State == par);
+                    plw.Count += 1;
+                    plw.StateItems?.Add(item);
+
+                    if (oldState == WatchState.Planned)
+                    {
+                        var pl = plmodel.All.Items.Single(x => x.State == oldState);
+                        pl.Count -= 1;
+                        pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                    }
+
+                    break;
+
+                case WatchState.Planned:
+
+                    var plp = plmodel.All.Items.Single(x => x.State == par);
+                    plp.Count += 1;
+                    plp.StateItems?.Add(item);
+
+                    if (oldState == WatchState.Watched)
+                    {
+                        Playlist pl = plmodel.All.Items.Single(x => x.State == oldState);
+                        pl.Count -= 1;
+                        pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                    }
+
+                    break;
+            }
         }
 
         #endregion

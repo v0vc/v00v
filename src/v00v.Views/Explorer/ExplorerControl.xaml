@@ -29,16 +29,20 @@
 
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <!--<MenuItem Header="To:Watched" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Watched}" IsVisible="{Binding !SelectedEntry.Watched}">
-                    <MenuItem.Icon>
-                        <Image Source="resm:v00v.MainApp.Icons.Dark.Checkmark32.png?assembly=v00v.MainApp"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="To:Planned" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Planned}" IsVisible="{Binding !SelectedEntry.Planned}">
-                    <MenuItem.Icon>
-                        <Image Source="resm:v00v.MainApp.Icons.Dark.Time32.png?assembly=v00v.MainApp"/>
-                    </MenuItem.Icon>
-                </MenuItem>-->
+                    <MenuItem Header="To:Watched" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" 
+                              CommandParameter="{x:Static enums:WatchState.Watched}" 
+                              IsVisible="{Binding !SelectedEntry.Watched}">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Checkmark32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="To:Planned" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}"
+                              CommandParameter="{x:Static enums:WatchState.Planned}"
+                              IsVisible="{Binding !SelectedEntry.Planned}">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Time32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Run" Command="{Binding RunItemCommand, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.VideoPlay32.png?assembly=v00v.MainApp"/>
@@ -84,11 +88,13 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
-                    <!--<MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{markup:Static enums:WatchState.Notset}" IsVisible="{Binding SelectedEntry.WatchStateSet}">
+                    <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}"
+                              CommandParameter="{x:Static enums:WatchState.Notset}"
+                              IsVisible="{Binding SelectedEntry.WatchStateSet}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
-                    </MenuItem>-->
+                    </MenuItem>
                     <MenuItem Header="Delete" Command="{Binding DeleteItemCommand, Mode=OneWay}" IsVisible="{Binding SelectedEntry.Downloaded}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>

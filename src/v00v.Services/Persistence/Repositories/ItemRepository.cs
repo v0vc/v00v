@@ -131,12 +131,21 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        int res = await
-                            context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{state}' WHERE [Id]='{itemId}'");
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        if (item == null)
+                        {
+                            transaction.Rollback();
+                            return -1;
+                        }
 
-                        //context.SaveChanges();
+                        item.WatchState = (byte)state;
+                        context.Entry(item).State = EntityState.Modified;
+                        //int res = await
+                        //    context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{(byte)state}' WHERE [Id]='{itemId}'");
+
+                        //int res = context.SaveChanges();
                         transaction.Commit();
-                        return res;
+                        return context.SaveChanges();
                     }
                     catch (Exception exception)
                     {

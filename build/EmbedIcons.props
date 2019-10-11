@@ -18,5 +18,7 @@
     <EmbeddedResource Include="Icons\Dark\VideoOnly32.png" />
     <EmbeddedResource Include="Icons\Dark\Sub32.png" />
     <EmbeddedResource Include="Icons\Dark\X32.png" />
+    <EmbeddedResource Include="Icons\Dark\Checkmark32.png" />
+    <EmbeddedResource Include="Icons\Dark\Time32.png" />
   </ItemGroup>
 </Project>
