@@ -29,7 +29,7 @@ namespace v00v.ViewModel.Explorer
 
         private readonly CatalogModel _catalogModel;
         private readonly IConfiguration _configuration;
-        private readonly ReadOnlyObservableCollection<Item> _entries;
+        private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
         private readonly IYoutubeService _youtubeService;
@@ -66,7 +66,7 @@ namespace v00v.ViewModel.Explorer
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedPlaylistId).Select(BuildPlFilter))
-                .Sort(GetSorter(), SortOptimisations.IgnoreEvaluates, 25).Bind(out _entries).DisposeMany().Subscribe();
+                .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _items).DisposeMany().Subscribe();
 
             OpenCommand = new Command(async x => await OpenItem(x));
 
@@ -115,7 +115,7 @@ namespace v00v.ViewModel.Explorer
         public ICommand DownloadItemCommand { get; }
         public ICommand GoToParentCommand { get; }
         public bool IsParentState { get; }
-        public IEnumerable<Item> Items => _entries;
+        public IEnumerable<Item> Items => _items;
 
         public ItemSort ItemSort
         {
@@ -261,8 +261,8 @@ namespace v00v.ViewModel.Explorer
             {
                 switch (x)
                 {
-                    case ItemSort.Timestamp:
-                        return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
+                    //case ItemSort.Timestamp:
+                    //    return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                     case ItemSort.View:
                         return SortExpressionComparer<Item>.Descending(t => t.ViewCount);
                     case ItemSort.Like:

@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
+using Avalonia;
 using Avalonia.Media.Imaging;
 using Newtonsoft.Json.Linq;
 using v00v.Model.Entities;
@@ -547,7 +548,7 @@ namespace v00v.Services.ContentProvider
                     try
                     {
                         var bitmap = new Bitmap(ms);
-                        return res;
+                        return bitmap.Size != Size.Empty ? res : new byte[0];
                     }
                     catch
                     {

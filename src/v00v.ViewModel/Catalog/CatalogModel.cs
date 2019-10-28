@@ -85,12 +85,14 @@ namespace v00v.ViewModel.Catalog
 
                 ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this));
                 PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, this, ExplorerModel));
-                if (PlaylistModel.SelectedEntry != null)
+                //ExplorerModel = new ExplorerModel(entry, this);
+                //PlaylistModel = new PlaylistModel(entry, this, ExplorerModel);
+                if (PlaylistModel?.SelectedEntry != null)
                 {
                     PlaylistModel.SelectedEntry = null;
                 }
 
-                if (!string.IsNullOrEmpty(PlaylistModel.SearchText))
+                if (!string.IsNullOrEmpty(PlaylistModel?.SearchText))
                 {
                     PlaylistModel.SearchText = null;
                 }
@@ -107,6 +109,7 @@ namespace v00v.ViewModel.Catalog
             });
 
             SelectedEntry = BaseChannel;
+
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
 
             AddChannelCommand = new Command(x => _popupController.Show(new ChannelPopupContext(null, this)));

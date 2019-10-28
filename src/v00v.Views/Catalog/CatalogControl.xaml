@@ -77,7 +77,9 @@
                     <ComboBox Height="25" Width="110" Margin="0,0,0,0" ToolTip.Tip="Tag" 
                               VerticalAlignment="Bottom" 
                               VirtualizationMode="Simple" 
-                              Items="{Binding Tags}" SelectedItem="{Binding SelectedTag}">
+                              Items="{Binding Tags}" 
+                              SelectedItem="{Binding SelectedTag}"
+                              >
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Text}"/>
