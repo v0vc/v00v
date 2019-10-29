@@ -5,6 +5,7 @@
              xmlns:explorer="clr-namespace:v00v.Views.Explorer"
              xmlns:playlist="clr-namespace:v00v.Views.Playlists"
              xmlns:popup="clr-namespace:v00v.Views.Popup"
+             xmlns:startup="clr-namespace:v00v.Views.Startup"
              >
     <Panel>
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,*,auto">
@@ -19,7 +20,7 @@
                 <explorer:ExplorerControl
                     DataContext="{Binding CatalogModel.ExplorerModel}" />
 
-                <!--<startup:StartupControl />-->
+                <startup:StartupControl />
 
             </Carousel>
 

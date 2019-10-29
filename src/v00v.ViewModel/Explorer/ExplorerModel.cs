@@ -29,8 +29,8 @@ namespace v00v.ViewModel.Explorer
 
         private readonly CatalogModel _catalogModel;
         private readonly IConfiguration _configuration;
-        private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IItemRepository _itemRepository;
+        private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IPopupController _popupController;
         private readonly IYoutubeService _youtubeService;
 
@@ -202,24 +202,9 @@ namespace v00v.ViewModel.Explorer
 
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
-            if (playlistId == null)
+            if (playlistId == null || _catalogModel.SelectedEntry.IsStateChannel)
             {
                 return x => true;
-            }
-
-            if (_catalogModel.SelectedEntry.IsStateChannel)
-            {
-                switch (playlistId)
-                {
-                    case "-2":
-                        return x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted;
-                    case "-1":
-                        return x => x.WatchState == WatchState.Planned;
-                    case "0":
-                        return x => x.WatchState == WatchState.Watched;
-                    default:
-                        return x => true;
-                }
             }
 
             return x => _catalogModel.PlaylistModel.SelectedEntry.Items.Contains(x.Id);

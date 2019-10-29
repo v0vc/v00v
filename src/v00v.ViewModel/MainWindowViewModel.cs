@@ -16,6 +16,8 @@ namespace v00v.ViewModel
 
         #region Fields
 
+        private byte _pageIndex;
+
         private PopupModel _popupModel;
 
         #endregion
@@ -33,7 +35,7 @@ namespace v00v.ViewModel
                 PopupModel = context == null ? PopupModel.Hidden() : PopupModel.NoHidden(context, _popupController);
             });
 
-            CatalogModel = new CatalogModel();
+            CatalogModel = new CatalogModel(this);
         }
 
         private MainWindowViewModel(IPopupController popupController)
@@ -46,7 +48,12 @@ namespace v00v.ViewModel
         #region Properties
 
         public CatalogModel CatalogModel { get; set; }
-        public byte PageIndex { get; set; }
+
+        public byte PageIndex
+        {
+            get => _pageIndex;
+            set => Update(ref _pageIndex, value);
+        }
 
         public PopupModel PopupModel
         {

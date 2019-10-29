@@ -21,38 +21,5 @@
   <ItemGroup>
     <ProjectReference Include="..\v00v.ViewModel\v00v.ViewModel.csproj" />
   </ItemGroup>
- 
-  <ItemGroup>
-    <None Update="Application\MainView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Application\MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Catalog\CatalogControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Catalog\EntryControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Explorer\ExplorerControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Explorer\ItemControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Popup\PopupControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Popup\Item\ItemPopupControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Popup\Item\ChannelPopupControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Popup\Item\TagItemControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
-  
+
 </Project>

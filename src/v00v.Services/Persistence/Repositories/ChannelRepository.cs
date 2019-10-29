@@ -371,13 +371,32 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        int res = channelId != null
-                            ? await
-                                context.Database
-                                    .ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
-                            : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}'");
+                        if (channelId == null)
+                        {
+                            foreach (var channel in context.Channels.AsNoTracking())
+                            {
+                                channel.Count = count;
+                                context.Entry(channel).Property(x => x.Count).IsModified = true;
+                            }
+                        }
+                        else
+                        {
+                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                            if (channel != null)
+                            {
+                                channel.Count = count;
+                                context.Entry(channel).Property(x => x.Count).IsModified = true;
+                            }
+                        }
 
-                        //await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync();
+
+                        //int res = channelId != null
+                        //    ? await
+                        //        context.Database
+                        //            .ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
+                        //    : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}'");
+
                         transaction.Commit();
                         return res;
                     }
@@ -399,14 +418,25 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        int res = channelId != null
-                            ? await
-                                context.Database
-                                    .ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [ChannelId]='{channelId}' AND [SyncState]=1")
-                            : await
-                                context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
+                        IQueryable<Item> items = channelId == null
+                            ? context.Items.AsNoTracking().Where(x => x.SyncState == 1)
+                            : context.Items.AsNoTracking().Where(x => x.ChannelId == channelId && x.SyncState == 1);
 
-                        //await context.SaveChangesAsync();
+                        foreach (Item item in items)
+                        {
+                            item.SyncState = state;
+                            context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                        }
+
+                        var res = await context.SaveChangesAsync();
+
+                        //int res = channelId != null
+                        //    ? await
+                        //        context.Database
+                        //            .ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [ChannelId]='{channelId}' AND [SyncState]=1")
+                        //    : await
+                        //        context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
+
                         transaction.Commit();
                         return res;
                     }

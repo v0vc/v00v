@@ -13,7 +13,6 @@ using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Services.Persistence;
-using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Explorer;
 
 namespace v00v.ViewModel.Playlists
@@ -37,10 +36,8 @@ namespace v00v.ViewModel.Playlists
 
         #region Constructors
 
-        public PlaylistModel(Channel channel, CatalogModel catalogModel, ExplorerModel explorerModel) : this(AvaloniaLocator.Current
-                                                                                                                 .GetService<
-                                                                                                                     IPlaylistRepository
-                                                                                                                 >())
+        public PlaylistModel(Channel channel, ExplorerModel explorerModel, MainWindowViewModel mainWindowViewModel) :
+            this(AvaloniaLocator.Current.GetService<IPlaylistRepository>())
         {
             _explorerModel = explorerModel;
 
@@ -104,9 +101,30 @@ namespace v00v.ViewModel.Playlists
             {
                 if (entry != null)
                 {
+                    byte index;
                     if (entry.IsStatePlaylist)
                     {
-                        await FillPlaylistItems(entry);
+                        if (_explorerModel.All.Items.Any())
+                        {
+                            _explorerModel.All.Clear();
+                        }
+
+                        if (!entry.HasFullLoad)
+                        {
+                            await FillPlaylistItems(entry);
+                        }
+
+                        _explorerModel.All.AddOrUpdate(entry.StateItems);
+                        index = (byte)(entry.StateItems.Count == 0 ? 1 : 0);
+                    }
+                    else
+                    {
+                        index = (byte)(entry.Items.Count == 0 ? 1 : 0);
+                    }
+
+                    if (mainWindowViewModel.PageIndex != index)
+                    {
+                        mainWindowViewModel.PageIndex = index;
                     }
 
                     _explorerModel.SelectedPlaylistId = entry.Id;
@@ -114,10 +132,9 @@ namespace v00v.ViewModel.Playlists
                 else
                 {
                     _explorerModel.SelectedPlaylistId = null;
-                    if (catalogModel.SelectedEntry.IsStateChannel)
+                    if (channel.IsStateChannel)
                     {
                         _explorerModel.All.Clear();
-                        _explorerModel.All.AddOrUpdate(catalogModel.SelectedEntry.Items);
                     }
                 }
             });
@@ -130,6 +147,7 @@ namespace v00v.ViewModel.Playlists
             DownloadItemCommand = new Command(x => DownloadItem((string)x));
             DeleteCommand = new Command(x => DeleteFiles());
         }
+
         private PlaylistModel(IPlaylistRepository playlistRepository)
         {
             _playlistRepository = playlistRepository;
@@ -144,11 +162,13 @@ namespace v00v.ViewModel.Playlists
         public ICommand DeleteCommand { get; }
         public ICommand DownloadItemCommand { get; }
         public IEnumerable<Playlist> Entries => _entries;
+
         public string SearchText
         {
             get => _searchText;
             set => Update(ref _searchText, value);
         }
+
         public Playlist SelectedEntry
         {
             get => _selectedEntry;
@@ -158,6 +178,7 @@ namespace v00v.ViewModel.Playlists
         #endregion
 
         #region Static Methods
+
         private static Func<Playlist, bool> BuildFilter(string searchText)
         {
             if (string.IsNullOrWhiteSpace(searchText))
@@ -171,6 +192,7 @@ namespace v00v.ViewModel.Playlists
         #endregion
 
         #region Methods
+
         private async Task CopyItem(string par)
         {
             if (SelectedEntry == null)
@@ -194,6 +216,7 @@ namespace v00v.ViewModel.Playlists
                 await Application.Current.Clipboard.SetTextAsync(res);
             }
         }
+
         private void DeleteFiles()
         {
             if (SelectedEntry == null)
@@ -208,6 +231,7 @@ namespace v00v.ViewModel.Playlists
                                  await _explorerModel.DeleteItem(x);
                              });
         }
+
         private void DownloadItem(string par)
         {
             if (SelectedEntry == null)
@@ -222,36 +246,27 @@ namespace v00v.ViewModel.Playlists
                                  await _explorerModel.Download(par, x);
                              });
         }
+
         private async Task FillPlaylistItems(Playlist playlist)
         {
-            _explorerModel.All.Clear();
-            if (playlist.HasFullLoad)
+            List<Item> newItems = null;
+            switch (playlist.Id)
             {
-                _explorerModel.All.AddOrUpdate(playlist.StateItems);
+                case "-2":
+                    newItems = await _playlistRepository.GetUnlistedPlaylistsItems();
+                    break;
+                case "-1":
+                    newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Planned);
+                    break;
+                case "0":
+                    newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Watched);
+                    break;
             }
-            else
-            {
-                List<Item> newItems = null;
-                switch (playlist.Id)
-                {
-                    case "-2":
-                        newItems = await _playlistRepository.GetUnlistedPlaylistsItems();
-                        break;
-                    case "-1":
-                        newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Planned);
-                        break;
-                    case "0":
-                        newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Watched);
-                        break;
-                }
 
-                if (newItems != null && newItems.Any())
-                {
-                    playlist.StateItems = newItems;
-                    //playlist.Items.AddRange(newItems.Select(x => x.Id));
-                    playlist.HasFullLoad = playlist.Items.Count > 0;
-                    _explorerModel.All.AddOrUpdate(newItems);
-                }
+            if (newItems != null && newItems.Any())
+            {
+                playlist.StateItems = newItems;
+                playlist.HasFullLoad = playlist.StateItems.Count > 0;
             }
         }
 

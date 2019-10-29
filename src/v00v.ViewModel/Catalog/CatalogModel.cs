@@ -33,6 +33,7 @@ namespace v00v.ViewModel.Catalog
         private readonly IChannelRepository _channelRepository;
         private readonly ReadOnlyObservableCollection<Channel> _entries;
         private readonly IItemRepository _itemRepository;
+        private readonly MainWindowViewModel _mainWindowViewModel;
         private readonly IPopupController _popupController;
         private readonly ISyncService _syncService;
         private readonly ITagRepository _tagRepository;
@@ -54,14 +55,15 @@ namespace v00v.ViewModel.Catalog
 
         #region Constructors
 
-        public CatalogModel() : this(AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                                     AvaloniaLocator.Current.GetService<ITagRepository>(),
-                                     AvaloniaLocator.Current.GetService<IPopupController>(),
-                                     AvaloniaLocator.Current.GetService<ISyncService>(),
-                                     AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                                     AvaloniaLocator.Current.GetService<IItemRepository>(),
-                                     AvaloniaLocator.Current.GetService<IBackupService>())
+        public CatalogModel(MainWindowViewModel mainWindowViewModel) : this(AvaloniaLocator.Current.GetService<IChannelRepository>(),
+                                                                            AvaloniaLocator.Current.GetService<ITagRepository>(),
+                                                                            AvaloniaLocator.Current.GetService<IPopupController>(),
+                                                                            AvaloniaLocator.Current.GetService<ISyncService>(),
+                                                                            AvaloniaLocator.Current.GetService<IYoutubeService>(),
+                                                                            AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                                                            AvaloniaLocator.Current.GetService<IBackupService>())
         {
+            _mainWindowViewModel = mainWindowViewModel;
             All = new SourceCache<Channel, string>(m => m.Id);
 
             BaseChannel = StateChannel.Instance;
@@ -84,7 +86,8 @@ namespace v00v.ViewModel.Catalog
                 }
 
                 ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this));
-                PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, this, ExplorerModel));
+                PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache,
+                                                        () => new PlaylistModel(entry, ExplorerModel, mainWindowViewModel));
                 //ExplorerModel = new ExplorerModel(entry, this);
                 //PlaylistModel = new PlaylistModel(entry, this, ExplorerModel);
                 if (PlaylistModel?.SelectedEntry != null)
@@ -105,6 +108,12 @@ namespace v00v.ViewModel.Catalog
                 if (ExplorerModel.ItemSort != ItemSort.Timestamp)
                 {
                     ExplorerModel.ItemSort = ItemSort.Timestamp;
+                }
+
+                var index = (byte)(ExplorerModel.Items.Any() ? 0 : 1);
+                if (mainWindowViewModel.PageIndex != index)
+                {
+                    mainWindowViewModel.PageIndex = index;
                 }
             });
 
@@ -311,8 +320,9 @@ namespace v00v.ViewModel.Catalog
                     All.AddOrUpdate(channel);
                 }
 
-                //ViewModelCache.Remove(BaseChannel.ExCache);
-                //SelectChannel(false, _entries.FirstOrDefault(x => !x.IsStateChannel));
+                ViewModelCache.Remove(BaseChannel.ExCache);
+                ViewModelCache.Remove(BaseChannel.PlCache);
+                SelectedEntry = BaseChannel;
                 //_mainWindowModel.WindowTitle = $"Finished : {_stateChannel.Count} : Elapsed {sw.ElapsedMilliseconds} ms";
             }
             else
@@ -322,6 +332,7 @@ namespace v00v.ViewModel.Catalog
                 //_mainWindowModel.WindowTitle = $"Finished {ch.Title.Trim()}: Elapsed {sw.ElapsedMilliseconds} ms";
             }
 
+            _mainWindowViewModel.PageIndex = 1;
             IsWorking = false;
         }
 
