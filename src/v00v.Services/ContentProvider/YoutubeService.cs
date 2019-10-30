@@ -115,6 +115,12 @@ namespace v00v.Services.ContentProvider
                                                                   ? $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(title,description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"
                                                                   : $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"));
 
+            if (!record.SelectToken("items").Any())
+            {
+                // banned channel
+                return null;
+            }
+
             // channel
             var channel = new Channel
             {

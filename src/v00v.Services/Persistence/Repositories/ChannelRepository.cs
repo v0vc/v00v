@@ -92,9 +92,15 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        //int res = await context.Database.ExecuteSqlRawAsync($"DELETE FROM [Channels] WHERE [Id]='{channelId}'");
-                        int res = await context.Database.ExecuteSqlCommandAsync($"DELETE FROM [Channels] WHERE [Id]='{channelId}'");
-                        //await context.SaveChangesAsync();
+                        var channel = await context.Channels.AsTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        if (channel == null)
+                        {
+                            transaction.Rollback();
+                            return -1;
+                        }
+
+                        context.Channels.Remove(channel);
+                        int res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
                     }
@@ -280,13 +286,14 @@ namespace v00v.Services.Persistence.Repositories
                                     context.ItemPlaylists.RemoveRange(deleted);
                                     foreach (var playlist in deleted.GroupBy(x => x.PlaylistId))
                                     {
-                                        using (var command = context.Database.GetDbConnection().CreateCommand())
+                                        var pl = await context.Playlists.AsTracking().FirstOrDefaultAsync(x => x.Id == playlist.Key);
+                                        if (pl == null)
                                         {
-                                            command.CommandText =
-                                                $"UPDATE [Playlists] SET Count=Count-{playlist.Count()} WHERE Id='{playlist.Key}'";
-                                            //context.Database.OpenConnection();
-                                            command.ExecuteNonQuery();
+                                            continue;
                                         }
+
+                                        pl.Count -= playlist.Count();
+                                        context.Entry(pl).Property(x => x.Count).IsModified = true;
                                     }
                                 }
 
@@ -296,12 +303,14 @@ namespace v00v.Services.Persistence.Repositories
                                     await context.ItemPlaylists.AddRangeAsync(added);
                                     foreach (var playlist in added.GroupBy(x => x.PlaylistId))
                                     {
-                                        using (var command = context.Database.GetDbConnection().CreateCommand())
+                                        var pl = await context.Playlists.AsTracking().FirstOrDefaultAsync(x => x.Id == playlist.Key);
+                                        if (pl == null)
                                         {
-                                            command.CommandText =
-                                                $"UPDATE [Playlists] SET Count=Count+{playlist.Count()} WHERE Id='{playlist.Key}'";
-                                            command.ExecuteNonQuery();
+                                            continue;
                                         }
+
+                                        pl.Count += playlist.Count();
+                                        context.Entry(pl).Property(x => x.Count).IsModified = true;
                                     }
                                 }
                             }
@@ -390,13 +399,6 @@ namespace v00v.Services.Persistence.Repositories
                         }
 
                         var res = await context.SaveChangesAsync();
-
-                        //int res = channelId != null
-                        //    ? await
-                        //        context.Database
-                        //            .ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}' WHERE [Id]='{channelId}'")
-                        //    : await context.Database.ExecuteSqlCommandAsync($"UPDATE [Channels] SET [Count]='{count}'");
-
                         transaction.Commit();
                         return res;
                     }
@@ -429,14 +431,6 @@ namespace v00v.Services.Persistence.Repositories
                         }
 
                         var res = await context.SaveChangesAsync();
-
-                        //int res = channelId != null
-                        //    ? await
-                        //        context.Database
-                        //            .ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [ChannelId]='{channelId}' AND [SyncState]=1")
-                        //    : await
-                        //        context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [SyncState]='{state}' WHERE [SyncState]=1");
-
                         transaction.Commit();
                         return res;
                     }

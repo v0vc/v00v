@@ -151,7 +151,12 @@ namespace v00v.ViewModel.Popup.Channel
             }
 
             var channel = await _youtubeService.GetChannelAsync(parsedId, ChannelTitle);
-
+            if (channel == null)
+            {
+                // banned channel
+                _popupController.Hide();
+                return;
+            }
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
             CatalogModel.All.AddOrUpdate(channel);
             CatalogModel.SelectedEntry = channel;

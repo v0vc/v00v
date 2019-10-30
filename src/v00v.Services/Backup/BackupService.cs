@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -97,12 +96,9 @@ namespace v00v.Services.Backup
 
             if (res == null)
             {
-                //await Console.Out.WriteLineAsync("No backup, bye");
                 return channels;
             }
 
-            //await
-            //    Console.Out.WriteLineAsync($"Backup has {res.Items.Count()} channels... and {res.ItemsState.Count} items state, start restoring..");
             if (isFast)
             {
                 List<Task<Channel>> tasks = res.Items.Where(x => !existChannels.Contains(x.ChannelId))
@@ -123,7 +119,6 @@ namespace v00v.Services.Backup
                     channels.Add(ch);
                 }
 
-                //await Console.Out.WriteLineAsync($"Restored {channels.Count} channels, now saving..");
                 var rows = await _channelRepository.AddChannels(channels);
                 //await Console.Out.WriteLineAsync($"Saved {rows} rows!");
             }
@@ -134,7 +129,6 @@ namespace v00v.Services.Backup
 
             foreach ((string key, byte value) in res.ItemsState)
             {
-                //await Console.Out.WriteLineAsync($"Set {key}...{value}");
                 await _itemRepository.UpdateItemsWatchState(key, value);
             }
 
@@ -156,9 +150,7 @@ namespace v00v.Services.Backup
         private string GetBackupName()
         {
             var prov = (FileConfigurationProvider)_configuration.Providers.Last();
-            var filename = Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
-            //Console.Out.WriteLine($"Backup location:{filename}");
-            return filename;
+            return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
         }
 
         private async Task<List<Channel>> RestoreOneByOne(IEnumerable<BackupItem> lst)
@@ -173,13 +165,19 @@ namespace v00v.Services.Backup
                     {
                         //await Console.Out.WriteLineAsync($"Start restoring {item.ChannelId}..");
                         var channel = await _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle);
+                        if (channel == null)
+                        {
+                            // banned channel
+                            continue;
+                        }
+
                         channel.Tags.AddRange(item.Tags.Select(x => new Tag { Id = x }));
                         //await Console.Out.WriteLineAsync($"Restored {channel.Title}, now saving..");
                         var rows = await _channelRepository.AddChannel(channel);
                         //await Console.Out.WriteLineAsync($"Saved {rows}!");
                         channels.Add(channel);
                     }
-                    catch (Exception e)
+                    catch
                     {
                         err.Add(item);
                         //await Console.Out.WriteLineAsync(e.Message);
