@@ -51,7 +51,10 @@ namespace v00v.ViewModel.Playlists
                 planned.Count = _playlistRepository.GetPlaylistsItemsCount(WatchState.Planned).GetAwaiter().GetResult();
                 watched.Count = _playlistRepository.GetPlaylistsItemsCount(WatchState.Watched).GetAwaiter().GetResult();
                 unlisted.Count = _playlistRepository.GetPlaylistsItemsCount(SyncState.Unlisted).GetAwaiter().GetResult();
-                All.AddOrUpdate(new List<Playlist> { planned, watched, unlisted });
+                channel.Playlists.Add(planned);
+                channel.Playlists.Add(watched);
+                channel.Playlists.Add(unlisted);
+                All.AddOrUpdate(channel.Playlists);
             }
             else
             {
@@ -114,8 +117,15 @@ namespace v00v.ViewModel.Playlists
                             await FillPlaylistItems(entry);
                         }
 
-                        _explorerModel.All.AddOrUpdate(entry.StateItems);
-                        index = (byte)(entry.StateItems.Count == 0 ? 1 : 0);
+                        if (entry.StateItems == null)
+                        {
+                            index = 1;
+                        }
+                        else
+                        {
+                            _explorerModel.All.AddOrUpdate(entry.StateItems);
+                            index = (byte)(entry.StateItems.Count == 0 ? 1 : 0);
+                        }
                     }
                     else
                     {
@@ -134,7 +144,8 @@ namespace v00v.ViewModel.Playlists
                     _explorerModel.SelectedPlaylistId = null;
                     if (channel.IsStateChannel)
                     {
-                        _explorerModel.All.Clear();
+                        //_explorerModel.All.Clear();
+                        _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
                     }
                 }
             });

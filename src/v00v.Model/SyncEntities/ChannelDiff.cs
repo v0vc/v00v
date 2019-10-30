@@ -11,6 +11,7 @@ namespace v00v.Model.SyncEntities
         {
             ChannelId = channelId;
             AddedItems = new List<ItemPrivacy>();
+            UploadedIds = new List<string>();
             DeletedItems = new List<string>();
             if (syncPls)
             {
@@ -33,6 +34,7 @@ namespace v00v.Model.SyncEntities
         public Dictionary<string, List<ItemPrivacy>> ExistPls { get; }
         public bool Faulted { get; set; }
         public long SubsCount { get; set; }
+        public List<string> UploadedIds { get; }
         public long ViewCount { get; set; }
 
         #endregion

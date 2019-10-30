@@ -144,11 +144,11 @@ namespace v00v.Services.Persistence.Repositories
                         ChannelId = ch.Id,
                         ChannelTitle = ch.Title,
                         Items =
-                            ch.Items.Select(y =>
-                                                y.Id),
+                            ch.Items.Select(y => y.Id),
+                        UnlistedItems =
+                            ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                         Playlists = syncPls
-                            ? ch.Playlists
-                                .Select(x => x.Id)
+                            ? ch.Playlists.Select(x => x.Id)
                             : null
                     }).ToListAsync();
                 }
@@ -320,6 +320,17 @@ namespace v00v.Services.Persistence.Repositories
                         if (fdiff.NewItems.Count > 0)
                         {
                             await context.Items.AddRangeAsync(fdiff.NewItems.Select(x => _mapper.Map<Item>(x)));
+                        }
+
+                        //become visible
+                        foreach (string s in fdiff.NoUnlistedAgain)
+                        {
+                            var item = await context.Items.AsTracking().FirstOrDefaultAsync(x => x.Id == s);
+                            if (item != null && (item.SyncState == 2 || item.SyncState == 3))
+                            {
+                                item.SyncState = 0;
+                                context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                            }
                         }
 
                         // channels

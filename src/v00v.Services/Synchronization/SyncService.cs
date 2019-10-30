@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
-using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -29,15 +27,6 @@ namespace v00v.Services.Synchronization
         }
 
         #endregion
-
-        //#region Static Methods
-
-        //private static void Log(string text)
-        //{
-        //    Console.WriteLine($"{DateTime.Now}:{text}");
-        //}
-
-        //#endregion
 
         #region Methods
 
@@ -73,16 +62,17 @@ namespace v00v.Services.Synchronization
 
                 foreach (Task<ChannelDiff> task in diffs)
                 {
+                    ChannelStruct channel = channelStructs.First(x => x.ChannelId == task.Result.ChannelId);
                     foreach (ItemPrivacy item in task.Result.AddedItems)
                     {
                         res.Items.Add(item.Id,
                                       new SyncPrivacy
                                       {
-                                          ChannelId = task.Result.ChannelId,
-                                          ChannelTitle = channelStructs.First(x => x.ChannelId == task.Result.ChannelId).ChannelTitle,
-                                          Status = item.Status
+                                          ChannelId = task.Result.ChannelId, ChannelTitle = channel.ChannelTitle, Status = item.Status
                                       });
                     }
+
+                    res.NoUnlistedAgain.AddRange(task.Result.UploadedIds.Where(x => channel.UnlistedItems.Contains(x)));
                 }
 
                 //Log($"new items:{res.Items.Count}");
@@ -141,16 +131,9 @@ namespace v00v.Services.Synchronization
                     }
                 }
 
-                if (res.TrueDiff)
-                {
-                    //Log("save to db..");
-                    int rows = await _channelRepository.StoreDiff(res);
-                    //Log($"saved {rows} rows");
-                }
-                else
-                {
-                    //Log("nothing to save");
-                }
+                //Log("save to db..");
+                int rows = await _channelRepository.StoreDiff(res);
+                //Log($"saved {rows} rows");
 
                 return res;
             }

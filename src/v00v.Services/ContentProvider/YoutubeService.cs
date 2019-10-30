@@ -316,18 +316,14 @@ namespace v00v.Services.ContentProvider
                                                                   ? $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description),statistics(viewCount,subscriberCount))&{PrintType}"
                                                                   : $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,statistics&fields=items(contentDetails(relatedPlaylists),statistics(viewCount,subscriberCount))&{PrintType}"));
 
-            JToken vCount = record.SelectToken("items[0].statistics.viewCount");
-            if (vCount != null)
+            if (!record.SelectToken("items").Any())
             {
-                diff.ViewCount = vCount.Value<long>();
-            }
-            else
-            {
-                Console.WriteLine("Sync fail: " + cs.ChannelId);
+                //Console.WriteLine("Sync fail: " + cs.ChannelId);
                 diff.Faulted = true;
                 return diff;
             }
 
+            diff.ViewCount = record.SelectToken("items[0].statistics.viewCount")?.Value<long>() ?? 0;
             diff.SubsCount = record.SelectToken("items[0].statistics.subscriberCount")?.Value<long>() ?? 0;
 
             if (syncPls)
@@ -343,6 +339,7 @@ namespace v00v.Services.ContentProvider
                 ).SelectTokens("$..items.[*]").Select(rec => rec.SelectToken("snippet.resourceId.videoId")?.Value<string>())
                 .Where(x => x != null).Distinct().ToList();
 
+            diff.UploadedIds.AddRange(uploadvids);
             diff.AddedItems.AddRange(uploadvids.Except(cs.Items)
                                          .Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
 

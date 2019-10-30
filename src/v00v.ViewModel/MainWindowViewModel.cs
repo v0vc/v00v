@@ -19,6 +19,7 @@ namespace v00v.ViewModel
         private byte _pageIndex;
 
         private PopupModel _popupModel;
+        private string _windowTitle;
 
         #endregion
 
@@ -36,6 +37,7 @@ namespace v00v.ViewModel
             });
 
             CatalogModel = new CatalogModel(this);
+            WindowTitle = $"Channels: {CatalogModel.Entries.Count - 1}";
         }
 
         private MainWindowViewModel(IPopupController popupController)
@@ -47,7 +49,7 @@ namespace v00v.ViewModel
 
         #region Properties
 
-        public CatalogModel CatalogModel { get; set; }
+        public CatalogModel CatalogModel { get; }
 
         public byte PageIndex
         {
@@ -59,6 +61,12 @@ namespace v00v.ViewModel
         {
             get => _popupModel;
             set => Update(ref _popupModel, value);
+        }
+
+        public string WindowTitle
+        {
+            get => _windowTitle;
+            set => Update(ref _windowTitle, value);
         }
 
         #endregion

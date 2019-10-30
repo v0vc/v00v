@@ -16,6 +16,7 @@ namespace v00v.Model.SyncEntities
             NewItems = new List<Item>();
             NewPlaylists = new List<Playlist>();
             ErrorSyncChannels = new List<string>();
+            NoUnlistedAgain = new List<string>();
         }
 
         #endregion
@@ -29,8 +30,8 @@ namespace v00v.Model.SyncEntities
         public Dictionary<string, SyncPrivacy> Items { get; }
         public List<Item> NewItems { get; }
         public List<Playlist> NewPlaylists { get; }
+        public List<string> NoUnlistedAgain { get; }
         public bool SyncPls { get; }
-        public bool TrueDiff => NewItems.Count > 0 || DeletedPlaylists?.Count > 0 || ExistPlaylists?.Count > 0 || NewPlaylists?.Count > 0;
 
         #endregion
     }
