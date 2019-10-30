@@ -74,8 +74,9 @@ namespace v00v.ViewModel.Explorer
 
             DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
 
-            RunItemCommand = new Command(x => SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
-                                                                     _configuration.GetValue<string>("AppSettings:BaseDir")));
+            //RunItemCommand = new Command(x => SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
+            //                                                         _configuration.GetValue<string>("AppSettings:BaseDir")));
+            RunItemCommand = new Command(async x => await RunItem());
 
             CopyItemCommand = new Command(async x => await CopyItem((string)x));
 
@@ -299,6 +300,14 @@ namespace v00v.ViewModel.Explorer
             }
 
             _popupController.Show(new ItemPopupContext(item));
+        }
+
+        private async Task RunItem()
+        {
+            var oldId = SelectedEntry.Id;
+            await SetItemState(WatchState.Watched);
+            _items.First(x => x.Id == oldId).RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
+                                                     _configuration.GetValue<string>("AppSettings:BaseDir"));
         }
 
         private async Task SetItemState(WatchState par)
