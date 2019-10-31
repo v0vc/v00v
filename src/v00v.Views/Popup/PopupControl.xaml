@@ -5,12 +5,12 @@
     xmlns:itemmodel="clr-namespace:v00v.ViewModel.Popup.Item;assembly=v00v.ViewModel"
     xmlns:itemview="clr-namespace:v00v.Views.Popup.Item"
     xmlns:channelmodel="clr-namespace:v00v.ViewModel.Popup.Channel;assembly=v00v.ViewModel"
-    xmlns:channelview="clr-namespace:v00v.Views.Popup.Channel"
+    xmlns:channelview="clr-namespace:v00v.Views.Popup.Channel" 
     >
-    <!--FocusManager.FocusedElement="{Binding ElementName=grid}"-->
-    <!--<UserControl.KeyBindings>
-        <KeyBinding Command="{Binding Context.CloseCommand}" Gesture="Escape"/>
-    </UserControl.KeyBindings>-->
+    
+    <UserControl.KeyBindings>
+        <KeyBinding Command="{Binding Context.CloseCommand, Mode=OneTime}" Gesture="Escape"/>
+    </UserControl.KeyBindings>
 
     <Grid Name="grid"
         RowDefinitions="auto,*"
@@ -57,7 +57,7 @@
                     Margin="8"
                     Background="Transparent"
                     BorderThickness="0"
-                    IsEnabled="{Binding !Context.IsWorking}"
+                    IsEnabled="{Binding !Context.IsWorking, Mode=OneWay}"
                     >
                     
                     <Image
