@@ -323,7 +323,7 @@ namespace v00v.ViewModel.Explorer
             }
 
             var id = SelectedEntry.Id;
-            var item = All.Items.Single(x => x.Id == id);
+            var item = _items.First(x => x.Id == id);
             var oldState = item.WatchState;
 
             item.WatchState = par;
@@ -332,11 +332,16 @@ namespace v00v.ViewModel.Explorer
             {
                 return;
             }
-
             All.AddOrUpdate(item);
-            Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? null : item.ChannelId)?.All
+
+            var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
+            if (bitem != null && bitem.WatchState != par)
+            {
+                bitem.WatchState = par;
+            }
+            Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
                 .Items.FirstOrDefault(x => x.Id == id);
-            if (citem != null)
+            if (citem != null && citem.WatchState != par)
             {
                 citem.WatchState = par;
             }

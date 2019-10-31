@@ -89,8 +89,7 @@ namespace v00v.ViewModel.Catalog
                 ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this));
                 PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache,
                                                         () => new PlaylistModel(entry, ExplorerModel, mainWindowViewModel));
-                //ExplorerModel = new ExplorerModel(entry, this);
-                //PlaylistModel = new PlaylistModel(entry, this, ExplorerModel);
+
                 if (PlaylistModel?.SelectedEntry != null)
                 {
                     PlaylistModel.SelectedEntry = null;
@@ -122,6 +121,7 @@ namespace v00v.ViewModel.Catalog
                     index = 0;
                     ExplorerModel.All.AddOrUpdate(entry.Items);
                 }
+
                 if (mainWindowViewModel.PageIndex != index)
                 {
                     mainWindowViewModel.PageIndex = index;
@@ -276,16 +276,13 @@ namespace v00v.ViewModel.Catalog
 
         private async Task BackupChannels()
         {
-            IsWorking = true;
-            //_mainWindowModel.WindowTitle = "Backup channels..";
-            //Stopwatch sw = Stopwatch.StartNew();
-
-            await _backupService.Backup(Entries.Where(x => !x.IsStateChannel));
-
-            //_mainWindowModel.WindowTitle =
-            //    $"Finished : {Entries.Count(x => !x.IsStateChannel)} : Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
-
-            IsWorking = false;
+            Stopwatch sw = Stopwatch.StartNew();
+            _mainWindowViewModel.WindowTitle = "Backup channels..";
+            await Task.WhenAll(_backupService.Backup(Entries.Where(x => !x.IsStateChannel))).ContinueWith(done =>
+            {
+                _mainWindowViewModel.WindowTitle =
+                    $"Finished, elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
+            });
         }
 
         private async Task ClearAdded()
@@ -297,80 +294,52 @@ namespace v00v.ViewModel.Catalog
 
             IsWorking = true;
 
-            //var sw = Stopwatch.StartNew();
-            var ch = SelectedEntry;
-            var chId = ch.IsStateChannel ? null : ch.Id;
-            var count = await _channelRepository.UpdateChannelSyncState(chId, 0);
-            if (count == 0)
+            var chId = SelectedEntry.IsStateChannel ? null : SelectedEntry.Id;
+            if (chId != null)
             {
-                return;
-            }
-
-            await _channelRepository.UpdateChannelsCount(chId, 0);
-            BaseChannel.Count -= count;
-            All.AddOrUpdate(BaseChannel);
-
-            if (chId == null)
-            {
-                BaseChannel.Items.Clear();
-                for (int i = 0; i < Entries.Count; i++)
-                {
-                    var channel = Entries.ElementAt(i);
-                    if (channel.IsStateChannel || channel.Working || channel.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    channel.Count = 0;
-
-                    if (channel.Loaded)
-                    {
-                        ClearAddedItems(channel, false);
-                    }
-
-                    All.AddOrUpdate(channel);
-                }
-
-                ViewModelCache.Remove(BaseChannel.ExCache);
-                ViewModelCache.Remove(BaseChannel.PlCache);
-                SelectedEntry = BaseChannel;
-                //_mainWindowModel.WindowTitle = $"Finished : {_stateChannel.Count} : Elapsed {sw.ElapsedMilliseconds} ms";
-            }
-            else
-            {
-                ch.Count = 0;
-                ClearAddedItems(ch, true);
-                //_mainWindowModel.WindowTitle = $"Finished {ch.Title.Trim()}: Elapsed {sw.ElapsedMilliseconds} ms";
-            }
-
-            _mainWindowViewModel.PageIndex = 1;
-            IsWorking = false;
-        }
-
-        private void ClearAddedItems(Channel channel, bool cleanBase)
-        {
-            var added = channel.Items.Where(y => y.SyncState == SyncState.Added).ToList();
-            foreach (Item item in added)
-            {
-                item.SyncState = SyncState.Notset;
-            }
-
-            BaseChannel.Items.RemoveAll(x => added.Select(z => z.Id).Contains(x.Id));
-
-            var chhache = ViewModelCache.Get<ExplorerModel>(channel.ExCache);
-            if (chhache != null)
-            {
-                foreach (Item item in chhache.All.Items.Where(x => added.Select(y => y.Id).Contains(x.Id)))
+                var channel = _entries.First(x => x.Id == chId);
+                var ids = channel.Items.Where(x => x.SyncState == SyncState.Added).Select(x => x.Id).ToList();
+                foreach (Item item in channel.Items.Where(x => ids.Contains(x.Id)))
                 {
                     item.SyncState = SyncState.Notset;
                 }
+
+                BaseChannel.Items.RemoveAll(x => ids.Contains(x.Id));
+                channel.Count -= ids.Count;
+                BaseChannel.Count -= ids.Count;
+            }
+            else
+            {
+                BaseChannel.Items.Clear();
+
+                foreach (Channel channel in _entries.Where(x => x.Count > 0))
+                {
+                    channel.Count = 0;
+                    var cached = GetCachedExplorerModel(channel.IsStateChannel ? null : channel.Id);
+                    if (cached != null)
+                    {
+                        if (channel.IsStateChannel)
+                        {
+                            cached.All.Clear();
+                        }
+                        else
+                        {
+                            foreach (Item item in cached.Items.Where(x => x.SyncState == SyncState.Added))
+                            {
+                                item.SyncState = SyncState.Notset;
+                            }
+                        }
+                    }
+                }
+
+                _mainWindowViewModel.PageIndex = 1;
             }
 
-            if (cleanBase)
-            {
-                var basecache = ViewModelCache.Get<ExplorerModel>(BaseChannel.ExCache);
-                basecache?.All.Remove(basecache.All.Items.Where(x => added.Select(y => y.Id).Contains(x.Id)));
-            }
+            await Task.WhenAll(_channelRepository.UpdateChannelSyncState(chId, 0), _channelRepository.UpdateChannelsCount(chId, 0))
+                .ContinueWith(done =>
+                {
+                    IsWorking = false;
+                });
         }
 
         private async Task DeleteChannel()
@@ -381,19 +350,16 @@ namespace v00v.ViewModel.Catalog
             }
 
             var deletedId = SelectedEntry.Id;
-            var count = SelectedEntry.Count;
-            var index = All.Items.IndexOf(SelectedEntry);
-            ViewModelCache.Remove(SelectedEntry.ExCache);
-            ViewModelCache.Remove(SelectedEntry.PlCache);
-            All.Remove(SelectedEntry);
-
+            var ch = _entries.First(x => x.Id == deletedId);
+            var count = ch.Count;
+            var index = All.Items.IndexOf(ch);
+            ViewModelCache.Remove(ch.ExCache);
+            ViewModelCache.Remove(ch.PlCache);
+            All.Remove(ch);
             BaseChannel.Count -= count;
-            All.AddOrUpdate(BaseChannel);
-
-            //_mainWindowModel.WindowTitle = $"Total : {_entries.Count(x => !x.IsStateChannel)}";
-
+            BaseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
+            GetCachedExplorerModel(null)?.All.Remove(ch.Items);
             SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? BaseChannel;
-
             var res = await _channelRepository.DeleteChannel(deletedId);
             //if (res > 0)
             //{

@@ -124,7 +124,7 @@ namespace v00v.ViewModel.Playlists
                         else
                         {
                             _explorerModel.All.AddOrUpdate(entry.StateItems);
-                            index = (byte)(entry.StateItems.Count == 0 ? 1 : 0);
+                            index = (byte)(_explorerModel.All.Count == 0 ? 1 : 0);
                         }
                     }
                     else
@@ -274,11 +274,13 @@ namespace v00v.ViewModel.Playlists
                     break;
             }
 
-            if (newItems != null && newItems.Any())
-            {
-                playlist.StateItems = newItems;
-                playlist.HasFullLoad = playlist.StateItems.Count > 0;
-            }
+            playlist.StateItems = newItems;
+            playlist.HasFullLoad = true;
+            //if (newItems != null && newItems.Any())
+            //{
+            //    playlist.StateItems = newItems;
+            //    playlist.HasFullLoad = playlist.StateItems.Count > 0;
+            //}
         }
 
         #endregion

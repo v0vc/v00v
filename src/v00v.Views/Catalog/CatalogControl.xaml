@@ -108,32 +108,32 @@
 
             <Border BorderBrush="#000000" BorderThickness="0.2">
                 <StackPanel Orientation="Horizontal" Height="25">
-                    <RadioButton GroupName="Sort" Margin="5,0,10,0" ToolTip.Tip="By title"
+                    <RadioButton GroupName="ChannelSort" Margin="5,0,10,0" ToolTip.Tip="By title"
                                  IsChecked="True" 
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Title"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By subs"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Subs"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By subs diff"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By subs diff"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="SubsDiff"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By views"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="View"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By views diff"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By views diff"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="ViewDiff"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By count"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By count"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Count"
                                  />
-                    <RadioButton GroupName="Sort" Margin="0,0,10,0" ToolTip.Tip="By date"
+                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By date"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="LastDate"
                                  />
