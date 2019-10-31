@@ -85,6 +85,8 @@ namespace v00v.Model.Entities
             set => Update(ref _percentage, value);
         }
 
+        public bool Planned => WatchState == WatchState.Planned;
+
         public string SaveDir { get; set; }
 
         public SyncState SyncState
@@ -107,6 +109,7 @@ namespace v00v.Model.Entities
         public long ViewCount { get; set; }
 
         public long ViewDiff { get; set; }
+        public bool Watched => WatchState == WatchState.Watched;
 
         public WatchState WatchState
         {

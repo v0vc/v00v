@@ -16,12 +16,12 @@
         <Panel Classes="Title" Grid.Column="1" Height="24" VerticalAlignment="Center">
             <TextBlock Text="{Binding Title, Mode=OneWay}" 
                        TextWrapping="NoWrap" VerticalAlignment="Center" 
-                       FontSize="15" ToolTip.Tip="{Binding Title}" />
+                       FontSize="15" ToolTip.Tip="{Binding Title, Mode=OneWay}" />
         </Panel>
         
         <Panel Classes="Indicator" Grid.Column="2" Height="24" VerticalAlignment="Center">
-            <Border IsVisible="{Binding HasNew}">
-                <TextBlock Text="{Binding Count}" VerticalAlignment="Center" />
+            <Border IsVisible="{Binding HasNew, Mode=OneWay}">
+                <TextBlock Text="{Binding Count, Mode=OneWay}" VerticalAlignment="Center" />
             </Border>
         </Panel>
     </Grid>

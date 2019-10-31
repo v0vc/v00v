@@ -10,7 +10,7 @@
 
         <controls:ExtendedTextBox
             ToolTip.Tip="{Binding SubTitle, Mode=OneWay}"
-            IsReadOnly="{Binding !IsChannelEnabled}"
+            IsReadOnly="{Binding !IsChannelEnabled, Mode=OneWay}"
             IsVisible="True"
             Watermark="Id (required)"
             Text="{Binding ChannelId, Mode=TwoWay}"
@@ -29,14 +29,14 @@
 
             <Button
                 Classes="Link"
-                Command="{Binding AddTagCommand}"
+                Command="{Binding AddTagCommand, Mode=OneWay}"
                 Grid.Column="0">
                 <TextBlock Text="Add" />
             </Button>
 
             <Button
                 Classes="Link"
-                Command="{Binding SaveTagCommand}"
+                Command="{Binding SaveTagCommand, Mode=OneWay}"
                 CommandParameter="{Binding SelectedTag}"
                 Grid.Column="1">
                 <TextBlock Text="Save" />
@@ -47,7 +47,7 @@
         <StackPanel Grid.Row="3" Orientation="Horizontal">
             <TextBox 
                 Width="185"
-                IsEnabled="{Binding SelectedTag.IsEditable}" Margin="0,0,0,10"
+                IsEnabled="{Binding SelectedTag.IsEditable, Mode=OneWay}" Margin="0,0,0,10"
                 IsVisible="True"
                 Watermark="Tag"
                 Text="{Binding SelectedTag.TagText, Mode=TwoWay}">
@@ -77,10 +77,10 @@
         <Grid
             Grid.Row="5">
 
-            <Button IsEnabled="{Binding !IsWorking}"
+            <Button IsEnabled="{Binding !IsWorking, Mode=OneWay}"
                 Classes="Link"
-                Command="{Binding CloseChannelCommand}">
-                <TextBlock Text="{Binding CloseText}" />
+                Command="{Binding CloseChannelCommand, Mode=OneWay}">
+                <TextBlock Text="{Binding CloseText, Mode=OneWay}" />
             </Button>
 
         </Grid>

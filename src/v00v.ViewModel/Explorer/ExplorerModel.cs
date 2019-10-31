@@ -40,6 +40,7 @@ namespace v00v.ViewModel.Explorer
 
         private ItemSort _itemSort;
         private string _searchText;
+        private Item _selectedEntry;
         private string _selectedPlaylistId;
 
         #endregion
@@ -74,9 +75,7 @@ namespace v00v.ViewModel.Explorer
 
             DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
 
-            //RunItemCommand = new Command(x => SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
-            //                                                         _configuration.GetValue<string>("AppSettings:BaseDir")));
-            RunItemCommand = new Command(async x => await RunItem());
+            RunItemCommand = new Command(async x => await RunItem(true));
 
             CopyItemCommand = new Command(async x => await CopyItem((string)x));
 
@@ -134,7 +133,11 @@ namespace v00v.ViewModel.Explorer
             set => Update(ref _searchText, value);
         }
 
-        public Item SelectedEntry { get; set; }
+        public Item SelectedEntry
+        {
+            get => _selectedEntry;
+            set => Update(ref _selectedEntry, value);
+        }
 
         public string SelectedPlaylistId
         {
@@ -302,12 +305,14 @@ namespace v00v.ViewModel.Explorer
             _popupController.Show(new ItemPopupContext(item));
         }
 
-        private async Task RunItem()
+        private async Task RunItem(bool setState)
         {
-            var oldId = SelectedEntry.Id;
-            await SetItemState(WatchState.Watched);
-            _items.First(x => x.Id == oldId).RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
-                                                     _configuration.GetValue<string>("AppSettings:BaseDir"));
+            SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
+                                   _configuration.GetValue<string>("AppSettings:BaseDir"));
+            if (setState)
+            {
+                await SetItemState(WatchState.Watched);
+            }
         }
 
         private async Task SetItemState(WatchState par)

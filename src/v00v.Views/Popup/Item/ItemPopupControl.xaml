@@ -15,7 +15,7 @@
                Width="{Binding ImageWidth}" Height="{Binding ImageHeight}"
                />
 
-        <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight}" Margin="0,3,0,0"
+        <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
                                   IsReadOnly="True"
                                   IsVisible="True"
                                   Watermark="Description"

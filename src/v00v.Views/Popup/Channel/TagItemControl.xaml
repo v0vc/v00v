@@ -6,7 +6,7 @@
     <Grid ColumnDefinitions="auto,auto,*,auto,auto">
         
         <CheckBox
-            IsVisible="{Binding !IsSaved}"
+            IsVisible="{Binding !IsSaved, Mode=OneWay}"
             IsEnabled="False"
             IsChecked="False"
             Grid.Column="0" />
@@ -21,14 +21,14 @@
             Grid.Column="1" />
         
         <TextBlock
-            IsVisible="{Binding !IsSaved}"
+            IsVisible="{Binding !IsSaved, Mode=OneWay}"
             Text=" * "
             Grid.Column="2" />
 
         <Button
             Grid.Column="4"
-            IsVisible="{Binding IsRemovable}"
-            Command="{Binding RemoveCommand}"
+            IsVisible="{Binding IsRemovable, Mode=OneWay}"
+            Command="{Binding RemoveCommand, Mode=OneWay}"
             CommandParameter="{Binding}"
             BorderThickness="0">
             <Image

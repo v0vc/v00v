@@ -43,7 +43,7 @@
                     <TextBlock
                         Foreground="#444444"
                         FontWeight="Medium"
-                        Text="{Binding Context.Title}"
+                        Text="{Binding Context.Title, Mode=OneWay}"
                         VerticalAlignment="Center" />
                     
                 </Border>

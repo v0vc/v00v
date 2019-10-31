@@ -32,7 +32,7 @@
 
         <popup:PopupControl
             DataContext="{Binding PopupModel}" 
-            IsVisible="{Binding IsVisible}"/>
+            IsVisible="{Binding IsVisible, Mode=OneWay}"/>
 
     </Panel>
 </UserControl>
