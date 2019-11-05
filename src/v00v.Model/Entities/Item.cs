@@ -247,7 +247,7 @@ namespace v00v.Model.Entities
                 try
                 {
                     var fileName =
-                        $"{Title.RemoveInvalidChars().Replace('"', ' ').Replace('\'', ' ').Replace('?', ' ').Trim()}{fn.Extension}";
+                        $"{Title.RemoveInvalidChars().Replace('"', ' ').Replace('\'', ' ').Replace('?', ' ').Replace('/', ' ').Trim()}{fn.Extension}";
                     var fulname = Path.Combine(SaveDir, fileName);
                     if (File.Exists(fulname))
                     {
