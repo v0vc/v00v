@@ -9,7 +9,7 @@ namespace v00v.Services.Synchronization
     {
         #region Methods
 
-        Task<SyncDiff> Sync(bool syncPls, IReadOnlyCollection<Channel> channels);
+        Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels);
 
         #endregion
     }

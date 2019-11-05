@@ -47,7 +47,7 @@ namespace v00v.ViewModel.Catalog
         private ChannelSort _channelSort;
         private ExplorerModel _explorerModel;
         private bool _isWorking;
-        private bool _massSync;
+        private bool _massSync = true;
         private PlaylistModel _playlistModel;
         private string _searchText;
         private Channel _selectedEntry;
@@ -407,13 +407,53 @@ namespace v00v.ViewModel.Catalog
             });
         }
 
+        private void MarkUnlisted(IEnumerable<Channel> channels, ICollection<string> noUnlisted)
+        {
+            var unlistedpl = BaseChannel.Playlists.FirstOrDefault(x => x.Id == "-2");
+
+            if (unlistedpl != null)
+            {
+                unlistedpl.StateItems?.RemoveAll(x => noUnlisted.Contains(x.Id));
+                unlistedpl.Count -= noUnlisted.Count;
+                GetCachedPlaylistModel(null)?.All.AddOrUpdate(unlistedpl);
+            }
+
+            foreach (Channel channel in channels.Where(x => !x.IsStateChannel && x.Playlists.FirstOrDefault(y => y.Id == x.Id) != null))
+            {
+                foreach (Item item in channel.Items.Where(x => noUnlisted.Contains(x.Id)))
+                {
+                    if (item.SyncState != SyncState.Notset)
+                    {
+                        item.SyncState = SyncState.Notset;
+                    }
+                }
+
+                var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
+                if (unlistpl != null)
+                {
+                    if (unlistpl.Count == noUnlisted.Count)
+                    {
+                        var plmodel = GetCachedPlaylistModel(channel.Id);
+                        channel.Playlists.Remove(unlistpl);
+                        plmodel?.All.Remove(plmodel.All.Items.Where(x => x.Id == unlistpl.Id));
+                    }
+                    else
+                    {
+                        unlistpl.Items.RemoveAll(noUnlisted.Contains);
+                        unlistpl.Count -= noUnlisted.Count;
+                        GetCachedPlaylistModel(channel.Id)?.All.AddOrUpdate(unlistpl);
+                    }
+                }
+            }
+        }
+
         private async Task ReloadStatistics()
         {
-            //_mainWindowModel.WindowTitle = "Update statistics..";
+            _mainWindowViewModel.WindowTitle = "Update statistics..";
 
             IsWorking = true;
 
-            //Stopwatch sw = Stopwatch.StartNew();
+            Stopwatch sw = Stopwatch.StartNew();
 
             var ch = SelectedEntry;
 
@@ -434,8 +474,8 @@ namespace v00v.ViewModel.Catalog
 
             ExplorerModel.All.AddOrUpdate(ch.Items);
 
-            //_mainWindowModel.WindowTitle =
-            //    $"Finished : {ch.Items.Count} items. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
+            _mainWindowViewModel.WindowTitle =
+                $"Finished : {ch.Items.Count} items. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
 
             IsWorking = false;
         }
@@ -443,8 +483,8 @@ namespace v00v.ViewModel.Catalog
         private async Task RestoreChannels()
         {
             IsWorking = true;
-            //_mainWindowModel.WindowTitle = "Restore channels..";
-            //Stopwatch sw = Stopwatch.StartNew();
+            _mainWindowViewModel.WindowTitle = "Restore channels..";
+            Stopwatch sw = Stopwatch.StartNew();
 
             List<Channel> channels = await _backupService.Restore(All.Items.Where(x => !x.IsStateChannel).Select(x => x.Id), false);
 
@@ -453,8 +493,8 @@ namespace v00v.ViewModel.Catalog
                 All.AddOrUpdate(channels);
             }
 
-            //_mainWindowModel.WindowTitle =
-            //    $"Finished : {channels.Count} : Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
+            _mainWindowViewModel.WindowTitle =
+                $"Finished {channels.Count}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
 
             IsWorking = false;
         }
@@ -475,25 +515,26 @@ namespace v00v.ViewModel.Catalog
 
             var channel = _entries.First(x => x.Id == SelectedEntry.Id);
             var lst = new List<Channel> { BaseChannel, channel };
-            SyncDiff diff = await _syncService.Sync(true, lst);
+            SyncDiff diff = await _syncService.Sync(true, true, lst);
 
             if (diff != null)
             {
+                var plmodel = GetCachedPlaylistModel(channel.Id);
                 if (diff.NewPlaylists.Count > 0)
                 {
                     channel.Playlists.AddRange(diff.NewPlaylists);
-                    PlaylistModel?.All.AddOrUpdate(diff.NewPlaylists);
+                    plmodel?.All.AddOrUpdate(diff.NewPlaylists);
                 }
 
                 if (diff.DeletedPlaylists.Count > 0)
                 {
                     channel.Playlists.RemoveAll(x => diff.DeletedPlaylists.Contains(x.Id));
-                    PlaylistModel?.All.Remove(PlaylistModel?.All.Items.Where(x => diff.DeletedPlaylists.Contains(x.Id)));
+                    plmodel?.All.Remove(plmodel?.All.Items.Where(x => diff.DeletedPlaylists.Contains(x.Id)));
                 }
 
                 foreach ((string key, List<ItemPrivacy> value) in diff.ExistPlaylists)
                 {
-                    var pl = PlaylistModel?.All.Items.FirstOrDefault(x => x.Id == key);
+                    var pl = plmodel?.All.Items.FirstOrDefault(x => x.Id == key);
                     if (pl != null)
                     {
                         pl.Count = value.Count;
@@ -504,34 +545,11 @@ namespace v00v.ViewModel.Catalog
 
                 if (diff.NoUnlistedAgain.Count > 0)
                 {
-                    var unlisted = channel.Items.Where(x => diff.NoUnlistedAgain.Contains(x.Id)).ToList();
-                    foreach (Item item in unlisted)
-                    {
-                        item.SyncState = SyncState.Notset;
-                    }
-
-                    _explorerModel.All.AddOrUpdate(unlisted);
-
-                    var unlistedpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
-                    if (unlistedpl != null)
-                    {
-                        if (unlistedpl.Count == diff.NoUnlistedAgain.Count)
-                        {
-                            channel.Playlists.Remove(unlistedpl);
-                            PlaylistModel?.All.Remove(PlaylistModel?.All.Items.Where(x => x.Id == unlistedpl.Id));
-                        }
-                        else
-                        {
-                            unlistedpl.Items.RemoveAll(x => diff.NoUnlistedAgain.Contains(x));
-                            unlistedpl.Count -= diff.NoUnlistedAgain.Count;
-                            PlaylistModel?.All.AddOrUpdate(unlistedpl);
-                        }
-                    }
+                    MarkUnlisted(lst, diff.NoUnlistedAgain);
                 }
 
                 All.AddOrUpdate(lst);
-                _explorerModel.All.AddOrUpdate(diff.NewItems);
-                GetCachedExplorerModel(null)?.All.AddOrUpdate(diff.NewItems);
+
                 SelectedEntry = channel;
 
                 _mainWindowViewModel.WindowTitle =
@@ -552,28 +570,17 @@ namespace v00v.ViewModel.Catalog
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted,
             //                                  $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
 
-            SyncDiff diff = await _syncService.Sync(SyncPls, Entries);
+            SyncDiff diff = await _syncService.Sync(MassSync, SyncPls, Entries);
 
             if (diff.NoUnlistedAgain.Count > 0)
             {
-                var unlistedpl = BaseChannel.Playlists.FirstOrDefault(x => x.Id == "-2");
-
-                if (unlistedpl != null)
-                {
-                    unlistedpl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
-                    unlistedpl.Count -= diff.NoUnlistedAgain.Count;
-                    PlaylistModel?.All.AddOrUpdate(unlistedpl);
-                }
+                MarkUnlisted(_entries, diff.NoUnlistedAgain);
             }
 
             All.AddOrUpdate(Entries);
             _explorerModel.All.AddOrUpdate(diff.NewItems);
             GetCachedExplorerModel(null)?.All.AddOrUpdate(diff.NewItems);
             SelectedEntry = oldId == null ? BaseChannel : _entries.First(x => x.Id == oldId);
-            //foreach (KeyValuePair<string, ChannelStats> channel in diff.Channels)
-            //{
-            //    ViewModelCache.Remove("e" + channel.Key);
-            //}
 
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished,
             //                                  diff == null

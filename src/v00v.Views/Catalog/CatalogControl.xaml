@@ -106,10 +106,10 @@
                     </Button>
                     
                     <StackPanel Orientation="Vertical">
-                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
-                                     IsChecked="{Binding MassSync, Mode=TwoWay}" />
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
                                      IsChecked="{Binding !MassSync, Mode=TwoWay}" />
+                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
+                                     IsChecked="{Binding MassSync, Mode=TwoWay}" />
                     </StackPanel>
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: on" Classes="dot"
@@ -273,7 +273,7 @@
         <Style Selector="RadioButton.dot">
             <Setter Property="RenderTransform">
                 <Setter.Value>
-                    <MatrixTransform Matrix="0.6,0,0,0.6,-2,-4" />
+                    <MatrixTransform Matrix="0.6,0,0,0.6,-2,-5" />
                 </Setter.Value>
             </Setter>
         </Style>
