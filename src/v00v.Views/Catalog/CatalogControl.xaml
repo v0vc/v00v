@@ -85,7 +85,7 @@
                             <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp" />
                         </Panel>
                     </Button>
-                    <ComboBox Height="25" Width="110" Margin="0,0,0,0" ToolTip.Tip="Tag" 
+                    <ComboBox Height="25" Width="90" ToolTip.Tip="Tag" 
                               VerticalAlignment="Bottom" 
                               VirtualizationMode="Simple" 
                               Items="{Binding Tags}" 
@@ -97,12 +97,26 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
+
                     <Button Command="{Binding SyncChannelsCommand, Mode=OneTime}" ToolTip.Tip="Sync">
                         <Panel>
                             <Ellipse />
                             <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp" />
                         </Panel>
                     </Button>
+                    
+                    <StackPanel Orientation="Vertical">
+                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
+                                     IsChecked="{Binding MassSync, Mode=TwoWay}" />
+                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
+                                     IsChecked="{Binding !MassSync, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Vertical">
+                        <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: on" Classes="dot"
+                                     IsChecked="{Binding SyncPls, Mode=TwoWay}" />
+                        <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: off" Classes="dot"
+                                     IsChecked="{Binding !SyncPls, Mode=TwoWay}"/>
+                    </StackPanel>
                 </StackPanel>
             </Expander.Header>
 
@@ -254,6 +268,14 @@
 
         <Style Selector="Button:pointerover">
             <Setter Property="Background" Value="#1b2333"/>
+        </Style>
+
+        <Style Selector="RadioButton.dot">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <MatrixTransform Matrix="0.6,0,0,0.6,-2,-4" />
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </UserControl.Styles>

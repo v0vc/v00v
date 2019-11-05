@@ -47,10 +47,12 @@ namespace v00v.ViewModel.Catalog
         private ChannelSort _channelSort;
         private ExplorerModel _explorerModel;
         private bool _isWorking;
+        private bool _massSync;
         private PlaylistModel _playlistModel;
         private string _searchText;
         private Channel _selectedEntry;
         private Tag _selectedTag;
+        private bool _syncPls;
 
         #endregion
 
@@ -193,6 +195,12 @@ namespace v00v.ViewModel.Catalog
             set => Update(ref _isWorking, value);
         }
 
+        public bool MassSync
+        {
+            get => _massSync;
+            set => Update(ref _massSync, value);
+        }
+
         public PlaylistModel PlaylistModel
         {
             get => _playlistModel;
@@ -224,6 +232,13 @@ namespace v00v.ViewModel.Catalog
 
         public ICommand SyncChannelCommand { get; }
         public ICommand SyncChannelsCommand { get; }
+
+        public bool SyncPls
+        {
+            get => _syncPls;
+            set => Update(ref _syncPls, value);
+        }
+
         public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
         private IAppCache ViewModelCache { get; } = new CachingService();
 
@@ -537,7 +552,7 @@ namespace v00v.ViewModel.Catalog
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted,
             //                                  $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
 
-            SyncDiff diff = await _syncService.Sync(true, Entries);
+            SyncDiff diff = await _syncService.Sync(SyncPls, Entries);
 
             if (diff.NoUnlistedAgain.Count > 0)
             {
