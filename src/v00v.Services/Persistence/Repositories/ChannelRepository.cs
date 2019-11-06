@@ -131,26 +131,64 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls)
+        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, IReadOnlyCollection<Channel> channels)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
-                    return await (syncPls
-                        ? context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
-                        : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()).Select(ch => new ChannelStruct
+                    if (channels.Count != 2)
                     {
-                        ChannelId = ch.Id,
-                        ChannelTitle = ch.Title,
-                        Items =
-                            ch.Items.Select(y => y.Id),
-                        UnlistedItems =
-                            ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
-                        Playlists = syncPls
-                            ? ch.Playlists.Select(x => x.Id)
-                            : null
-                    }).ToListAsync();
+                        if (syncPls)
+                        {
+                            return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
+                                .Select(ch => new ChannelStruct
+                                {
+                                    ChannelId = ch.Id,
+                                    ChannelTitle = ch.Title,
+                                    Items = ch.Items.Select(y => y.Id),
+                                    UnlistedItems =
+                                        ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                    Playlists = ch.Playlists.Select(x => x.Id)
+                                }).ToListAsync();
+                        }
+
+                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                            .Select(ch => new ChannelStruct
+                            {
+                                ChannelId = ch.Id,
+                                ChannelTitle = ch.Title,
+                                Items = ch.Items.Select(y => y.Id),
+                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                    .Select(y => y.Id),
+                            }).ToListAsync();
+                    }
+
+                    var id = channels.First(x => !x.IsStateChannel).Id;
+                    if (syncPls)
+                    {
+                        return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
+                            .Include(x => x.Playlists).Select(ch => new ChannelStruct
+                            {
+                                ChannelId = ch.Id,
+                                ChannelTitle = ch.Title,
+                                Items = ch.Items.Select(y => y.Id),
+                                UnlistedItems =
+                                    ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                        .Select(y => y.Id),
+                                Playlists = ch.Playlists.Select(x => x.Id)
+                            }).ToListAsync();
+                    }
+
+                    return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
+                        .Select(ch => new ChannelStruct
+                        {
+                            ChannelId = ch.Id,
+                            ChannelTitle = ch.Title,
+                            Items = ch.Items.Select(y => y.Id),
+                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                        }).ToListAsync();
+                
                 }
                 catch (Exception exception)
                 {

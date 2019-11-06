@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
 
@@ -8,9 +9,9 @@ namespace v00v.Services.Backup
     {
         #region Methods
 
-        Task Backup(IEnumerable<Channel> entries);
+        Task<int> Backup(IEnumerable<Channel> entries);
 
-        Task<List<Channel>> Restore(IEnumerable<string> existChannel, bool isFast);
+        Task<int> Restore(IEnumerable<string> existChannel, bool isFast, Action<string> setTitle, Action<Channel> updateList);
 
         #endregion
     }

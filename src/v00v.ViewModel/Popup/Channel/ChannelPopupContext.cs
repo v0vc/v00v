@@ -52,7 +52,7 @@ namespace v00v.ViewModel.Popup.Channel
             All.Connect().Filter(this.WhenValueChanged(t => t.FilterTag).Select(BuildSearchFilter)).Bind(out _entries).DisposeMany()
                 .Subscribe();
             CloseText = channel == null ? "Add" : "Save";
-            Title = channel == null ? "Add" : "Edit";
+            Title = channel == null ? "Add" : $"Edit: {channel.Title}";
             ChannelId = channel?.Id;
             ChannelTitle = channel?.Title;
             IsChannelEnabled = channel == null;

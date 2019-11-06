@@ -17,7 +17,6 @@ namespace v00v.ViewModel
         #region Fields
 
         private byte _pageIndex;
-
         private PopupModel _popupModel;
         private string _windowTitle;
 
@@ -36,7 +35,7 @@ namespace v00v.ViewModel
                 PopupModel = context == null ? PopupModel.Hidden() : PopupModel.NoHidden(context, _popupController);
             });
 
-            CatalogModel = new CatalogModel(this);
+            CatalogModel = new CatalogModel(SetTitle, SetPageIndex);
             WindowTitle = $"Channels: {CatalogModel.Entries.Count - 1}";
         }
 
@@ -67,6 +66,23 @@ namespace v00v.ViewModel
         {
             get => _windowTitle;
             set => Update(ref _windowTitle, value);
+        }
+
+        #endregion
+
+        #region Methods
+
+        private void SetPageIndex(byte index)
+        {
+            if (PageIndex != index)
+            {
+                PageIndex = index;
+            }
+        }
+
+        private void SetTitle(string title)
+        {
+            WindowTitle = title;
         }
 
         #endregion

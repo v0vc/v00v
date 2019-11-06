@@ -31,17 +31,9 @@ namespace v00v.Services.Synchronization
 
         public async Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels)
         {
-            var channelStructs = await _channelRepository.GetChannelsStruct(syncPls);
-
-            if (channelStructs.Count == 0)
-            {
-                //Log("nothing to sync");
-                return null;
-            }
+            var channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channels);
 
             var res = new SyncDiff(syncPls);
-
-            //Log($"channels:{channelStructs.Count}, start sync..");
 
             List<Task<ChannelDiff>> diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls)).ToList();
 
@@ -131,7 +123,7 @@ namespace v00v.Services.Synchronization
                 var chitems = res.NewItems.Where(x => pair.Select(y => y.Key).Contains(x.Id)).ToHashSet();
                 res.Channels[pair.Key].ItemsCount = chitems.Count;
                 res.Channels[pair.Key].Timestamp = chitems.OrderByDescending(x => x.Timestamp).First().Timestamp;
-                var ch = channels?.First(x => x.Id == pair.Key);
+                var ch = channels?.FirstOrDefault(x => x.Id == pair.Key);
                 if (ch == null)
                 {
                     continue;

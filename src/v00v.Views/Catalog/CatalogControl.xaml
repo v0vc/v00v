@@ -39,7 +39,7 @@
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Network32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Reload" Command="{Binding ReloadCommand, Mode=OneWay}">
+                    <MenuItem Header="Update" Command="{Binding ReloadCommand, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Refresh32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
@@ -52,23 +52,23 @@
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Clear" Command="{Binding ClearAddedCommand, Mode=OneWay}">
-                        <MenuItem.Icon>
-                            <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
                     <MenuItem Header="Backup" Command="{Binding BackupCommand, Mode=OneWay}" 
                               IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                    >
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Backup32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Restore" Command="{Binding RestoreCommand, Mode=OneWay}" 
                               IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                    >
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Restore32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Clear" Command="{Binding ClearAddedCommand, Mode=OneWay}">
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,16 +41,16 @@ namespace v00v.Services.Backup
 
         #region Methods
 
-        public async Task Backup(IEnumerable<Channel> entries)
+        public async Task<int> Backup(IEnumerable<Channel> entries)
         {
             if (!CheckJsonBackup())
             {
-                return;
+                return 0;
             }
 
             var bcp = new BackupAll
             {
-                Items = entries.Where(x => !x.IsStateChannel).Select(channel => new BackupItem
+                Items = entries.Select(channel => new BackupItem
                 {
                     ChannelId = channel.Id,
                     ChannelTitle = channel.Title.Trim(),
@@ -72,44 +73,50 @@ namespace v00v.Services.Backup
             }
 
             File.Move(tempFileName, fileName);
+            return bcp.Items.Count();
         }
 
-        public async Task<List<Channel>> Restore(IEnumerable<string> existChannels, bool isFast)
+        public async Task<int> Restore(IEnumerable<string> existChannels,
+            bool isFast,
+            Action<string> setTitle,
+            Action<Channel> updateList)
         {
-            var channels = new List<Channel>();
+            int res;
             if (!CheckJsonBackup())
             {
-                return channels;
+                return 0;
             }
 
             var fileName = GetBackupName();
-            BackupAll res = null;
+            BackupAll backup = null;
             using (var r = new StreamReader(fileName))
             {
                 string json = r.ReadToEnd();
                 var ss = Task.Factory.StartNew(() =>
                 {
-                    res = JsonConvert.DeserializeObject<BackupAll>(json);
+                    backup = JsonConvert.DeserializeObject<BackupAll>(json);
                 });
                 await ss;
             }
 
-            if (res == null)
+            if (backup == null)
             {
-                return channels;
+                return 0;
             }
 
             if (isFast)
             {
-                List<Task<Channel>> tasks = res.Items.Where(x => !existChannels.Contains(x.ChannelId))
+                setTitle.Invoke("Restore channels..");
+                List<Task<Channel>> tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
                     .Select(item => _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle)).ToList();
 
                 await Task.WhenAll(tasks);
 
+                var channels = new List<Channel>();
                 foreach (Task<Channel> task in tasks)
                 {
                     var ch = task.Result;
-                    BackupItem rr = res.Items.FirstOrDefault(x => x.ChannelId == ch.Id);
+                    BackupItem rr = backup.Items.FirstOrDefault(x => x.ChannelId == ch.Id);
                     if (rr == null)
                     {
                         continue;
@@ -117,23 +124,28 @@ namespace v00v.Services.Backup
 
                     ch.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
                     channels.Add(ch);
+                    updateList.Invoke(ch);
                 }
 
                 var rows = await _channelRepository.AddChannels(channels);
+                res = channels.Count;
                 //await Console.Out.WriteLineAsync($"Saved {rows} rows!");
             }
             else
             {
-                channels.AddRange(await RestoreOneByOne(res.Items.Where(x => !existChannels.Contains(x.ChannelId))));
+                res = await RestoreOneByOne(backup.Items.Where(x => !existChannels.Contains(x.ChannelId)), setTitle, updateList);
             }
 
-            foreach ((string key, byte value) in res.ItemsState)
+            var states = new List<Task<int>>();
+            foreach ((string key, byte value) in backup.ItemsState)
             {
-                await _itemRepository.UpdateItemsWatchState(key, value);
+                states.Add(_itemRepository.UpdateItemsWatchState(key, value));
+                //await _itemRepository.UpdateItemsWatchState(key, value);
             }
 
+            await Task.WhenAll(states);
             //await Console.Out.WriteLineAsync("Restore finished");
-            return channels;
+            return res;
         }
 
         private bool CheckJsonBackup()
@@ -153,9 +165,9 @@ namespace v00v.Services.Backup
             return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
         }
 
-        private async Task<List<Channel>> RestoreOneByOne(IEnumerable<BackupItem> lst)
+        private async Task<int> RestoreOneByOne(IEnumerable<BackupItem> lst, Action<string> setTitle, Action<Channel> updateList)
         {
-            var channels = new List<Channel>();
+            var res = 0;
             while (true)
             {
                 var err = new List<BackupItem>();
@@ -164,6 +176,7 @@ namespace v00v.Services.Backup
                     try
                     {
                         //await Console.Out.WriteLineAsync($"Start restoring {item.ChannelId}..");
+                        setTitle.Invoke($"Restore {item.ChannelTitle}..");
                         var channel = await _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle);
                         if (channel == null)
                         {
@@ -175,7 +188,8 @@ namespace v00v.Services.Backup
                         //await Console.Out.WriteLineAsync($"Restored {channel.Title}, now saving..");
                         var rows = await _channelRepository.AddChannel(channel);
                         //await Console.Out.WriteLineAsync($"Saved {rows}!");
-                        channels.Add(channel);
+                        updateList.Invoke(channel);
+                        res++;
                     }
                     catch
                     {
@@ -193,7 +207,7 @@ namespace v00v.Services.Backup
                 break;
             }
 
-            return channels;
+            return res;
         }
 
         #endregion

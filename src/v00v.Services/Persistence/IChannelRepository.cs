@@ -18,7 +18,7 @@ namespace v00v.Services.Persistence
 
         Task<List<Channel>> GetChannels();
 
-        Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls);
+        Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, IReadOnlyCollection<Channel> channels);
 
         Task<string> GetChannelSubtitle(string channelId);
 

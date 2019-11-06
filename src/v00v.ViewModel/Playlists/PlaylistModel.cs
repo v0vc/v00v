@@ -36,8 +36,10 @@ namespace v00v.ViewModel.Playlists
 
         #region Constructors
 
-        public PlaylistModel(Channel channel, ExplorerModel explorerModel, MainWindowViewModel mainWindowViewModel) :
-            this(AvaloniaLocator.Current.GetService<IPlaylistRepository>())
+        public PlaylistModel(Channel channel, ExplorerModel explorerModel, Action<byte> setPageIndex) : this(AvaloniaLocator.Current
+                                                                                                                 .GetService<
+                                                                                                                     IPlaylistRepository
+                                                                                                                 >())
         {
             _explorerModel = explorerModel;
 
@@ -132,10 +134,7 @@ namespace v00v.ViewModel.Playlists
                         index = (byte)(entry.Items.Count == 0 ? 1 : 0);
                     }
 
-                    if (mainWindowViewModel.PageIndex != index)
-                    {
-                        mainWindowViewModel.PageIndex = index;
-                    }
+                    setPageIndex.Invoke(index);
 
                     _explorerModel.SelectedPlaylistId = entry.Id;
                 }
