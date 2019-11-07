@@ -32,6 +32,7 @@ namespace v00v.ViewModel.Explorer
         private readonly IItemRepository _itemRepository;
         private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IPopupController _popupController;
+        private readonly Action<byte> _setPageIndex;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -48,12 +49,14 @@ namespace v00v.ViewModel.Explorer
 
         #region Constructors
 
-        public ExplorerModel(Channel channel, CatalogModel catalogModel) : this(AvaloniaLocator.Current.GetService<IItemRepository>(),
-                                                                                AvaloniaLocator.Current.GetService<IPopupController>(),
-                                                                                AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                                                                                AvaloniaLocator.Current.GetService<IConfigurationRoot>())
+        public ExplorerModel(Channel channel, CatalogModel catalogModel, Action<byte> setPageIndex) :
+            this(AvaloniaLocator.Current.GetService<IItemRepository>(),
+                 AvaloniaLocator.Current.GetService<IPopupController>(),
+                 AvaloniaLocator.Current.GetService<IYoutubeService>(),
+                 AvaloniaLocator.Current.GetService<IConfigurationRoot>())
         {
             _catalogModel = catalogModel;
+            _setPageIndex = setPageIndex;
 
             All = new SourceCache<Item, string>(m => m.Id);
 
@@ -134,7 +137,11 @@ namespace v00v.ViewModel.Explorer
         public string SearchText
         {
             get => _searchText;
-            set => Update(ref _searchText, value);
+            set
+            {
+                Update(ref _searchText, value);
+                _setPageIndex.Invoke(Items.Any() ? (byte)0 : (byte)1);
+            }
         }
 
         public Item SelectedEntry

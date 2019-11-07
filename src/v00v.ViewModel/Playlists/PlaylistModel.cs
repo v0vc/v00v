@@ -275,11 +275,6 @@ namespace v00v.ViewModel.Playlists
 
             playlist.StateItems = newItems;
             playlist.HasFullLoad = true;
-            //if (newItems != null && newItems.Any())
-            //{
-            //    playlist.StateItems = newItems;
-            //    playlist.HasFullLoad = playlist.StateItems.Count > 0;
-            //}
         }
 
         #endregion

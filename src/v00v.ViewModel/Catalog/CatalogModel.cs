@@ -92,7 +92,7 @@ namespace v00v.ViewModel.Catalog
                     return;
                 }
 
-                ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this));
+                ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
                 PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex));
 
                 if (PlaylistModel?.SelectedEntry != null)
