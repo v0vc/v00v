@@ -39,6 +39,7 @@ namespace v00v.ViewModel.Explorer
         #region Fields
 
         private ItemSort _itemSort;
+        private string _logText;
         private string _searchText;
         private Item _selectedEntry;
         private string _selectedPlaylistId;
@@ -70,13 +71,9 @@ namespace v00v.ViewModel.Explorer
                 .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _items).DisposeMany().Subscribe();
 
             OpenCommand = new Command(async x => await OpenItem(x));
-
             DownloadCommand = new Command(async x => await Download("simple", (Item)x));
-
             DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
-
             RunItemCommand = new Command(async x => await RunItem(true));
-
             CopyItemCommand = new Command(async x => await CopyItem((string)x));
 
             IsParentState = channel.IsStateChannel;
@@ -87,9 +84,7 @@ namespace v00v.ViewModel.Explorer
             }
 
             DeleteItemCommand = new Command(async x => await DeleteItem());
-
             SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
-
             SetItemWatchStateCommand = new Command(async x => await SetItemState((WatchState)x));
         }
 
@@ -113,6 +108,8 @@ namespace v00v.ViewModel.Explorer
         public ICommand DeleteItemCommand { get; }
         public ICommand DownloadCommand { get; }
         public ICommand DownloadItemCommand { get; }
+
+        public bool EnableLog => All.Items.Any();
         public ICommand GoToParentCommand { get; }
         public bool IsParentState { get; }
         public IEnumerable<Item> Items => _items;
@@ -124,6 +121,13 @@ namespace v00v.ViewModel.Explorer
         }
 
         public ItemSort ItemSortBase { get; set; }
+
+        public string LogText
+        {
+            get => _logText;
+            set => Update(ref _logText, value);
+        }
+
         public ICommand OpenCommand { get; }
         public ICommand RunItemCommand { get; }
 
@@ -169,39 +173,49 @@ namespace v00v.ViewModel.Explorer
         public async Task DeleteItem(Item item)
         {
             item.Downloaded = false;
-            await _itemRepository.UpdateItemFileName(item.Id, null);
-            if (item.FileName != null)
+            await Task.WhenAll(_itemRepository.UpdateItemFileName(item.Id, null)).ContinueWith(done =>
             {
+                if (item.FileName == null)
+                {
+                    return;
+                }
+
                 var fn = new FileInfo(Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"),
                                                    item.ChannelId,
                                                    item.FileName));
-                if (fn.Exists)
+                if (!fn.Exists)
                 {
-                    try
-                    {
-                        fn.Delete();
-                        await item.Log($"{fn.FullName} deleted").ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        await item.Log($"Error {e.Message}").ConfigureAwait(false);
-                    }
+                    return;
                 }
-            }
+
+                try
+                {
+                    fn.Delete();
+                    SetLog($"{fn.FullName} deleted");
+                }
+                catch (Exception e)
+                {
+                    SetLog($"Error {e.Message}");
+                }
+            });
         }
 
         public async Task Download(string par, Item item)
         {
             bool skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
-            var success = await item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
-                                              _configuration.GetValue<string>("AppSettings:YouParam"),
-                                              par,
-                                              skip);
-            if (success && !skip)
+            var task = item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
+                                     _configuration.GetValue<string>("AppSettings:YouParam"),
+                                     par,
+                                     skip,
+                                     SetLog);
+            await Task.WhenAll(task).ContinueWith(done =>
             {
-                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-            }
+                if (task.Result && !skip)
+                {
+                    _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+                }
+            });
         }
 
         private Func<Item, bool> BuildPlFilter(string playlistId)
@@ -325,74 +339,81 @@ namespace v00v.ViewModel.Explorer
             var id = SelectedEntry.Id;
             var item = _items.First(x => x.Id == id);
             var oldState = item.WatchState;
-
             item.WatchState = par;
-            var res = await _itemRepository.SetItemsWatchState(par, item.Id);
-            if (res != 1)
+            var task = _itemRepository.SetItemsWatchState(par, item.Id);
+            await Task.WhenAll(task).ContinueWith(done =>
             {
-                return;
-            }
+                if (task.Result == 1)
+                {
+                    var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
+                    if (bitem != null && bitem.WatchState != par)
+                    {
+                        bitem.WatchState = par;
+                    }
+
+                    Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)
+                        ?.All.Items.FirstOrDefault(x => x.Id == id);
+                    if (citem != null && citem.WatchState != par)
+                    {
+                        citem.WatchState = par;
+                    }
+
+                    PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
+
+                    if (plmodel == null)
+                    {
+                        return;
+                    }
+
+                    switch (par)
+                    {
+                        case WatchState.Notset:
+
+                            var pln = plmodel.All.Items.Single(x => x.State == oldState);
+                            pln.Count -= 1;
+                            pln.StateItems?.RemoveAll(x => x.Id == item.Id);
+
+                            break;
+
+                        case WatchState.Watched:
+
+                            var plw = plmodel.All.Items.Single(x => x.State == par);
+                            plw.Count += 1;
+                            plw.StateItems?.Add(item);
+
+                            if (oldState == WatchState.Planned)
+                            {
+                                var pl = plmodel.All.Items.Single(x => x.State == oldState);
+                                pl.Count -= 1;
+                                pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                            }
+
+                            break;
+
+                        case WatchState.Planned:
+
+                            var plp = plmodel.All.Items.Single(x => x.State == par);
+                            plp.Count += 1;
+                            plp.StateItems?.Add(item);
+
+                            if (oldState == WatchState.Watched)
+                            {
+                                Playlist pl = plmodel.All.Items.Single(x => x.State == oldState);
+                                pl.Count -= 1;
+                                pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                            }
+
+                            break;
+                    }
+                }
+            });
+
             All.AddOrUpdate(item);
+        }
 
-            var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
-            if (bitem != null && bitem.WatchState != par)
-            {
-                bitem.WatchState = par;
-            }
-            Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
-                .Items.FirstOrDefault(x => x.Id == id);
-            if (citem != null && citem.WatchState != par)
-            {
-                citem.WatchState = par;
-            }
-
-            PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
-
-            if (plmodel == null)
-            {
-                return;
-            }
-
-            switch (par)
-            {
-                case WatchState.Notset:
-
-                    var pln = plmodel.All.Items.Single(x => x.State == oldState);
-                    pln.Count -= 1;
-                    pln.StateItems?.RemoveAll(x => x.Id == item.Id);
-
-                    break;
-
-                case WatchState.Watched:
-
-                    var plw = plmodel.All.Items.Single(x => x.State == par);
-                    plw.Count += 1;
-                    plw.StateItems?.Add(item);
-
-                    if (oldState == WatchState.Planned)
-                    {
-                        var pl = plmodel.All.Items.Single(x => x.State == oldState);
-                        pl.Count -= 1;
-                        pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                    }
-
-                    break;
-
-                case WatchState.Planned:
-
-                    var plp = plmodel.All.Items.Single(x => x.State == par);
-                    plp.Count += 1;
-                    plp.StateItems?.Add(item);
-
-                    if (oldState == WatchState.Watched)
-                    {
-                        Playlist pl = plmodel.All.Items.Single(x => x.State == oldState);
-                        pl.Count -= 1;
-                        pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                    }
-
-                    break;
-            }
+        private void SetLog(string log)
+        {
+            LogText += log + Environment.NewLine;
         }
 
         #endregion

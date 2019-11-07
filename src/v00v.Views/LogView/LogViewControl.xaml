@@ -1,0 +1,91 @@
+﻿<UserControl
+    x:Class="v00v.Views.LogView.LogViewControl"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:v00v.Model.Converters;assembly=v00v.Model"
+    xmlns:enums="clr-namespace:v00v.Model.Enums;assembly=v00v.Model"
+    >
+    
+    <Expander HorizontalAlignment="Stretch" ExpandDirection="Up" Background="#242e44">
+        <Expander.Header >
+            <Grid ColumnDefinitions="*,auto,auto" 
+                  HorizontalAlignment="Stretch" 
+                  Width="{Binding $parent[Expander].Bounds.Width}"
+                  IsEnabled="{Binding EnableLog}"
+                  >
+                <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By date" 
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Timestamp}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Timestamp"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By views"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.View}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="View"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By likes"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Like}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Like"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By dislikes"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Dislike}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Dislike"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By comment"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Comment}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Comment"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By duration"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Duration}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Duration"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By title"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Title"
+                                 />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By view diff"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Diff}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Diff"
+                                 />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{Binding Items.Count}" Margin="0,0,40,0" VerticalAlignment="Center" Foreground="#92a3b3"/>
+            </Grid>
+        </Expander.Header>
+        <TextBox Width="{Binding $parent[Expander].Bounds.Width}" 
+                 Height="150" 
+                 Margin="3"
+                 Text="{Binding LogText, Mode=OneWay}" 
+                 TextWrapping="Wrap" 
+                 HorizontalAlignment="Stretch" 
+                 VerticalAlignment="Stretch"
+                 />
+    </Expander>
+    
+    
+    <UserControl.Styles>
+
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="25" />
+            <Setter Property="Width" Value="150" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#ffffff" />
+            <Setter Property="Background" Value="#1b2333" />
+            <Setter Property="BorderBrush" Value="#3a455a" />
+        </Style>
+
+        <Style Selector="TextBox /template/ Border">
+            <Setter Property="CornerRadius" Value="3" />
+        </Style>
+
+    </UserControl.Styles>
+
+</UserControl>

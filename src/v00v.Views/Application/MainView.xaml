@@ -6,6 +6,7 @@
              xmlns:playlist="clr-namespace:v00v.Views.Playlists"
              xmlns:popup="clr-namespace:v00v.Views.Popup"
              xmlns:startup="clr-namespace:v00v.Views.Startup"
+             xmlns:logView="clr-namespace:v00v.Views.LogView"
              >
     <Panel>
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,*,auto">
@@ -13,7 +14,8 @@
             <catalog:CatalogControl
                 DataContext="{Binding CatalogModel}"
                 Grid.Column="0"
-                Grid.RowSpan="3" />
+                Grid.RowSpan="3"
+                />
 
             <Carousel Grid.Column="1" Grid.Row="1" SelectedIndex="{Binding PageIndex}">
 
@@ -27,7 +29,14 @@
             <playlist:PlaylistControl
                 DataContext="{Binding CatalogModel.PlaylistModel}"
                 Grid.Column="2" 
-                Grid.RowSpan="3"/>
+                Grid.RowSpan="3"
+                />
+
+            <logView:LogViewControl
+                DataContext="{Binding CatalogModel.ExplorerModel}"
+                Grid.Column="1" 
+                Grid.Row="2"
+                />
         </Grid>
 
         <popup:PopupControl

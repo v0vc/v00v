@@ -31,6 +31,7 @@ namespace v00v.Model.Entities
         private bool _isWorking;
         private double _percentage;
         private Process _proc;
+        private Action<string> _setLog;
         private SyncState _syncState;
         private WatchState _watchState;
 
@@ -75,8 +76,6 @@ namespace v00v.Model.Entities
         public long LikeCount { get; set; }
 
         public string Link => $"https://www.youtube.com/watch?v={Id}";
-        public string LogText { get; set; }
-
         public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
 
         public double Percentage
@@ -182,8 +181,13 @@ namespace v00v.Model.Entities
 
         #region Methods
 
-        public async Task<bool> Download(string youdl, string youparam, string par, bool skip)
+        public async Task<bool> Download(string youdl, string youparam, string par, bool skip, Action<string> setLog)
         {
+            if (_setLog == null)
+            {
+                _setLog = setLog;
+            }
+
             IsWorking = true;
             var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam))
             {
@@ -208,13 +212,9 @@ namespace v00v.Model.Entities
                 _proc.BeginOutputReadLine();
                 _proc.BeginErrorReadLine();
                 _proc.WaitForExit();
-            }).ContinueWith(async x => await HandleDownload(skip));
-            return Downloaded;
-        }
+            }).ContinueWith(x => HandleDownload(skip));
 
-        public async Task Log(string text)
-        {
-            await Task.Run(() => LogText += text + Environment.NewLine).ConfigureAwait(false);
+            return Downloaded;
         }
 
         public void RunItem(string mpcpath, string basedir)
@@ -237,7 +237,7 @@ namespace v00v.Model.Entities
             }
         }
 
-        private async Task HandleDownload(bool skip)
+        private void HandleDownload(bool skip)
         {
             IsWorking = false;
             Downloaded = true;
@@ -263,7 +263,7 @@ namespace v00v.Model.Entities
                 catch (Exception e)
                 {
                     FileName = fn.Name;
-                    await Log(e.Message);
+                    _setLog?.Invoke(e.Message);
                 }
             }
 
@@ -301,14 +301,14 @@ namespace v00v.Model.Entities
 
         #region Event Handling
 
-        private async void OutputDataReceived(object sender, DataReceivedEventArgs e)
+        private void OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e?.Data == null)
             {
                 return;
             }
 
-            await Log(e.Data).ConfigureAwait(false);
+            _setLog?.Invoke(e.Data);
 
             if (e.Data.StartsWith(DownloadText))
             {
