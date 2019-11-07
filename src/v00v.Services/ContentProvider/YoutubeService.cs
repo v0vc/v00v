@@ -23,17 +23,11 @@ namespace v00v.Services.ContentProvider
         #region Constants
 
         private const int ItemsPerPage = 50;
-
         private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
-
         private const string PrintType = "prettyPrint=false";
-
         private const string Url = "https://www.googleapis.com/youtube/v3/";
-
         private const string YouChannel = "channel";
-
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
-
         private const string YouUser = "user";
 
         #endregion

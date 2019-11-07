@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
 using v00v.Model.SyncEntities;
@@ -9,7 +10,7 @@ namespace v00v.Services.Synchronization
     {
         #region Methods
 
-        Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels);
+        Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels, Action<string> setLog);
 
         #endregion
     }

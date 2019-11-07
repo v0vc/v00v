@@ -548,6 +548,15 @@ namespace v00v.ViewModel.Catalog
             });
         }
 
+        private void SetLog(string log)
+        {
+            var exmodel = GetCachedExplorerModel(null);
+            if (exmodel != null)
+            {
+                exmodel.LogText += log + Environment.NewLine;
+            }
+        }
+
         private async Task SyncChannel()
         {
             if (SelectedEntry == null)
@@ -564,7 +573,7 @@ namespace v00v.ViewModel.Catalog
             //await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start full sync: {SelectedEntry.Id}");
 
             var lst = new List<Channel> { BaseChannel, channel };
-            var task = _syncService.Sync(true, true, lst);
+            var task = _syncService.Sync(true, true, lst, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.NewItems.Count, sw) : $"Error: {task.Exception.Message}");
@@ -615,7 +624,7 @@ namespace v00v.ViewModel.Catalog
             Stopwatch sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted, $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
 
-            var task = _syncService.Sync(MassSync, SyncPls, _entries);
+            var task = _syncService.Sync(MassSync, SyncPls, _entries, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.NewItems.Count, sw) : $"Error: {task.Exception.Message}");
