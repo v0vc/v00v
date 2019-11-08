@@ -34,9 +34,9 @@ namespace v00v.Services.Persistence
 
         Task<int> UpdateItemsCount(string channelId, int count);
 
-        Task<int> UpdatePlannedCount(string channelId, int count);
+        Task<int> UpdatePlannedCount(string channelId, int count, bool decrease = false);
 
-        Task<int> UpdateWatchedCount(string channelId, int count);
+        Task<int> UpdateWatchedCount(string channelId, int count, bool decrease = false);
 
         #endregion
     }

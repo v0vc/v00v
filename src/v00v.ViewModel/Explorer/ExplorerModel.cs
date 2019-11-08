@@ -28,6 +28,7 @@ namespace v00v.ViewModel.Explorer
         #region Static and Readonly Fields
 
         private readonly CatalogModel _catalogModel;
+        private readonly IChannelRepository _channelRepository;
         private readonly IConfiguration _configuration;
         private readonly IItemRepository _itemRepository;
         private readonly ReadOnlyObservableCollection<Item> _items;
@@ -53,7 +54,8 @@ namespace v00v.ViewModel.Explorer
             this(AvaloniaLocator.Current.GetService<IItemRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                 AvaloniaLocator.Current.GetService<IConfigurationRoot>())
+                 AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
+                 AvaloniaLocator.Current.GetService<IChannelRepository>())
         {
             _catalogModel = catalogModel;
             _setPageIndex = setPageIndex;
@@ -94,12 +96,14 @@ namespace v00v.ViewModel.Explorer
         private ExplorerModel(IItemRepository itemRepository,
             IPopupController popupController,
             IYoutubeService youtubeService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IChannelRepository channelRepository)
         {
             _itemRepository = itemRepository;
             _popupController = popupController;
             _youtubeService = youtubeService;
             _configuration = configuration;
+            _channelRepository = channelRepository;
         }
 
         #endregion
@@ -271,8 +275,8 @@ namespace v00v.ViewModel.Explorer
             {
                 switch (x)
                 {
-                    //case ItemSort.Timestamp:
-                    //    return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
+                    case ItemSort.Timestamp:
+                        return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                     case ItemSort.View:
                         return SortExpressionComparer<Item>.Descending(t => t.ViewCount);
                     case ItemSort.Like:
@@ -350,68 +354,113 @@ namespace v00v.ViewModel.Explorer
             var task = _itemRepository.SetItemsWatchState(par, item.Id);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                if (task.Result == 1)
+                if (task.Result != 1)
                 {
-                    var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
-                    if (bitem != null && bitem.WatchState != par)
+                    return;
+                }
+
+                if (oldState == WatchState.Notset)
+                {
+                    switch (par)
                     {
-                        bitem.WatchState = par;
+                        case WatchState.Planned:
+                            _channelRepository.UpdatePlannedCount(item.ChannelId, 0);
+                            break;
+                        case WatchState.Watched:
+                            _channelRepository.UpdateWatchedCount(item.ChannelId, 0);
+                            break;
                     }
+                }
 
-                    Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)
-                        ?.All.Items.FirstOrDefault(x => x.Id == id);
-                    if (citem != null && citem.WatchState != par)
-                    {
-                        citem.WatchState = par;
-                    }
-
-                    PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
-
-                    if (plmodel == null)
-                    {
-                        return;
-                    }
-
+                if (oldState == WatchState.Planned)
+                {
                     switch (par)
                     {
                         case WatchState.Notset:
-
-                            var pln = plmodel.All.Items.Single(x => x.State == oldState);
-                            pln.Count -= 1;
-                            pln.StateItems?.RemoveAll(x => x.Id == item.Id);
-
+                            _channelRepository.UpdatePlannedCount(item.ChannelId, 0, true);
                             break;
-
                         case WatchState.Watched:
-
-                            var plw = plmodel.All.Items.Single(x => x.State == par);
-                            plw.Count += 1;
-                            plw.StateItems?.Add(item);
-
-                            if (oldState == WatchState.Planned)
-                            {
-                                var pl = plmodel.All.Items.Single(x => x.State == oldState);
-                                pl.Count -= 1;
-                                pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                            }
-
-                            break;
-
-                        case WatchState.Planned:
-
-                            var plp = plmodel.All.Items.Single(x => x.State == par);
-                            plp.Count += 1;
-                            plp.StateItems?.Add(item);
-
-                            if (oldState == WatchState.Watched)
-                            {
-                                Playlist pl = plmodel.All.Items.Single(x => x.State == oldState);
-                                pl.Count -= 1;
-                                pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                            }
+                            Task.WhenAll(_channelRepository.UpdateWatchedCount(item.ChannelId, 0),
+                                         _channelRepository.UpdatePlannedCount(item.ChannelId, 0, true));
 
                             break;
                     }
+                }
+
+                if (oldState == WatchState.Watched)
+                {
+                    switch (par)
+                    {
+                        case WatchState.Notset:
+                            _channelRepository.UpdateWatchedCount(item.ChannelId, 0, true);
+                            break;
+                        case WatchState.Planned:
+                            Task.WhenAll(_channelRepository.UpdatePlannedCount(item.ChannelId, 0),
+                                         _channelRepository.UpdateWatchedCount(item.ChannelId, 0, true));
+
+                            break;
+                    }
+                }
+
+                var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
+                if (bitem != null && bitem.WatchState != par)
+                {
+                    bitem.WatchState = par;
+                }
+
+                Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
+                    .Items.FirstOrDefault(x => x.Id == id);
+                if (citem != null && citem.WatchState != par)
+                {
+                    citem.WatchState = par;
+                }
+
+                PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
+
+                if (plmodel == null)
+                {
+                    return;
+                }
+
+                switch (par)
+                {
+                    case WatchState.Notset:
+
+                        var pln = plmodel.Entries.Single(x => x.State == oldState);
+                        pln.Count -= 1;
+                        pln.StateItems?.RemoveAll(x => x.Id == item.Id);
+
+                        break;
+
+                    case WatchState.Watched:
+
+                        var plw = plmodel.Entries.Single(x => x.State == par);
+                        plw.Count += 1;
+                        plw.StateItems?.Add(item);
+
+                        if (oldState == WatchState.Planned)
+                        {
+                            var pl = plmodel.Entries.Single(x => x.State == oldState);
+                            pl.Count -= 1;
+                            pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                        }
+
+                        break;
+
+                    case WatchState.Planned:
+
+                        var plp = plmodel.Entries.Single(x => x.State == par);
+                        plp.Count += 1;
+                        plp.StateItems?.Add(item);
+
+                        if (oldState == WatchState.Watched)
+                        {
+                            Playlist pl = plmodel.Entries.Single(x => x.State == oldState);
+                            pl.Count -= 1;
+                            pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                        }
+
+                        break;
                 }
             });
 

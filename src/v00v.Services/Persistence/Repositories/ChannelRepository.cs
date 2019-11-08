@@ -510,7 +510,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> UpdatePlannedCount(string channelId, int count)
+        public async Task<int> UpdatePlannedCount(string channelId, int count, bool decrease = false)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -521,7 +521,22 @@ namespace v00v.Services.Persistence.Repositories
                         var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
                         if (channel != null)
                         {
-                            channel.PlannedCount = count;
+                            if (count == 0)
+                            {
+                                if (decrease)
+                                {
+                                    channel.PlannedCount -= 1;
+                                }
+                                else
+                                {
+                                    channel.PlannedCount += 1;
+                                }
+                            }
+                            else
+                            {
+                                channel.PlannedCount = count;
+                            }
+
                             context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                         }
 
@@ -539,7 +554,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> UpdateWatchedCount(string channelId, int count)
+        public async Task<int> UpdateWatchedCount(string channelId, int count, bool decrease = false)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -550,7 +565,22 @@ namespace v00v.Services.Persistence.Repositories
                         var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
                         if (channel != null)
                         {
-                            channel.WatchedCount = count;
+                            if (count == 0)
+                            {
+                                if (decrease)
+                                {
+                                    channel.WatchedCount -= 1;
+                                }
+                                else
+                                {
+                                    channel.WatchedCount += 1;
+                                }
+                            }
+                            else
+                            {
+                                channel.WatchedCount = count;
+                            }
+
                             context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
                         }
 
