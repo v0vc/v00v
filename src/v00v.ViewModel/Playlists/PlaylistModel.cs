@@ -47,12 +47,13 @@ namespace v00v.ViewModel.Playlists
 
             if (channel.IsStateChannel)
             {
+                UnlistedPlaylist unlisted = UnlistedPlaylist.Instance;
                 PlannedPlaylist planned = PlannedPlaylist.Instance;
                 WatchedPlaylist watched = WatchedPlaylist.Instance;
-                UnlistedPlaylist unlisted = UnlistedPlaylist.Instance;
-                planned.Count = _playlistRepository.GetPlaylistsItemsCount(WatchState.Planned).GetAwaiter().GetResult();
-                watched.Count = _playlistRepository.GetPlaylistsItemsCount(WatchState.Watched).GetAwaiter().GetResult();
-                unlisted.Count = _playlistRepository.GetPlaylistsItemsCount(SyncState.Unlisted).GetAwaiter().GetResult();
+                var stateCounts = _playlistRepository.GetStatePlaylistsItemsCount().GetAwaiter().GetResult();
+                unlisted.Count = stateCounts[0];
+                planned.Count = stateCounts[1];
+                watched.Count = stateCounts[2];
                 channel.Playlists.Add(planned);
                 channel.Playlists.Add(watched);
                 channel.Playlists.Add(unlisted);

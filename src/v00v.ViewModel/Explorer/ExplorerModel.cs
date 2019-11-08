@@ -229,6 +229,11 @@ namespace v00v.ViewModel.Explorer
             });
         }
 
+        public void SetLog(string log)
+        {
+            LogText += log + Environment.NewLine;
+        }
+
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
             if (playlistId == null || _catalogModel.SelectedEntry.IsStateChannel)
@@ -351,57 +356,9 @@ namespace v00v.ViewModel.Explorer
             var item = _items.First(x => x.Id == id);
             var oldState = item.WatchState;
             item.WatchState = par;
-            var task = _itemRepository.SetItemsWatchState(par, item.Id);
+            var task = _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                if (task.Result != 1)
-                {
-                    return;
-                }
-
-                if (oldState == WatchState.Notset)
-                {
-                    switch (par)
-                    {
-                        case WatchState.Planned:
-                            _channelRepository.UpdatePlannedCount(item.ChannelId, 0);
-                            break;
-                        case WatchState.Watched:
-                            _channelRepository.UpdateWatchedCount(item.ChannelId, 0);
-                            break;
-                    }
-                }
-
-                if (oldState == WatchState.Planned)
-                {
-                    switch (par)
-                    {
-                        case WatchState.Notset:
-                            _channelRepository.UpdatePlannedCount(item.ChannelId, 0, true);
-                            break;
-                        case WatchState.Watched:
-                            Task.WhenAll(_channelRepository.UpdateWatchedCount(item.ChannelId, 0),
-                                         _channelRepository.UpdatePlannedCount(item.ChannelId, 0, true));
-
-                            break;
-                    }
-                }
-
-                if (oldState == WatchState.Watched)
-                {
-                    switch (par)
-                    {
-                        case WatchState.Notset:
-                            _channelRepository.UpdateWatchedCount(item.ChannelId, 0, true);
-                            break;
-                        case WatchState.Planned:
-                            Task.WhenAll(_channelRepository.UpdatePlannedCount(item.ChannelId, 0),
-                                         _channelRepository.UpdateWatchedCount(item.ChannelId, 0, true));
-
-                            break;
-                    }
-                }
-
                 var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
                 if (bitem != null && bitem.WatchState != par)
                 {
@@ -465,11 +422,6 @@ namespace v00v.ViewModel.Explorer
             });
 
             All.AddOrUpdate(item);
-        }
-
-        private void SetLog(string log)
-        {
-            LogText += log + Environment.NewLine;
         }
 
         #endregion

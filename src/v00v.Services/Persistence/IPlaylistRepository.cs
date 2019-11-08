@@ -17,6 +17,8 @@ namespace v00v.Services.Persistence
 
         Task<int> GetPlaylistsItemsCount(SyncState state);
 
+        Task<List<int>> GetStatePlaylistsItemsCount();
+
         Task<List<Item>> GetUnlistedPlaylistsItems();
 
         #endregion

@@ -9,9 +9,13 @@ namespace v00v.Services.Backup
     {
         #region Methods
 
-        Task<int> Backup(IEnumerable<Channel> entries);
+        Task<int> Backup(IEnumerable<Channel> entries, Action<string> setLog);
 
-        Task<RestoreResult> Restore(IEnumerable<string> existChannel, bool isFast, Action<string> setTitle, Action<Channel> updateList);
+        Task<RestoreResult> Restore(IEnumerable<string> existChannel,
+            bool isFast,
+            Action<string> setTitle,
+            Action<Channel> updateList,
+            Action<string> setLog);
 
         #endregion
     }

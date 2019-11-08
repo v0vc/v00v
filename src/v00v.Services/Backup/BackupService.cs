@@ -42,9 +42,9 @@ namespace v00v.Services.Backup
 
         #region Methods
 
-        public async Task<int> Backup(IEnumerable<Channel> entries)
+        public async Task<int> Backup(IEnumerable<Channel> entries, Action<string> setLog)
         {
-            if (!CheckJsonBackup())
+            if (!CheckJsonBackup(setLog))
             {
                 return 0;
             }
@@ -59,6 +59,7 @@ namespace v00v.Services.Backup
                 }),
                 ItemsState = await _itemRepository.GetItemsState()
             };
+            setLog?.Invoke($"Start backup {bcp.Items.Count()} channels..");
             var fileName = GetBackupName();
             var tempFileName = fileName + ".new";
             string res = string.Empty;
@@ -74,67 +75,78 @@ namespace v00v.Services.Backup
             }
 
             File.Move(tempFileName, fileName);
+            setLog?.Invoke($"Done, saved to {fileName}");
             return bcp.Items.Count();
         }
 
         public async Task<RestoreResult> Restore(IEnumerable<string> existChannels,
             bool isFast,
             Action<string> setTitle,
-            Action<Channel> updateList)
+            Action<Channel> updateList,
+            Action<string> setLog)
         {
-            var res = new RestoreResult { Channels = 0, Planned = 0, Watched = 0 };
-            if (!CheckJsonBackup())
+            var res = new RestoreResult { ChannelsCount = 0, PlannedCount = 0, WatchedCount = 0 };
+            if (!CheckJsonBackup(setLog))
             {
                 return res;
             }
 
             var fileName = GetBackupName();
-            BackupAll backup = null;
+            BackupAll backup;
             using (var r = new StreamReader(fileName))
             {
                 string json = r.ReadToEnd();
-                var ss = Task.Factory.StartNew(() =>
-                {
-                    backup = JsonConvert.DeserializeObject<BackupAll>(json);
-                });
-                await ss;
+                backup = JsonConvert.DeserializeObject<BackupAll>(json);
             }
 
             if (backup == null)
             {
+                setLog?.Invoke("No backup");
                 return res;
             }
 
             if (isFast)
             {
-                setTitle.Invoke("Restore channels..");
+                setTitle?.Invoke("Working..");
+                setLog?.Invoke("Parallel mode: ON");
+
                 List<Task<Channel>> tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
                     .Select(item => _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle)).ToList();
 
-                await Task.WhenAll(tasks);
+                setLog?.Invoke($"Total channels: {tasks.Count}, working..");
 
                 var channels = new List<Channel>();
-                foreach (Task<Channel> task in tasks)
+                await Task.WhenAll(tasks).ContinueWith(done =>
                 {
-                    var ch = task.Result;
-                    BackupItem rr = backup.Items.FirstOrDefault(x => x.ChannelId == ch.Id);
-                    if (rr == null)
+                    foreach (Task<Channel> task in tasks)
                     {
-                        continue;
+                        BackupItem rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
+                        if (rr == null)
+                        {
+                            continue;
+                        }
+
+                        task.Result.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
+                        channels.Add(task.Result);
+                        //setLog?.Invoke($"Error channel {task.Result.Title}: {task.Exception.Message}");
                     }
 
-                    ch.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
-                    channels.Add(ch);
-                    updateList.Invoke(ch);
-                }
-
-                var rows = await _channelRepository.AddChannels(channels);
-                res.Channels = channels.Count;
-                //await Console.Out.WriteLineAsync($"Saved {rows} rows!");
+                    var rows = _channelRepository.AddChannels(channels);
+                    Task.WhenAll(rows).ContinueWith(r =>
+                    {
+                        setLog?.Invoke($"Saved {rows.Result} rows!");
+                    });
+                });
+                res.ChannelsCount = channels.Count;
+                channels.ForEach(updateList.Invoke);
             }
             else
             {
-                res.Channels = await RestoreOneByOne(backup.Items.Where(x => !existChannels.Contains(x.ChannelId)), setTitle, updateList);
+                setLog?.Invoke("Parallel mode: OFF");
+                res.ChannelsCount = await RestoreOneByOne(backup.Items.Where(x => !existChannels.Contains(x.ChannelId)),
+                                                          setTitle,
+                                                          updateList,
+                                                          setLog);
             }
 
             await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
@@ -148,20 +160,21 @@ namespace v00v.Services.Backup
 
             await Task.WhenAll(uplanned.Union(uwatched));
 
-            res.Planned = planned.Result.Sum(x => x.Value);
-            res.Watched = watched.Result.Sum(x => x.Value);
-
+            res.PlannedCount = planned.Result.Sum(x => x.Value);
+            res.WatchedCount = watched.Result.Sum(x => x.Value);
+            setLog?.Invoke($"Total planned: {res.PlannedCount}");
+            setLog?.Invoke($"Total watched: {res.WatchedCount}");
             return res;
         }
 
-        private bool CheckJsonBackup()
+        private bool CheckJsonBackup(Action<string> setLog)
         {
             if (_configuration.Providers.Count() == 2)
             {
                 return true;
             }
 
-            //Console.Out.WriteLine("Please, enable backup/restore service (backup.json)");
+            setLog?.Invoke("Please, enable backup/restore service (backup.json)");
             return false;
         }
 
@@ -171,7 +184,10 @@ namespace v00v.Services.Backup
             return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
         }
 
-        private async Task<int> RestoreOneByOne(IEnumerable<BackupItem> lst, Action<string> setTitle, Action<Channel> updateList)
+        private async Task<int> RestoreOneByOne(IEnumerable<BackupItem> lst,
+            Action<string> setTitle,
+            Action<Channel> updateList,
+            Action<string> setLog)
         {
             var res = 0;
             while (true)
@@ -181,26 +197,29 @@ namespace v00v.Services.Backup
                 {
                     try
                     {
-                        //await Console.Out.WriteLineAsync($"Start restoring {item.ChannelId}..");
-                        setTitle.Invoke($"Restore {item.ChannelTitle}..");
+                        setLog?.Invoke($"Start restoring {item.ChannelTitle} - {item.ChannelId}..");
+                        setTitle.Invoke($"Restoring {item.ChannelTitle}..");
                         var channel = await _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle);
                         if (channel == null)
                         {
-                            // banned channel
+                            setLog?.Invoke($"Banned {item.ChannelTitle} - {item.ChannelId}, skipping..");
                             continue;
                         }
 
                         channel.Tags.AddRange(item.Tags.Select(x => new Tag { Id = x }));
-                        //await Console.Out.WriteLineAsync($"Restored {channel.Title}, now saving..");
-                        var rows = await _channelRepository.AddChannel(channel);
-                        //await Console.Out.WriteLineAsync($"Saved {rows}!");
+                        setLog?.Invoke($"Restored {channel.Title}, now saving..");
+                        var rows = _channelRepository.AddChannel(channel);
+                        await Task.WhenAll(rows).ContinueWith(r =>
+                        {
+                            setLog?.Invoke($"Saved {rows.Result} rows!");
+                        });
                         updateList.Invoke(channel);
                         res++;
                     }
-                    catch
+                    catch (Exception e)
                     {
                         err.Add(item);
-                        //await Console.Out.WriteLineAsync(e.Message);
+                        setLog?.Invoke(e.Message);
                     }
                 }
 

@@ -123,7 +123,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> SetItemsWatchState(WatchState state, string itemId)
+        public async Task<int> SetItemsWatchState(WatchState state, string itemId, string channelId = null)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -138,10 +138,61 @@ namespace v00v.Services.Persistence.Repositories
                             return -1;
                         }
 
+                        var oldState = item.WatchState;
                         item.WatchState = (byte)state;
-                        context.Entry(item).State = EntityState.Modified;
-                        //int res = await
-                        //    context.Database.ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{(byte)state}' WHERE [Id]='{itemId}'");
+                        context.Entry(item).Property(x => x.WatchState).IsModified = true;
+                        if (channelId != null)
+                        {
+                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                            if (oldState == 0)
+                            {
+                                switch (state)
+                                {
+                                    case WatchState.Planned:
+                                        channel.PlannedCount += 1;
+                                        context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
+                                        break;
+                                    case WatchState.Watched:
+                                        channel.WatchedCount += 1;
+                                        context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
+                                        break;
+                                }
+                            }
+
+                            if (oldState == 2)
+                            {
+                                switch (state)
+                                {
+                                    case WatchState.Notset:
+                                        channel.PlannedCount -= 1;
+                                        context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
+                                        break;
+                                    case WatchState.Watched:
+                                        channel.WatchedCount += 1;
+                                        channel.PlannedCount -= 1;
+                                        context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
+                                        context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
+                                        break;
+                                }
+                            }
+
+                            if (oldState == 1)
+                            {
+                                switch (state)
+                                {
+                                    case WatchState.Notset:
+                                        channel.WatchedCount -= 1;
+                                        context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
+                                        break;
+                                    case WatchState.Planned:
+                                        channel.PlannedCount += 1;
+                                        channel.WatchedCount -= 1;
+                                        context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
+                                        context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
+                                        break;
+                                }
+                            }
+                        }
 
                         var res = await context.SaveChangesAsync();
                         transaction.Commit();
@@ -172,9 +223,6 @@ namespace v00v.Services.Persistence.Repositories
                             context.Entry(item).Property(x => x.FileName).IsModified = true;
                         }
 
-                        //int res =
-                        //    await context.Database
-                        //        .ExecuteSqlCommandAsync($"UPDATE [Items] SET [FileName]='{filename}' WHERE [Id]='{itemId}'");
                         var res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;

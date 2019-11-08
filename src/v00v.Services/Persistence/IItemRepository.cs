@@ -19,7 +19,7 @@ namespace v00v.Services.Persistence
 
         Task<Dictionary<string, byte>> GetItemsState();
 
-        Task<int> SetItemsWatchState(WatchState state, string itemId);
+        Task<int> SetItemsWatchState(WatchState state, string itemId, string channelId = null);
 
         Task<int> UpdateItemFileName(string itemId, string filename);
 

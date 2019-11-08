@@ -342,7 +342,7 @@ namespace v00v.ViewModel.Catalog
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
             _setTitle.Invoke($"Backup {_entries.Count - 1} channels..");
-            var task = _backupService.Backup(_entries.Where(x => !x.IsStateChannel));
+            var task = _backupService.Backup(_entries.Where(x => !x.IsStateChannel), SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
@@ -431,6 +431,7 @@ namespace v00v.ViewModel.Catalog
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
 
+            var title = SelectedEntry.Title;
             var deletedId = SelectedEntry.Id;
             var ch = _entries.First(x => x.Id == deletedId);
             var count = ch.Count;
@@ -481,6 +482,7 @@ namespace v00v.ViewModel.Catalog
             {
                 _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
+                GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
             });
             // await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel:{deletedId}");
         }
@@ -553,17 +555,22 @@ namespace v00v.ViewModel.Catalog
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
 
-            var task = _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id), MassSync, _setTitle, UpdateList);
+            var task = _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
+                                              MassSync,
+                                              _setTitle,
+                                              UpdateList,
+                                              SetLog);
+
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.Channels, sw) : $"Error: {task.Exception.Message}");
+                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.ChannelsCount, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
 
             var pl = BaseChannel.Playlists.First(x => x.Id == "-1");
-            pl.Count += task.Result.Planned;
+            pl.Count += task.Result.PlannedCount;
             var wl = BaseChannel.Playlists.First(x => x.Id == "0");
-            wl.Count += task.Result.Watched;
+            wl.Count += task.Result.WatchedCount;
             GetCachedPlaylistModel(null)?.All.AddOrUpdate(new[] { pl, wl });
         }
 

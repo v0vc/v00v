@@ -98,6 +98,27 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
+        public async Task<List<int>> GetStatePlaylistsItemsCount()
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                try
+                {
+                    return new List<int>
+                    {
+                        await context.Items.AsNoTracking().Where(x => x.SyncState == 2).CountAsync(),
+                        await context.Items.AsNoTracking().Where(x => x.WatchState == 2).CountAsync(),
+                        await context.Items.AsNoTracking().Where(x => x.WatchState == 1).CountAsync()
+                    };
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    throw;
+                }
+            }
+        }
+
         public async Task<List<Item>> GetUnlistedPlaylistsItems()
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
