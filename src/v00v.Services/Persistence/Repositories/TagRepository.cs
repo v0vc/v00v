@@ -79,7 +79,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public void DeleteTag(string text)
+        public async Task<int> DeleteTag(string text)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -87,18 +87,18 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var tag = context.Tags.AsNoTracking()
-                            .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase)).Result;
+                        var tag = await context.Tags.AsNoTracking()
+                            .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase));
                         if (tag != null)
                         {
                             context.Tags.Remove(tag);
-                            context.SaveChanges();
+                            var res = await context.SaveChangesAsync();
                             transaction.Commit();
+                            return res;
                         }
-                        else
-                        {
-                            transaction.Rollback();
-                        }
+
+                        transaction.Rollback();
+                        return -1;
                     }
                     catch (Exception exception)
                     {

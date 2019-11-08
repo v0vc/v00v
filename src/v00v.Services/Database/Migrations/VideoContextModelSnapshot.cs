@@ -52,6 +52,9 @@ namespace v00v.Services.Database.Migrations
                     b.Property<long>("ItemsCount")
                         .HasColumnType("INTEGER");
 
+					b.Property<long>("PlannedCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SiteId")
                         .HasColumnType("INTEGER");
 
@@ -81,6 +84,10 @@ namespace v00v.Services.Database.Migrations
 
                     b.Property<long>("ViewCountDiff")
                         .HasColumnType("INTEGER");
+                        
+					b.Property<long>("WatchedCount")
+                        .HasColumnType("INTEGER");
+
 
                     b.HasKey("Id");
 

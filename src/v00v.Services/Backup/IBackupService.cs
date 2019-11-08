@@ -11,7 +11,7 @@ namespace v00v.Services.Backup
 
         Task<int> Backup(IEnumerable<Channel> entries);
 
-        Task<int> Restore(IEnumerable<string> existChannel, bool isFast, Action<string> setTitle, Action<Channel> updateList);
+        Task<RestoreResult> Restore(IEnumerable<string> existChannel, bool isFast, Action<string> setTitle, Action<Channel> updateList);
 
         #endregion
     }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.FileProviders;
 using Newtonsoft.Json;
 using v00v.Model.BackupEntities;
 using v00v.Model.Entities;
+using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 
@@ -76,15 +77,15 @@ namespace v00v.Services.Backup
             return bcp.Items.Count();
         }
 
-        public async Task<int> Restore(IEnumerable<string> existChannels,
+        public async Task<RestoreResult> Restore(IEnumerable<string> existChannels,
             bool isFast,
             Action<string> setTitle,
             Action<Channel> updateList)
         {
-            int res;
+            var res = new RestoreResult { Channels = 0, Planned = 0, Watched = 0 };
             if (!CheckJsonBackup())
             {
-                return 0;
+                return res;
             }
 
             var fileName = GetBackupName();
@@ -101,7 +102,7 @@ namespace v00v.Services.Backup
 
             if (backup == null)
             {
-                return 0;
+                return res;
             }
 
             if (isFast)
@@ -128,23 +129,28 @@ namespace v00v.Services.Backup
                 }
 
                 var rows = await _channelRepository.AddChannels(channels);
-                res = channels.Count;
+                res.Channels = channels.Count;
                 //await Console.Out.WriteLineAsync($"Saved {rows} rows!");
             }
             else
             {
-                res = await RestoreOneByOne(backup.Items.Where(x => !existChannels.Contains(x.ChannelId)), setTitle, updateList);
+                res.Channels = await RestoreOneByOne(backup.Items.Where(x => !existChannels.Contains(x.ChannelId)), setTitle, updateList);
             }
 
-            var states = new List<Task<int>>();
-            foreach ((string key, byte value) in backup.ItemsState)
-            {
-                states.Add(_itemRepository.UpdateItemsWatchState(key, value));
-                //await _itemRepository.UpdateItemsWatchState(key, value);
-            }
+            await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
 
-            await Task.WhenAll(states);
-            //await Console.Out.WriteLineAsync("Restore finished");
+            var planned = _channelRepository.GetChannelStateCount(WatchState.Planned);
+            var watched = _channelRepository.GetChannelStateCount(WatchState.Watched);
+            await Task.WhenAll(planned, watched);
+
+            var uplanned = planned.Result.Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value));
+            var uwatched = watched.Result.Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value));
+
+            await Task.WhenAll(uplanned.Union(uwatched));
+
+            res.Planned = planned.Result.Sum(x => x.Value);
+            res.Watched = watched.Result.Sum(x => x.Value);
+
             return res;
         }
 

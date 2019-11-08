@@ -8,6 +8,8 @@
         Subs,
         SubsDiff,
         Count,
-        LastDate
+        LastDate,
+        Planned,
+        Watched
     }
 }

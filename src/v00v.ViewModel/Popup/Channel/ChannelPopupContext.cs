@@ -12,7 +12,6 @@ using v00v.Model.Core;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
-using v00v.ViewModel.Catalog;
 
 namespace v00v.ViewModel.Popup.Channel
 {
@@ -20,11 +19,15 @@ namespace v00v.ViewModel.Popup.Channel
     {
         #region Static and Readonly Fields
 
+        private readonly IReadOnlyCollection<Model.Entities.Channel> _allChannels;
         private readonly IAppLogRepository _appLogRepository;
         private readonly IChannelRepository _channelRepository;
         private readonly ReadOnlyObservableCollection<TagModel> _entries;
         private readonly IPopupController _popupController;
+        private readonly Action<Model.Entities.Channel> _setSelect;
+        private readonly Action<string> _setTitle;
         private readonly ITagRepository _tagRepository;
+        private readonly Action<Model.Entities.Channel> _updateList;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -39,14 +42,20 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Constructors
 
-        public ChannelPopupContext(Model.Entities.Channel channel, CatalogModel catalogModel) :
-            this(AvaloniaLocator.Current.GetService<IPopupController>(),
-                 AvaloniaLocator.Current.GetService<ITagRepository>(),
-                 AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                 AvaloniaLocator.Current.GetService<IAppLogRepository>(),
-                 AvaloniaLocator.Current.GetService<IYoutubeService>())
+        public ChannelPopupContext(Model.Entities.Channel channel,
+            IReadOnlyCollection<Model.Entities.Channel> allChannels,
+            Action<string> setTitle,
+            Action<Model.Entities.Channel> updateList,
+            Action<Model.Entities.Channel> setSelect) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
+                                                             AvaloniaLocator.Current.GetService<ITagRepository>(),
+                                                             AvaloniaLocator.Current.GetService<IChannelRepository>(),
+                                                             AvaloniaLocator.Current.GetService<IAppLogRepository>(),
+                                                             AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
-            CatalogModel = catalogModel;
+            _allChannels = allChannels;
+            _setTitle = setTitle;
+            _updateList = updateList;
+            _setSelect = setSelect;
             All = new SourceList<TagModel>();
             All.AddRange(_tagRepository.GetTags(true).GetAwaiter().GetResult().Select(x => TagModel.FromDbTag(x, channel?.Tags)));
             All.Connect().Filter(this.WhenValueChanged(t => t.FilterTag).Select(BuildSearchFilter)).Bind(out _entries).DisposeMany()
@@ -60,6 +69,7 @@ namespace v00v.ViewModel.Popup.Channel
             {
                 channel.SubTitle = _channelRepository.GetChannelSubtitle(channel.Id).GetAwaiter().GetResult();
             }
+
             SubTitle = channel?.SubTitle;
             AddTagCommand = new Command(x => AddTag());
             SaveTagCommand = new Command(async x => await SaveTag());
@@ -86,8 +96,9 @@ namespace v00v.ViewModel.Popup.Channel
         #region Properties
 
         public ICommand AddTagCommand { get; set; }
+
         public SourceList<TagModel> All { get; }
-        public CatalogModel CatalogModel { get; }
+
         public string ChannelId { get; set; }
         public string ChannelTitle { get; set; }
         public ICommand CloseChannelCommand { get; set; }
@@ -137,42 +148,59 @@ namespace v00v.ViewModel.Popup.Channel
 
         private async Task AddChannel()
         {
+            if (string.IsNullOrEmpty(ChannelId))
+            {
+                return;
+            }
+
             IsWorking = true;
             CloseText = "Working...";
             IsChannelEnabled = false;
 
+            if (SetExisted(ChannelId))
+            {
+                return;
+            }
+
             var parsedId = await _youtubeService.GetChannelId(ChannelId);
-            var existchanel = CatalogModel.All.Items.FirstOrDefault(x => x.Id == parsedId);
-            if (existchanel != null)
+            if (SetExisted(parsedId))
             {
-                _popupController.Hide();
-                CatalogModel.SelectedEntry = existchanel;
                 return;
             }
 
-            var channel = await _youtubeService.GetChannelAsync(parsedId, ChannelTitle);
-            if (channel == null)
+            var task = _youtubeService.GetChannelAsync(parsedId, ChannelTitle);
+            await Task.WhenAll(task).ContinueWith(async done =>
             {
-                // banned channel
-                _popupController.Hide();
-                return;
-            }
-            channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
-            CatalogModel.All.AddOrUpdate(channel);
-            CatalogModel.SelectedEntry = channel;
-            _popupController.Hide();
+                if (task.Exception != null)
+                {
+                    _setTitle?.Invoke("Error: " + task.Exception.Message);
+                    return;
+                }
 
-            var res = await _channelRepository.AddChannel(channel);
-            if (res > 0)
-            {
-                await _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{channel.Id}:{channel.Title}");
-            }
+                if (task.Result == null)
+                {
+                    _setTitle?.Invoke("Banned channel: " + parsedId);
+                    return;
+                }
+
+                task.Result.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
+                var task1 = _channelRepository.AddChannel(task.Result);
+                var task2 = _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{task.Result.Id}:{task.Result.Title}");
+                await Task.WhenAll(task1, task2);
+
+                IsWorking = false;
+                _popupController.Hide();
+            });
+
+            _setTitle?.Invoke("New channel: " + task.Result.Title);
+            _updateList?.Invoke(task.Result);
+            _setSelect?.Invoke(task.Result);
         }
 
         private void AddTag()
         {
             var tag = new TagModel { TagText = string.Empty, IsEditable = true, IsRemovable = true };
-            tag.RemoveCommand = new Command(x => RemoveTag(tag));
+            tag.RemoveCommand = new Command(async x => await RemoveTag(tag));
             All.Add(tag);
             SelectedTag = tag;
         }
@@ -184,27 +212,23 @@ namespace v00v.ViewModel.Popup.Channel
             IsChannelEnabled = false;
 
             channel.Title = ChannelTitle.Trim();
-
             channel.Tags.Clear();
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
 
-            CatalogModel.All.AddOrUpdate(channel);
-            CatalogModel.SelectedEntry = channel;
+            _updateList?.Invoke(channel);
             _popupController.Hide();
 
-            var res = await _channelRepository.SaveChannel(ChannelId, channel.Title, channel.Tags.Select(x => x.Id));
-            if (res > 0)
-            {
-                await _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
-            }
+            var task1 = _channelRepository.SaveChannel(ChannelId, channel.Title, channel.Tags.Select(x => x.Id));
+            var task2 = _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
+            await Task.WhenAll(task1, task2);
         }
 
-        private void RemoveTag(TagModel tag)
+        private async Task RemoveTag(TagModel tag)
         {
             All.Remove(tag);
             if (tag.IsSaved && !string.IsNullOrEmpty(tag.TagText))
             {
-                _tagRepository.DeleteTag(tag.TagText);
+                await _tagRepository.DeleteTag(tag.TagText);
             }
         }
 
@@ -218,6 +242,20 @@ namespace v00v.ViewModel.Popup.Channel
                     tag.Id = await _tagRepository.Add(tag.TagText);
                 }
             }
+        }
+
+        private bool SetExisted(string channelId)
+        {
+            var existchanel = _allChannels.FirstOrDefault(x => x.Id == channelId);
+            if (existchanel == null)
+            {
+                return false;
+            }
+
+            _popupController.Hide();
+            _setTitle?.Invoke("Already exist: " + existchanel.Title);
+            _setSelect?.Invoke(existchanel);
+            return true;
         }
 
         #endregion

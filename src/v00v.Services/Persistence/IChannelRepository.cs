@@ -20,6 +20,8 @@ namespace v00v.Services.Persistence
 
         Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, IReadOnlyCollection<Channel> channels);
 
+        Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState);
+
         Task<string> GetChannelSubtitle(string channelId);
 
         Task<int> GetItemsCount(SyncState state, string channelId = null);
@@ -28,9 +30,13 @@ namespace v00v.Services.Persistence
 
         Task<int> StoreDiff(SyncDiff fdiff);
 
-        Task<int> UpdateChannelsCount(string channelId, int count);
-
         Task<int> UpdateChannelSyncState(string channelId, byte state);
+
+        Task<int> UpdateItemsCount(string channelId, int count);
+
+        Task<int> UpdatePlannedCount(string channelId, int count);
+
+        Task<int> UpdateWatchedCount(string channelId, int count);
 
         #endregion
     }

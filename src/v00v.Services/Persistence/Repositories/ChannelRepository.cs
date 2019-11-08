@@ -159,8 +159,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelId = ch.Id,
                                 ChannelTitle = ch.Title,
                                 Items = ch.Items.Select(y => y.Id),
-                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                    .Select(y => y.Id),
+                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             }).ToListAsync();
                     }
 
@@ -188,7 +187,25 @@ namespace v00v.Services.Persistence.Repositories
                             Items = ch.Items.Select(y => y.Id),
                             UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                         }).ToListAsync();
-                
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    throw;
+                }
+            }
+        }
+
+        public async Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState)
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                try
+                {
+                    Dictionary<string, int> res = await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
+                        .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState));
+
+                    return res;
                 }
                 catch (Exception exception)
                 {
@@ -421,7 +438,39 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> UpdateChannelsCount(string channelId, int count)
+        public async Task<int> UpdateChannelSyncState(string channelId, byte state)
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                {
+                    try
+                    {
+                        IQueryable<Item> items = channelId == null
+                            ? context.Items.AsNoTracking().Where(x => x.SyncState == 1)
+                            : context.Items.AsNoTracking().Where(x => x.ChannelId == channelId && x.SyncState == 1);
+
+                        foreach (Item item in items)
+                        {
+                            item.SyncState = state;
+                            context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                        }
+
+                        var res = await context.SaveChangesAsync();
+                        transaction.Commit();
+                        return res;
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public async Task<int> UpdateItemsCount(string channelId, int count)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -461,7 +510,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> UpdateChannelSyncState(string channelId, byte state)
+        public async Task<int> UpdatePlannedCount(string channelId, int count)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
@@ -469,14 +518,40 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        IQueryable<Item> items = channelId == null
-                            ? context.Items.AsNoTracking().Where(x => x.SyncState == 1)
-                            : context.Items.AsNoTracking().Where(x => x.ChannelId == channelId && x.SyncState == 1);
-
-                        foreach (Item item in items)
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        if (channel != null)
                         {
-                            item.SyncState = state;
-                            context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                            channel.PlannedCount = count;
+                            context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
+                        }
+
+                        var res = await context.SaveChangesAsync();
+                        transaction.Commit();
+                        return res;
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public async Task<int> UpdateWatchedCount(string channelId, int count)
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                {
+                    try
+                    {
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        if (channel != null)
+                        {
+                            channel.WatchedCount = count;
+                            context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
                         }
 
                         var res = await context.SaveChangesAsync();

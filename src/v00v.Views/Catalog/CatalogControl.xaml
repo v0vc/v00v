@@ -122,35 +122,43 @@
 
             <Border BorderBrush="#000000" BorderThickness="0.2">
                 <StackPanel Orientation="Horizontal" Height="25">
-                    <RadioButton GroupName="ChannelSort" Margin="5,0,10,0" ToolTip.Tip="By title"
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By title" Classes="sort"
                                  IsChecked="True" 
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Title"
                                  />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By subs"
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Subs"
                                  />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By subs diff"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="SubsDiff"
-                                 />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By views"
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="View"
                                  />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By views diff"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="ViewDiff"
-                                 />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By count"
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By items count" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Count"
                                  />
-                    <RadioButton GroupName="ChannelSort" Margin="0,0,10,0" ToolTip.Tip="By date"
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By date" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="LastDate"
                                  />
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By watched" Classes="sort"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="Watched"
+                    />
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By planned" Classes="sort"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="Planned"
+                    />
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs diff" Classes="sort"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="SubsDiff"
+                    />
+                    <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views diff" Classes="sort"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="ViewDiff"
+                    />
                 </StackPanel>
             </Border>
         </Expander>
@@ -276,6 +284,10 @@
                     <MatrixTransform Matrix="0.6,0,0,0.6,-2,-5" />
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style Selector="RadioButton.sort">
+            <Setter Property="Margin" Value="0,0,4,0" />
         </Style>
 
     </UserControl.Styles>

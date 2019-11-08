@@ -12,7 +12,7 @@ namespace v00v.Services.Persistence
 
         Task<int> Add(string text);
 
-        void DeleteTag(string text);
+        Task<int> DeleteTag(string text);
 
         Task<IEnumerable<Model.Entities.Tag>> GetTags(bool useOrder);
 

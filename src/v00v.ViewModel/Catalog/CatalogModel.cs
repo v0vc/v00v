@@ -134,8 +134,15 @@ namespace v00v.ViewModel.Catalog
 
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
 
-            AddChannelCommand = new Command(x => _popupController.Show(new ChannelPopupContext(null, this)));
-            EditChannelCommand = new Command(x => _popupController.Show(new ChannelPopupContext(SelectedEntry, this)));
+            AddChannelCommand =
+                new Command(x => _popupController.Show(new ChannelPopupContext(null, Entries, setTitle, UpdateList, SetSelected)));
+            EditChannelCommand =
+                new Command(x =>
+                                _popupController.Show(new ChannelPopupContext(SelectedEntry,
+                                                                              Entries,
+                                                                              setTitle,
+                                                                              UpdateList,
+                                                                              SetSelected)));
             SyncChannelCommand = new Command(async x => await SyncChannel());
             ReloadCommand = new Command(async x => await ReloadStatistics());
             DeleteChannelCommand = new Command(async x => await DeleteChannel());
@@ -406,7 +413,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             var task1 = _channelRepository.UpdateChannelSyncState(chId, 0);
-            var task2 = _channelRepository.UpdateChannelsCount(chId, 0);
+            var task2 = _channelRepository.UpdateItemsCount(chId, 0);
             await Task.WhenAll(task1, task2).ContinueWith(done =>
             {
                 _setTitle.Invoke(MakeTitle(count, sw));
@@ -484,6 +491,8 @@ namespace v00v.ViewModel.Catalog
             {
                 switch (x)
                 {
+                    case ChannelSort.Title:
+                        return SortExpressionComparer<Channel>.Ascending(t => t.Title);
                     case ChannelSort.Subs:
                         return SortExpressionComparer<Channel>.Descending(t => t.SubsCount);
                     case ChannelSort.SubsDiff:
@@ -496,6 +505,10 @@ namespace v00v.ViewModel.Catalog
                         return SortExpressionComparer<Channel>.Descending(t => t.ItemsCount);
                     case ChannelSort.LastDate:
                         return SortExpressionComparer<Channel>.Descending(t => t.Timestamp);
+                    case ChannelSort.Watched:
+                        return SortExpressionComparer<Channel>.Descending(t => t.WatchedCount);
+                    case ChannelSort.Planned:
+                        return SortExpressionComparer<Channel>.Descending(t => t.PlannedCount);
 
                     default:
                         return SortExpressionComparer<Channel>.Ascending(t => t.Title);
@@ -543,9 +556,15 @@ namespace v00v.ViewModel.Catalog
             var task = _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id), MassSync, _setTitle, UpdateList);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
+                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.Channels, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            var pl = BaseChannel.Playlists.First(x => x.Id == "-1");
+            pl.Count += task.Result.Planned;
+            var wl = BaseChannel.Playlists.First(x => x.Id == "0");
+            wl.Count += task.Result.Watched;
+            GetCachedPlaylistModel(null)?.All.AddOrUpdate(new[] { pl, wl });
         }
 
         private void SetLog(string log)
@@ -554,6 +573,14 @@ namespace v00v.ViewModel.Catalog
             if (exmodel != null)
             {
                 exmodel.LogText += log + Environment.NewLine;
+            }
+        }
+
+        private void SetSelected(Channel channel)
+        {
+            if (channel != null)
+            {
+                SelectedEntry = channel;
             }
         }
 
@@ -649,7 +676,10 @@ namespace v00v.ViewModel.Catalog
 
         private void UpdateList(Channel channel)
         {
-            All.AddOrUpdate(channel);
+            if (channel != null)
+            {
+                All.AddOrUpdate(channel);
+            }
         }
 
         #endregion

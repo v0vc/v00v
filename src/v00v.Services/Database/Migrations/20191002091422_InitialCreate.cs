@@ -59,6 +59,7 @@ namespace v00v.Services.Database.Migrations
                     Id = table.Column<string>(nullable: false),
                     Count = table.Column<int>(nullable: false),
                     ItemsCount = table.Column<long>(nullable: false),
+                    PlannedCount = table.Column<long>(nullable: false),
                     SiteId = table.Column<int>(nullable: false),
                     SubsCount = table.Column<long>(nullable: false),
                     SubsCountDiff = table.Column<long>(nullable: false),
@@ -68,7 +69,8 @@ namespace v00v.Services.Database.Migrations
                     Timestamp = table.Column<DateTimeOffset>(nullable: false),
                     Title = table.Column<string>(nullable: true),
                     ViewCount = table.Column<long>(nullable: false),
-                    ViewCountDiff = table.Column<long>(nullable: false)
+                    ViewCountDiff = table.Column<long>(nullable: false),
+                    WatchedCount = table.Column<long>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -188,6 +190,11 @@ namespace v00v.Services.Database.Migrations
                 columns: new[] { "Id", "Cookie", "Login", "Pass", "Title" },
                 values: new object[] { 1, null, null, null, "youtube.com" });
 
+			migrationBuilder.InsertData(
+                table: "Tags",
+                columns: new[] { "Id", "Text" },
+                values: new object[] { 27, "мультики" });
+
             migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Text" },
@@ -251,12 +258,12 @@ namespace v00v.Services.Database.Migrations
             migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Text" },
-                values: new object[] { 27, "мультики" });
+                values: new object[] { 14, "религия" });
 
             migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Text" },
-                values: new object[] { 14, "религия" });
+                values: new object[] { 13, "ревью" });
 
             migrationBuilder.InsertData(
                 table: "Tags",
@@ -317,11 +324,6 @@ namespace v00v.Services.Database.Migrations
                 table: "Tags",
                 columns: new[] { "Id", "Text" },
                 values: new object[] { 1, "авто" });
-
-            migrationBuilder.InsertData(
-                table: "Tags",
-                columns: new[] { "Id", "Text" },
-                values: new object[] { 13, "ревью" });
 
             migrationBuilder.InsertData(
                 table: "Tags",

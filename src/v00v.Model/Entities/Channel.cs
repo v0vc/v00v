@@ -39,8 +39,9 @@ namespace v00v.Model.Entities
         public bool IsStateChannel { get; set; } = false;
 
         public long ItemsCount { get; set; }
-
         public bool Loaded => Items.Count > 0;
+
+        public long PlannedCount { get; set; }
 
         public string PlCache => "p" + Id;
 
@@ -69,6 +70,8 @@ namespace v00v.Model.Entities
         public long ViewCount { get; set; }
 
         public long ViewCountDiff { get; set; }
+
+        public long WatchedCount { get; set; }
 
         public bool Working { get; set; }
 
