@@ -23,12 +23,26 @@ namespace v00v.Services.ContentProvider
         #region Constants
 
         private const int ItemsPerPage = 50;
-        private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
+
+        //private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
+        //private const string Key1 = "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc";
         private const string PrintType = "prettyPrint=false";
         private const string Url = "https://www.googleapis.com/youtube/v3/";
         private const string YouChannel = "channel";
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
+
+        #endregion
+
+        #region Static and Readonly Fields
+
+        private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
+
+        #endregion
+
+        #region Properties
+
+        private string Key => _keys[new Random().Next(0, _keys.Length)];
 
         #endregion
 
@@ -55,13 +69,6 @@ namespace v00v.Services.ContentProvider
             while (pagetoken != null);
 
             return res;
-        }
-
-        private static async Task<string> GetChannelIdByUserNameNetAsync(string username)
-        {
-            string zap = $"{Url}channels?&forUsername={username}&key={Key}&part=snippet&fields=items(id)&{PrintType}";
-
-            return (await GetJsonObjectAsync(new Uri(zap))).SelectToken("items[0].id")?.Value<string>();
         }
 
         private static async Task<JObject> GetJsonObjectAsync(Uri uri)
@@ -334,8 +341,7 @@ namespace v00v.Services.ContentProvider
                 .Where(x => x != null).Distinct().ToList();
 
             diff.UploadedIds.AddRange(uploadvids);
-            diff.AddedItems.AddRange(uploadvids.Except(cs.Items)
-                                         .Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
+            diff.AddedItems.AddRange(uploadvids.Except(cs.Items).Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
 
             diff.DeletedItems.AddRange(cs.Items.Except(uploadvids));
 
@@ -420,8 +426,7 @@ namespace v00v.Services.ContentProvider
 
             foreach (KeyValuePair<Playlist, List<ItemPrivacy>> pair in diff.AddedPls)
             {
-                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id))
-                                         .Contains(y.Id));
+                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id)).Contains(y.Id));
             }
 
             foreach (KeyValuePair<string, List<ItemPrivacy>> pair in diff.ExistPls.Where(x => x.Key != upId))
@@ -633,6 +638,13 @@ namespace v00v.Services.ContentProvider
                 item.Thumbnail = itasks.First(x => x.Item1 == item.Id).Item2.Result;
                 item.ThumbnailLink = null;
             }
+        }
+
+        private async Task<string> GetChannelIdByUserNameNetAsync(string username)
+        {
+            string zap = $"{Url}channels?&forUsername={username}&key={Key}&part=snippet&fields=items(id)&{PrintType}";
+
+            return (await GetJsonObjectAsync(new Uri(zap))).SelectToken("items[0].id")?.Value<string>();
         }
 
         #endregion
