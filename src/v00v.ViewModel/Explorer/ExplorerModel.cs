@@ -422,6 +422,7 @@ namespace v00v.ViewModel.Explorer
             });
 
             All.AddOrUpdate(item);
+            SelectedEntry = _items.First(x => x.Id == id);
         }
 
         #endregion
