@@ -144,7 +144,6 @@ namespace v00v.ViewModel.Playlists
                     _explorerModel.SelectedPlaylistId = null;
                     if (channel.IsStateChannel)
                     {
-                        //_explorerModel.All.Clear();
                         _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
                     }
                 }

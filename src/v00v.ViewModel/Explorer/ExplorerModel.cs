@@ -359,7 +359,7 @@ namespace v00v.ViewModel.Explorer
             var task = _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                var bitem = _catalogModel.BaseChannel.Items.FirstOrDefault(x => x.Id == id);
+                var bitem = _catalogModel.GetBaseItems.FirstOrDefault(x => x.Id == id);
                 if (bitem != null && bitem.WatchState != par)
                 {
                     bitem.WatchState = par;

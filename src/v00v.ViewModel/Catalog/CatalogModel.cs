@@ -31,6 +31,9 @@ namespace v00v.ViewModel.Catalog
         #region Static and Readonly Fields
 
         private readonly IBackupService _backupService;
+        private readonly Channel _baseChannel;
+        private readonly ExplorerModel _baseExplorerModel;
+        private readonly PlaylistModel _basePlaylistModel;
         private readonly IChannelRepository _channelRepository;
         private readonly ReadOnlyObservableCollection<Channel> _entries;
         private readonly IItemRepository _itemRepository;
@@ -73,12 +76,13 @@ namespace v00v.ViewModel.Catalog
 
             All = new SourceCache<Channel, string>(m => m.Id);
 
-            BaseChannel = StateChannel.Instance;
-            BaseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
+            _baseChannel = StateChannel.Instance;
+            _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
+            _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex);
+            _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex);
 
             var channels = _channelRepository?.GetChannels().GetAwaiter().GetResult();
-            channels.Insert(0, BaseChannel);
-
+            channels.Insert(0, _baseChannel);
             All.AddOrUpdate(channels);
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
@@ -92,8 +96,13 @@ namespace v00v.ViewModel.Catalog
                     return;
                 }
 
-                ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
-                PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex));
+                ExplorerModel = entry.IsStateChannel
+                    ? _baseExplorerModel
+                    : ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
+
+                PlaylistModel = entry.IsStateChannel
+                    ? _basePlaylistModel
+                    : ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex));
 
                 if (PlaylistModel?.SelectedEntry != null)
                 {
@@ -130,7 +139,7 @@ namespace v00v.ViewModel.Catalog
                 setPageIndex.Invoke(index);
             });
 
-            SelectedEntry = BaseChannel;
+            SelectedEntry = _baseChannel;
 
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
 
@@ -177,7 +186,6 @@ namespace v00v.ViewModel.Catalog
         public ICommand AddChannelCommand { get; }
         public SourceCache<Channel, string> All { get; }
         public ICommand BackupCommand { get; }
-        public Channel BaseChannel { get; set; }
 
         public ChannelSort ChannelSort
         {
@@ -195,6 +203,8 @@ namespace v00v.ViewModel.Catalog
             get => _explorerModel;
             set => Update(ref _explorerModel, value);
         }
+
+        public IEnumerable<Item> GetBaseItems => _baseChannel.Items;
 
         public bool IsWorking
         {
@@ -325,16 +335,16 @@ namespace v00v.ViewModel.Catalog
 
         public ExplorerModel GetCachedExplorerModel(string channelId)
         {
-            return ViewModelCache.Get<ExplorerModel>(channelId == null
-                                                         ? BaseChannel.ExCache
-                                                         : All.Items.Single(x => x.Id == channelId).ExCache);
+            return channelId == null
+                ? _baseExplorerModel
+                : ViewModelCache.Get<ExplorerModel>(_entries.Single(x => x.Id == channelId).ExCache);
         }
 
         public PlaylistModel GetCachedPlaylistModel(string channelId)
         {
-            return ViewModelCache.Get<PlaylistModel>(channelId == null
-                                                         ? BaseChannel.PlCache
-                                                         : All.Items.Single(x => x.Id == channelId).PlCache);
+            return channelId == null
+                ? _basePlaylistModel
+                : ViewModelCache.Get<PlaylistModel>(_entries.Single(x => x.Id == channelId).PlCache);
         }
 
         private async Task BackupChannels()
@@ -365,8 +375,8 @@ namespace v00v.ViewModel.Catalog
             var chId = SelectedEntry.IsStateChannel ? null : SelectedEntry.Id;
             if (chId == null)
             {
-                count = BaseChannel.Items.Count;
-                BaseChannel.Items.Clear();
+                count = _baseChannel.Items.Count;
+                _baseChannel.Items.Clear();
 
                 foreach (Channel channel in _entries.Where(x => x.Count > 0))
                 {
@@ -406,9 +416,9 @@ namespace v00v.ViewModel.Catalog
                     item.SyncState = SyncState.Notset;
                 }
 
-                BaseChannel.Items.RemoveAll(x => ids.Contains(x.Id));
+                _baseChannel.Items.RemoveAll(x => ids.Contains(x.Id));
                 channel.Count -= ids.Count;
-                BaseChannel.Count -= ids.Count;
+                _baseChannel.Count -= ids.Count;
                 count = ids.Count;
             }
 
@@ -439,8 +449,8 @@ namespace v00v.ViewModel.Catalog
             ViewModelCache.Remove(ch.ExCache);
             ViewModelCache.Remove(ch.PlCache);
             All.Remove(ch);
-            BaseChannel.Count -= count;
-            BaseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
+            _baseChannel.Count -= count;
+            _baseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
             GetCachedExplorerModel(null)?.All.Remove(ch.Items);
             if (ch.Items.Any(x => x.WatchStateSet)
                 || ch.Items.Any(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted))
@@ -476,7 +486,7 @@ namespace v00v.ViewModel.Catalog
                 }
             }
 
-            SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? BaseChannel;
+            SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
             var task = _channelRepository.DeleteChannel(deletedId);
             await Task.WhenAll(task).ContinueWith(done =>
             {
@@ -567,9 +577,9 @@ namespace v00v.ViewModel.Catalog
                 IsWorking = false;
             });
 
-            var pl = BaseChannel.Playlists.First(x => x.Id == "-1");
+            var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
             pl.Count += task.Result.PlannedCount;
-            var wl = BaseChannel.Playlists.First(x => x.Id == "0");
+            var wl = _baseChannel.Playlists.First(x => x.Id == "0");
             wl.Count += task.Result.WatchedCount;
             GetCachedPlaylistModel(null)?.All.AddOrUpdate(new[] { pl, wl });
         }
@@ -606,7 +616,7 @@ namespace v00v.ViewModel.Catalog
             Stopwatch sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start full sync: {SelectedEntry.Id}");
 
-            var lst = new List<Channel> { BaseChannel, channel };
+            var lst = new List<Channel> { _baseChannel, channel };
             var task = _syncService.Sync(true, true, lst, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
@@ -643,7 +653,7 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Result.NoUnlistedAgain.Count > 0)
             {
-                MarkUnlisted(channel, task.Result.NoUnlistedAgain, BaseChannel.Playlists.FirstOrDefault(x => x.Id == "-2"), plmodel);
+                MarkUnlisted(channel, task.Result.NoUnlistedAgain, _baseChannel.Playlists.FirstOrDefault(x => x.Id == "-2"), plmodel);
             }
 
             All.AddOrUpdate(lst);
@@ -667,7 +677,7 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Result.NoUnlistedAgain.Count > 0)
             {
-                var pl = BaseChannel.Playlists.FirstOrDefault(x => x.Id == "-2");
+                var pl = _baseChannel.Playlists.FirstOrDefault(x => x.Id == "-2");
                 foreach (Channel channel in _entries.Where(x => !x.IsStateChannel))
                 {
                     MarkUnlisted(channel, task.Result.NoUnlistedAgain, pl, GetCachedPlaylistModel(channel.Id));
@@ -675,7 +685,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             All.AddOrUpdate(_entries);
-            SelectedEntry = oldId == null ? BaseChannel : _entries.First(x => x.Id == oldId);
+            SelectedEntry = oldId == null ? _baseChannel : _entries.First(x => x.Id == oldId);
 
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished, $"Finished simple sync: {sw.Elapsed.Duration()}")
             //SetErroSyncChannels(diff.ErrorSyncChannels);
