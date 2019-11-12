@@ -28,7 +28,6 @@ namespace v00v.ViewModel.Explorer
         #region Static and Readonly Fields
 
         private readonly CatalogModel _catalogModel;
-        private readonly IChannelRepository _channelRepository;
         private readonly IConfiguration _configuration;
         private readonly IItemRepository _itemRepository;
         private readonly ReadOnlyObservableCollection<Item> _items;
@@ -54,8 +53,7 @@ namespace v00v.ViewModel.Explorer
             this(AvaloniaLocator.Current.GetService<IItemRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                 AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
-                 AvaloniaLocator.Current.GetService<IChannelRepository>())
+                 AvaloniaLocator.Current.GetService<IConfigurationRoot>())
         {
             _catalogModel = catalogModel;
             _setPageIndex = setPageIndex;
@@ -82,11 +80,7 @@ namespace v00v.ViewModel.Explorer
             CopyItemCommand = new Command(async x => await CopyItem((string)x));
 
             IsParentState = channel.IsStateChannel;
-            if (IsParentState)
-            {
-                GoToParentCommand =
-                    new Command(x => _catalogModel.SelectedEntry = _catalogModel.Entries.First(y => y.Id == SelectedEntry.ChannelId));
-            }
+            GoToParentCommand = IsParentState ? new Command(x => SelectChannel()) : new Command(x => SelectPlaylist());
 
             DeleteItemCommand = new Command(async x => await DeleteItem());
             SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
@@ -96,14 +90,12 @@ namespace v00v.ViewModel.Explorer
         private ExplorerModel(IItemRepository itemRepository,
             IPopupController popupController,
             IYoutubeService youtubeService,
-            IConfiguration configuration,
-            IChannelRepository channelRepository)
+            IConfiguration configuration)
         {
             _itemRepository = itemRepository;
             _popupController = popupController;
             _youtubeService = youtubeService;
             _configuration = configuration;
-            _channelRepository = channelRepository;
         }
 
         #endregion
@@ -342,6 +334,46 @@ namespace v00v.ViewModel.Explorer
             if (setState)
             {
                 await SetItemState(WatchState.Watched);
+            }
+        }
+
+        private void SelectChannel()
+        {
+            if (SelectedEntry == null)
+            {
+                return;
+            }
+
+            var oldId = SelectedEntry.ChannelId;
+            var ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
+            if (ch == null)
+            {
+                return;
+            }
+
+            if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
+            {
+                _catalogModel.SelectedEntry = ch;
+            }
+        }
+
+        private void SelectPlaylist()
+        {
+            if (SelectedEntry == null)
+            {
+                return;
+            }
+
+            var oldId = SelectedEntry.Id;
+            var pl = _catalogModel.PlaylistModel.Entries.FirstOrDefault(x => x.Items.Contains(oldId));
+            if (pl == null)
+            {
+                return;
+            }
+
+            if (_catalogModel.PlaylistModel.SelectedEntry == null || _catalogModel.PlaylistModel.SelectedEntry.Id != pl.Id)
+            {
+                _catalogModel.PlaylistModel.SelectedEntry = pl;
             }
         }
 

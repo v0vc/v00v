@@ -12,6 +12,7 @@
     <EmbeddedResource Include="Icons\Dark\VideoPlay32.png" />
     <EmbeddedResource Include="Icons\Dark\Copy32.png" />
     <EmbeddedResource Include="Icons\Dark\LeftArrow32.png" />
+    <EmbeddedResource Include="Icons\Dark\RightArrow32.png" />
     <EmbeddedResource Include="Icons\Dark\Download32.png" />
     <EmbeddedResource Include="Icons\Dark\VideoHd32.png" />
     <EmbeddedResource Include="Icons\Dark\Audio32.png" />

@@ -63,11 +63,18 @@
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Copy32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Go to Parent" Command="{Binding GoToParentCommand, Mode=OneWay}" 
+                    <MenuItem Header="Go to Channel" Command="{Binding GoToParentCommand, Mode=OneWay}" 
                               IsVisible="{Binding IsParentState, Mode=OneWay}"
                               >
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.LeftArrow32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Go to Playlist" Command="{Binding GoToParentCommand, Mode=OneWay}" 
+                              IsVisible="{Binding !IsParentState, Mode=OneWay}"
+                    >
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.RightArrow32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Download">
