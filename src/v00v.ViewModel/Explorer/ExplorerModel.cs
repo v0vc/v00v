@@ -107,7 +107,6 @@ namespace v00v.ViewModel.Explorer
         public ICommand DeleteItemCommand { get; }
         public ICommand DownloadCommand { get; }
         public ICommand DownloadItemCommand { get; }
-
         public bool EnableLog => All.Items.Any();
         public ICommand GoToParentCommand { get; }
         public bool IsParentState { get; }

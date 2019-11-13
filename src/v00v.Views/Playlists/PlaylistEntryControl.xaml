@@ -8,21 +8,52 @@
         <Border Grid.ColumnSpan="3" />
 
         <Image Grid.Row="0" Grid.Column="0"
+               Width="{Binding ThumbSize}" Height="{Binding ThumbSize}"
                Source="{Binding Thumb, Mode=OneWay}" 
-               Stretch="Fill" Width="30" Height="30"
-               VerticalAlignment="Top"
-               HorizontalAlignment="Center" />
+               Stretch="Fill" 
+               />
+
+        <TextBox Grid.Column="1" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" Margin="60,0,0,0" 
+                 FontSize="12" Height="29"
+                 VerticalAlignment="Center"
+                 HorizontalAlignment="Stretch"
+                 Watermark=". . ."
+                 Text="{Binding SearchText, Mode=TwoWay}"
+                 />
+
+        <CheckBox Grid.Column="2" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" Margin="0,0,8,0"
+                  VerticalAlignment="Center"
+                  IsChecked="{Binding EnableGlobalSearch, Mode=TwoWay}"
+                  ToolTip.Tip="Global"
+                  />
+
+        <ComboBox Grid.Column="2" IsVisible="{Binding IsPopularPlaylist, Mode=OneWay}" Margin="0,0,8,0"
+                  VerticalAlignment="Center"
+                  Height="24" Width="45"
+                  Items="{Binding Countries}"
+                  SelectedItem="{Binding SelectedCountry, Mode=TwoWay}"
+                  ToolTip.Tip="Country">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" FontSize="10"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
         <Panel Classes="Title" Grid.Column="1" Height="24" VerticalAlignment="Center">
             <TextBlock Text="{Binding Title, Mode=OneWay}" 
                        TextWrapping="NoWrap" VerticalAlignment="Center" 
-                       FontSize="15" ToolTip.Tip="{Binding Title, Mode=OneWay}" />
+                       FontSize="15" 
+                       ToolTip.Tip="{Binding Title, Mode=OneWay}" 
+                       />
         </Panel>
         
         <Panel Classes="Indicator" Grid.Column="2" Height="24" VerticalAlignment="Center">
             <Border IsVisible="{Binding HasNew, Mode=OneWay}">
-                <TextBlock Text="{Binding Count, Mode=OneWay}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Count, Mode=OneWay}" VerticalAlignment="Center"/>
             </Border>
         </Panel>
+
     </Grid>
+
 </UserControl>

@@ -71,6 +71,29 @@ namespace v00v.Services.ContentProvider
             return res;
         }
 
+        private static async Task<JArray> GetAll(string zap, int maxresult)
+        {
+            string rawzap = zap;
+
+            var res = new JArray();
+
+            object pagetoken;
+
+            do
+            {
+                JObject record = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
+
+                res.Add(record);
+
+                pagetoken = record.SelectToken("nextPageToken");
+
+                zap = rawzap + $"&pageToken={pagetoken}";
+            }
+            while (pagetoken != null);
+
+            return res;
+        }
+
         private static async Task<JObject> GetJsonObjectAsync(Uri uri)
         {
             using (var client = new HttpClient())
@@ -494,7 +517,7 @@ namespace v00v.Services.ContentProvider
         {
             List<Task<JObject>> tasks = privacyItems.Select(x => x.Key).ToList().SplitList()
                 .Select(vid =>
-                            $"{Url}videos?id={string.Join(",", vid)}&key={Key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")
+                            $"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")
                 .Select(zap => GetJsonObjectAsync(new Uri(zap))).ToList();
 
             await Task.WhenAll(tasks);
@@ -535,6 +558,48 @@ namespace v00v.Services.ContentProvider
             return newItems;
         }
 
+        public async Task<List<Item>> GetPopularItems(string country, IEnumerable<string> existChannelsIds)
+        {
+            string zap =
+                $"{Url}videos?chart=mostPopular&key={Key}&maxResults={ItemsPerPage}&regionCode={country}&safeSearch=none&part=snippet&fields=items(id,snippet(channelId))&{PrintType}";
+
+            var res = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
+
+            var ids = res.SelectTokens("items.[*]").Where(x => x.SelectToken("id")?.Value<string>() != null)
+                .ToDictionary(y => y.SelectToken("id")?.Value<string>(),
+                              y => new SyncPrivacy
+                              {
+                                  ChannelId = y.SelectToken("snippet.channelId")?.Value<string>(),
+                                  Status = existChannelsIds.Contains(y.SelectToken("snippet.channelId")?.Value<string>())
+                                      ? SyncState.Added
+                                      : SyncState.Notset
+                              });
+
+            return await GetItems(ids);
+        }
+
+        public Task<List<Channel>> GetRelatedChannelsAsync(string channelId)
+        {
+            // string zap =
+            //$"{url}channels?id={id}&key={key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{printType}";
+            throw new NotImplementedException();
+        }
+
+        public async Task<List<Item>> GetSearchedItems(string searchText, string region)
+        {
+            string zap =
+                $"{Url}search?&q={searchText}&key={Key}&maxResults={ItemsPerPage}&regionCode={region}&safeSearch=none&part=snippet&fields=items(id(videoId),snippet(channelId))&{PrintType}";
+
+            var res = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
+
+            var ids = res.SelectTokens("items.[*]")
+                .Where(x => x.SelectToken("id.videoId")?.Value<string>() != null)
+                .ToDictionary(y => y.SelectToken("id.videoId")?.Value<string>(),
+                              y => new SyncPrivacy { ChannelId = y.SelectToken("snippet.channelId")?.Value<string>() });
+
+            return await GetItems(ids);
+        }
+
         public async Task<byte[]> GetStreamFromUrl(string dataurl)
         {
             if (string.IsNullOrEmpty(dataurl))
@@ -558,6 +623,13 @@ namespace v00v.Services.ContentProvider
                     }
                 }
             }
+        }
+
+        public Task<List<string>> GetVideoCommentsAsync(string itemlId, int maxResult)
+        {
+            //string zap =
+            //$"{url}commentThreads?videoId={videoID}&key={key}&maxResults={itemsppage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,authorChannelUrl,authorProfileImageUrl,publishedAt))))&{printType}";
+            throw new NotImplementedException();
         }
 
         public async Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null)

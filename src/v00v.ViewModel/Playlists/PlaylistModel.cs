@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using v00v.Model.Core;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
+using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Explorer;
 
@@ -23,7 +25,9 @@ namespace v00v.ViewModel.Playlists
 
         private readonly ReadOnlyObservableCollection<Playlist> _entries;
         private readonly ExplorerModel _explorerModel;
+        private readonly IItemRepository _itemRepository;
         private readonly IPlaylistRepository _playlistRepository;
+        private readonly IYoutubeService _youtubeService;
 
         #endregion
 
@@ -36,12 +40,15 @@ namespace v00v.ViewModel.Playlists
 
         #region Constructors
 
-        public PlaylistModel(Channel channel, ExplorerModel explorerModel, Action<byte> setPageIndex) : this(AvaloniaLocator.Current
-                                                                                                                 .GetService<
-                                                                                                                     IPlaylistRepository
-                                                                                                                 >())
+        public PlaylistModel(Channel channel,
+            ExplorerModel exModel,
+            Action<byte> setIndex,
+            Action<string> setTitle,
+            IEnumerable<string> existChannels = null) : this(AvaloniaLocator.Current.GetService<IPlaylistRepository>(),
+                                                             AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                                             AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
-            _explorerModel = explorerModel;
+            _explorerModel = exModel;
 
             All = new SourceCache<Playlist, string>(m => m.Id);
 
@@ -50,6 +57,9 @@ namespace v00v.ViewModel.Playlists
                 UnlistedPlaylist unlisted = UnlistedPlaylist.Instance;
                 PlannedPlaylist planned = PlannedPlaylist.Instance;
                 WatchedPlaylist watched = WatchedPlaylist.Instance;
+                SearchPlaylist searched = SearchPlaylist.Instance;
+                PopularPlaylist popular = PopularPlaylist.Instance;
+                //popular.SelectedCountry = popular.Countries.First();
                 var stateCounts = _playlistRepository.GetStatePlaylistsItemsCount().GetAwaiter().GetResult();
                 unlisted.Count = stateCounts[0];
                 planned.Count = stateCounts[1];
@@ -57,7 +67,13 @@ namespace v00v.ViewModel.Playlists
                 channel.Playlists.Add(planned);
                 channel.Playlists.Add(watched);
                 channel.Playlists.Add(unlisted);
+                channel.Playlists.Add(searched);
+                channel.Playlists.Add(popular);
                 All.AddOrUpdate(channel.Playlists);
+                SearchedPl = searched;
+                PopularPl = popular;
+                SubscribeSearchChange(setIndex);
+                SubscribePopular(setIndex, setTitle, existChannels);
             }
             else
             {
@@ -103,51 +119,7 @@ namespace v00v.ViewModel.Playlists
                 }
             }
 
-            this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
-            {
-                if (entry != null)
-                {
-                    byte index;
-                    if (entry.IsStatePlaylist)
-                    {
-                        if (_explorerModel.All.Items.Any())
-                        {
-                            _explorerModel.All.Clear();
-                        }
-
-                        if (!entry.HasFullLoad)
-                        {
-                            await FillPlaylistItems(entry);
-                        }
-
-                        if (entry.StateItems == null)
-                        {
-                            index = 1;
-                        }
-                        else
-                        {
-                            _explorerModel.All.AddOrUpdate(entry.StateItems);
-                            index = (byte)(_explorerModel.All.Count == 0 ? 1 : 0);
-                        }
-                    }
-                    else
-                    {
-                        index = (byte)(entry.Items.Count == 0 ? 1 : 0);
-                    }
-
-                    setPageIndex.Invoke(index);
-
-                    _explorerModel.SelectedPlaylistId = entry.Id;
-                }
-                else
-                {
-                    _explorerModel.SelectedPlaylistId = null;
-                    if (channel.IsStateChannel)
-                    {
-                        _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
-                    }
-                }
-            });
+            SubscribePlChange(setIndex, channel.IsStateChannel);
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Sort(SortExpressionComparer<Playlist>.Ascending(t => t.Order), SortOptimisations.ComparesImmutableValuesOnly, 25)
@@ -158,9 +130,11 @@ namespace v00v.ViewModel.Playlists
             DeleteCommand = new Command(x => DeleteFiles());
         }
 
-        private PlaylistModel(IPlaylistRepository playlistRepository)
+        private PlaylistModel(IPlaylistRepository playlistRepository, IItemRepository itemRepository, IYoutubeService youtubeService)
         {
             _playlistRepository = playlistRepository;
+            _itemRepository = itemRepository;
+            _youtubeService = youtubeService;
         }
 
         #endregion
@@ -184,6 +158,10 @@ namespace v00v.ViewModel.Playlists
             get => _selectedEntry;
             set => Update(ref _selectedEntry, value);
         }
+
+        private PopularPlaylist PopularPl { get; }
+
+        private SearchPlaylist SearchedPl { get; }
 
         #endregion
 
@@ -274,7 +252,153 @@ namespace v00v.ViewModel.Playlists
             }
 
             playlist.StateItems = newItems;
-            playlist.HasFullLoad = true;
+        }
+
+        private void SubscribePlChange(Action<byte> setPageIndex, bool isStateChannel)
+        {
+            this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
+            {
+                if (entry != null)
+                {
+                    byte index;
+                    if (entry.IsStatePlaylist)
+                    {
+                        if (entry.Id == "-3")
+                        {
+                            entry.IsSearchPlaylist = true;
+                        }
+                        else
+                        {
+                            SearchedPl.IsSearchPlaylist = false;
+                        }
+
+                        if (entry.Id == "-4")
+                        {
+                            entry.IsPopularPlaylist = true;
+                        }
+                        else
+                        {
+                            PopularPl.IsPopularPlaylist = false;
+                        }
+
+                        if (_explorerModel.All.Items.Any())
+                        {
+                            _explorerModel.All.Clear();
+                        }
+
+                        if (entry.StateItems == null)
+                        {
+                            await FillPlaylistItems(entry);
+                        }
+
+                        if (entry.StateItems?.Count == 0)
+                        {
+                            index = 1;
+                        }
+                        else
+                        {
+                            if (entry.StateItems != null)
+                            {
+                                _explorerModel.All.AddOrUpdate(entry.StateItems);
+                            }
+
+                            index = (byte)(_explorerModel.All.Count == 0 ? 1 : 0);
+                        }
+                    }
+                    else
+                    {
+                        index = (byte)(entry.Items.Count == 0 ? 1 : 0);
+                    }
+
+                    setPageIndex.Invoke(index);
+
+                    _explorerModel.SelectedPlaylistId = entry.Id;
+                }
+                else
+                {
+                    _explorerModel.SelectedPlaylistId = null;
+                    if (isStateChannel)
+                    {
+                        SearchedPl.IsSearchPlaylist = false;
+                        PopularPl.IsPopularPlaylist = false;
+                        _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
+                    }
+                }
+            });
+        }
+
+        private void SubscribePopular(Action<byte> setPageIndex, Action<string> setTitle, IEnumerable<string> channelIds)
+        {
+            this.WhenValueChanged(x => x.PopularPl.SelectedCountry).Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(entry =>
+            {
+                if (!string.IsNullOrWhiteSpace(entry))
+                {
+                    setTitle?.Invoke($"Working {PopularPl.SelectedCountry} popular..");
+                    Stopwatch sw = Stopwatch.StartNew();
+                    PopularPl.StateItems = _youtubeService.GetPopularItems(entry, channelIds).GetAwaiter().GetResult();
+                    setTitle?.Invoke($"Done {PopularPl.SelectedCountry}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms");
+                    if (PopularPl.StateItems.Count > 0)
+                    {
+                        setPageIndex(0);
+                        if (_explorerModel.All.Items.Any())
+                        {
+                            _explorerModel.All.Clear();
+                        }
+
+                        _explorerModel.All.AddOrUpdate(PopularPl.StateItems);
+                    }
+                }
+                else
+                {
+                    PopularPl.StateItems?.Clear();
+                    if (_explorerModel.All.Items.Any())
+                    {
+                        _explorerModel.All.Clear();
+                    }
+
+                    setPageIndex(1);
+                }
+            });
+        }
+
+        private void SubscribeSearchChange(Action<byte> setPageIndex)
+        {
+            //.Throttle(TimeSpan.FromMilliseconds(2000)) - avalonia crash
+            this.WhenValueChanged(x => x.SearchedPl.SearchText).Subscribe(entry =>
+            {
+                if (!string.IsNullOrEmpty(entry))
+                {
+                    if (entry.Length < 2)
+                    {
+                        return;
+                    }
+
+                    SearchedPl.StateItems = SearchedPl.EnableGlobalSearch
+                        ? _youtubeService.GetSearchedItems(entry.Trim(), PopularPl.SelectedCountry).GetAwaiter().GetResult()
+                        : _itemRepository.GetItemsByTitle(entry.Trim(), 50).GetAwaiter().GetResult();
+
+                    if (SearchedPl.StateItems?.Count > 0)
+                    {
+                        setPageIndex(0);
+                        if (_explorerModel.All.Items.Any())
+                        {
+                            _explorerModel.All.Clear();
+                        }
+
+                        _explorerModel.All.AddOrUpdate(SearchedPl.StateItems);
+                    }
+                }
+                else
+                {
+                    SearchedPl.StateItems?.Clear();
+                    if (_explorerModel.All.Items.Any())
+                    {
+                        _explorerModel.All.Clear();
+                    }
+
+                    setPageIndex(1);
+                }
+            });
         }
 
         #endregion

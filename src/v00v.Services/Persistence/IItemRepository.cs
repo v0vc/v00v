@@ -15,7 +15,7 @@ namespace v00v.Services.Persistence
 
         Task<List<Item>> GetItemsBySyncState(SyncState state);
 
-        Task<List<Item>> GetItemsByTitle(string search, string channelId, int resultCount);
+        Task<List<Item>> GetItemsByTitle(string search, int resultCount);
 
         Task<Dictionary<string, byte>> GetItemsState();
 

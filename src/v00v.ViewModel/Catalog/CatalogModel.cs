@@ -76,13 +76,15 @@ namespace v00v.ViewModel.Catalog
 
             All = new SourceCache<Channel, string>(m => m.Id);
 
+            var channels = _channelRepository.GetChannels().GetAwaiter().GetResult();
+
             _baseChannel = StateChannel.Instance;
             _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
             _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex);
-            _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex);
+            _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, channels.Select(x => x.Id));
 
-            var channels = _channelRepository?.GetChannels().GetAwaiter().GetResult();
-            channels.Insert(0, _baseChannel);
+            channels.Add(_baseChannel);
+            //channels.Insert(0, _baseChannel);
             All.AddOrUpdate(channels);
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
@@ -102,7 +104,7 @@ namespace v00v.ViewModel.Catalog
 
                 PlaylistModel = entry.IsStateChannel
                     ? _basePlaylistModel
-                    : ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex));
+                    : ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex, setTitle));
 
                 if (PlaylistModel?.SelectedEntry != null)
                 {
@@ -160,6 +162,7 @@ namespace v00v.ViewModel.Catalog
             RestoreCommand = new Command(async x => await RestoreChannels());
             SyncChannelsCommand = new Command(async x => await SyncChannels());
             SetSortCommand = new Command(x => ChannelSort = (ChannelSort)Enum.Parse(typeof(ChannelSort), (string)x));
+            SelectChannelCommand = new Command(x => SelectedEntry = _baseChannel);
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -232,6 +235,8 @@ namespace v00v.ViewModel.Catalog
             get => _searchText;
             set => Update(ref _searchText, value);
         }
+
+        public ICommand SelectChannelCommand { get; }
 
         public Channel SelectedEntry
         {

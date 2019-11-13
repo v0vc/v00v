@@ -86,17 +86,14 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<Item>> GetItemsByTitle(string search, string channelId, int resultCount)
+        public async Task<List<Item>> GetItemsByTitle(string search, int resultCount)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
-                    return channelId == null
-                        ? await context.Items.AsNoTracking().Where(x => x.Title.ToLower().Contains(search))
-                            .OrderByDescending(x => x.Timestamp).Take(resultCount).Select(x => _mapper.Map<Item>(x)).ToListAsync()
-                        : await context.Items.AsNoTracking().Where(x => x.Title.ToLower().Contains(search) && x.ChannelId == channelId)
-                            .OrderByDescending(x => x.Timestamp).Take(resultCount).Select(x => _mapper.Map<Item>(x)).ToListAsync();
+                    return await context.Items.AsNoTracking().Where(x => x.Title.ToLower().Contains(search.ToLower()))
+                        .OrderByDescending(x => x.Timestamp).Take(resultCount).Select(x => _mapper.Map<Item>(x)).ToListAsync();
                 }
                 catch (Exception exception)
                 {

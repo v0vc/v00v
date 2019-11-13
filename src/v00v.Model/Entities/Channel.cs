@@ -37,7 +37,6 @@ namespace v00v.Model.Entities
         public string Id { get; set; }
 
         public bool IsStateChannel { get; set; } = false;
-
         public long ItemsCount { get; set; }
         public bool Loaded => Items.Count > 0;
 
