@@ -77,14 +77,12 @@ namespace v00v.ViewModel.Catalog
             All = new SourceCache<Channel, string>(m => m.Id);
 
             var channels = _channelRepository.GetChannels().GetAwaiter().GetResult();
-
             _baseChannel = StateChannel.Instance;
             _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
             _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex);
-            _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, channels.Select(x => x.Id));
+            _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, SetSelected, GetExistIds);
 
             channels.Add(_baseChannel);
-            //channels.Insert(0, _baseChannel);
             All.AddOrUpdate(channels);
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
@@ -104,7 +102,8 @@ namespace v00v.ViewModel.Catalog
 
                 PlaylistModel = entry.IsStateChannel
                     ? _basePlaylistModel
-                    : ViewModelCache.GetOrAdd(entry.PlCache, () => new PlaylistModel(entry, ExplorerModel, setPageIndex, setTitle));
+                    : ViewModelCache.GetOrAdd(entry.PlCache,
+                                              () => new PlaylistModel(entry, ExplorerModel, setPageIndex, setTitle, SetSelected));
 
                 if (PlaylistModel?.SelectedEntry != null)
                 {
@@ -146,15 +145,18 @@ namespace v00v.ViewModel.Catalog
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
 
             AddChannelCommand =
-                new Command(x => _popupController.Show(new ChannelPopupContext(null, Entries, setTitle, UpdateList, SetSelected)));
+                new Command(x => _popupController.Show(new ChannelPopupContext(null, GetExistIds, setTitle, UpdateList, SetSelected)));
             EditChannelCommand =
-                new Command(x =>
-                                _popupController.Show(new ChannelPopupContext(SelectedEntry,
-                                                                              Entries,
-                                                                              setTitle,
-                                                                              UpdateList,
-                                                                              SetSelected)));
+                new Command(x => _popupController.Show(new ChannelPopupContext(SelectedEntry,
+                                                                               GetExistIds,
+                                                                               setTitle,
+                                                                               UpdateList,
+                                                                               SetSelected,
+                                                                               UpdatePlaylist,
+                                                                               ResortList)));
+
             SyncChannelCommand = new Command(async x => await SyncChannel());
+            SaveChannelCommand = new Command(async x => await SaveChannel());
             ReloadCommand = new Command(async x => await ReloadStatistics());
             DeleteChannelCommand = new Command(async x => await DeleteChannel());
             ClearAddedCommand = new Command(async x => await ClearAdded());
@@ -229,6 +231,8 @@ namespace v00v.ViewModel.Catalog
 
         public ICommand ReloadCommand { get; }
         public ICommand RestoreCommand { get; }
+
+        public ICommand SaveChannelCommand { get; set; }
 
         public string SearchText
         {
@@ -338,6 +342,19 @@ namespace v00v.ViewModel.Catalog
 
         #region Methods
 
+        public void AddChannelToList(Channel channel)
+        {
+            if (_entries.Select(x => x.Id).Contains(channel.Id))
+            {
+                return;
+            }
+
+            channel.IsNew = true;
+            channel.Order = _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min() - 1;
+            UpdateList(channel);
+            SetSelected(channel.Id);
+        }
+
         public ExplorerModel GetCachedExplorerModel(string channelId)
         {
             return channelId == null
@@ -367,7 +384,7 @@ namespace v00v.ViewModel.Catalog
 
         private async Task ClearAdded()
         {
-            if (SelectedEntry == null)
+            if (SelectedEntry == null || SelectedEntry.IsNew)
             {
                 return;
             }
@@ -443,14 +460,21 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
-
             var title = SelectedEntry.Title;
             var deletedId = SelectedEntry.Id;
             var ch = _entries.First(x => x.Id == deletedId);
             var count = ch.Count;
             var index = All.Items.IndexOf(ch);
+            if (ch.IsNew)
+            {
+                _explorerModel.All.Remove(ch.Items);
+                All.Remove(ch);
+                SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
+                return;
+            }
+
+            IsWorking = true;
+            Stopwatch sw = Stopwatch.StartNew();
             ViewModelCache.Remove(ch.ExCache);
             ViewModelCache.Remove(ch.PlCache);
             All.Remove(ch);
@@ -509,7 +533,7 @@ namespace v00v.ViewModel.Catalog
                 switch (x)
                 {
                     case ChannelSort.Title:
-                        return SortExpressionComparer<Channel>.Ascending(t => t.Title);
+                        return SortExpressionComparer<Channel>.Ascending(t => t.Order);
                     case ChannelSort.Subs:
                         return SortExpressionComparer<Channel>.Descending(t => t.SubsCount);
                     case ChannelSort.SubsDiff:
@@ -533,8 +557,18 @@ namespace v00v.ViewModel.Catalog
             });
         }
 
+        private IEnumerable<string> GetExistIds()
+        {
+            return _entries.Where(x => !x.IsStateChannel && !x.IsNew).Select(x => x.Id);
+        }
+
         private async Task ReloadStatistics()
         {
+            if (SelectedEntry == null || SelectedEntry.IsNew)
+            {
+                return;
+            }
+
             _setTitle.Invoke("Update statistics..");
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
@@ -565,6 +599,21 @@ namespace v00v.ViewModel.Catalog
             ExplorerModel.All.AddOrUpdate(ch.Items);
         }
 
+        private void ResortList(int r)
+        {
+            var channels = _entries.Where(x => !x.IsNew && !x.IsStateChannel).ToList();
+            channels.Sort(SortExpressionComparer<Channel>.Ascending(x => x.Title));
+            var i = 0;
+            foreach (Channel ch in channels)
+            {
+                ch.Order = i;
+                i++;
+            }
+
+            All.AddOrUpdate(channels);
+            GetCachedExplorerModel(null)?.SetLog($"Saved {r} rows");
+        }
+
         private async Task RestoreChannels()
         {
             IsWorking = true;
@@ -589,6 +638,34 @@ namespace v00v.ViewModel.Catalog
             GetCachedPlaylistModel(null)?.All.AddOrUpdate(new[] { pl, wl });
         }
 
+        private async Task SaveChannel()
+        {
+            if (SelectedEntry == null || !SelectedEntry.IsNew)
+            {
+                return;
+            }
+
+            var oldId = SelectedEntry.Id;
+            var channel = _entries.First(x => x.Id == oldId);
+
+            channel.Title = channel.Title.Trim();
+            _setTitle.Invoke($"Working {channel.Title}..");
+            IsWorking = true;
+            Stopwatch sw = Stopwatch.StartNew();
+
+            await _youtubeService.AddPlaylists(channel);
+            var task = _channelRepository.AddChannel(channel);
+            await Task.WhenAll(task).ContinueWith(done =>
+            {
+                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
+                IsWorking = false;
+            });
+
+            channel.IsNew = false;
+            ResortList(task.Result);
+            UpdatePlaylist(channel);
+        }
+
         private void SetLog(string log)
         {
             var exmodel = GetCachedExplorerModel(null);
@@ -598,17 +675,29 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        private void SetSelected(Channel channel)
+        private void SetSelected(string channelId)
         {
-            if (channel != null)
+            var channel = _entries.FirstOrDefault(x => x.Id == channelId);
+            if (channel == null)
+            {
+                return;
+            }
+            if (SelectedEntry == null)
             {
                 SelectedEntry = channel;
+            }
+            else
+            {
+                if (SelectedEntry.Id != channelId)
+                {
+                    SelectedEntry = channel;
+                }
             }
         }
 
         private async Task SyncChannel()
         {
-            if (SelectedEntry == null)
+            if (SelectedEntry == null || SelectedEntry.IsNew)
             {
                 return;
             }
@@ -689,7 +778,7 @@ namespace v00v.ViewModel.Catalog
                 }
             }
 
-            All.AddOrUpdate(_entries);
+            All.AddOrUpdate(_entries.Where(x => !x.IsNew));
             SelectedEntry = oldId == null ? _baseChannel : _entries.First(x => x.Id == oldId);
 
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished, $"Finished simple sync: {sw.Elapsed.Duration()}")
@@ -701,6 +790,14 @@ namespace v00v.ViewModel.Catalog
             if (channel != null)
             {
                 All.AddOrUpdate(channel);
+            }
+        }
+
+        private void UpdatePlaylist(Channel channel)
+        {
+            if (channel.Playlists.Count > 1)
+            {
+                GetCachedPlaylistModel(channel.Id).All.AddOrUpdate(channel.Playlists);
             }
         }
 

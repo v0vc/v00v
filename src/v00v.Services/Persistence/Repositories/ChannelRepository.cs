@@ -120,8 +120,19 @@ namespace v00v.Services.Persistence.Repositories
             {
                 try
                 {
-                    return await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title)
-                        .Select(x => _mapper.Map<Channel>(x)).ToListAsync();
+                    var res = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title)
+                        .ToListAsync();
+                    var i = 0;
+                    var r = new List<Channel>(res.Count);
+                    foreach (Channel ch in res.Select(channel => _mapper.Map<Channel>(channel)))
+                    {
+                        ch.Order = i;
+                        r.Add(ch);
+                        i++;
+                    }
+                    return r;
+                    //return await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title)
+                    //    .Select(x => _mapper.Map<Channel>(x)).ToListAsync();
                 }
                 catch (Exception exception)
                 {
@@ -131,7 +142,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, IReadOnlyCollection<Channel> channels)
+        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<Channel> channels)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {

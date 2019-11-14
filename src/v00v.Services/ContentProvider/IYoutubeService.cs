@@ -9,9 +9,11 @@ namespace v00v.Services.ContentProvider
     {
         #region Methods
 
+        Task AddPlaylists(Channel channel);
+
         Task FillThumbs(IReadOnlyCollection<Playlist> items);
 
-        Task<Channel> GetChannelAsync(string channelId, string channelTitle = null);
+        Task<Channel> GetChannelAsync(string channelId, bool withoutPl, string channelTitle = null);
 
         Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls);
 
@@ -23,7 +25,7 @@ namespace v00v.Services.ContentProvider
 
         Task<List<Channel>> GetRelatedChannelsAsync(string channelId);
 
-        Task<List<Item>> GetSearchedItems(string searchText, string region);
+        Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region);
 
         Task<byte[]> GetStreamFromUrl(string dataurl);
 

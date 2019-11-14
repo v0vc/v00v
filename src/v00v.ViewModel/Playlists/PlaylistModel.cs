@@ -44,9 +44,10 @@ namespace v00v.ViewModel.Playlists
             ExplorerModel exModel,
             Action<byte> setIndex,
             Action<string> setTitle,
-            IEnumerable<string> existChannels = null) : this(AvaloniaLocator.Current.GetService<IPlaylistRepository>(),
-                                                             AvaloniaLocator.Current.GetService<IItemRepository>(),
-                                                             AvaloniaLocator.Current.GetService<IYoutubeService>())
+            Action<string> setSelect,
+            Func<IEnumerable<string>> getExistId = null) : this(AvaloniaLocator.Current.GetService<IPlaylistRepository>(),
+                                                                AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                                                AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
             _explorerModel = exModel;
 
@@ -72,8 +73,8 @@ namespace v00v.ViewModel.Playlists
                 All.AddOrUpdate(channel.Playlists);
                 SearchedPl = searched;
                 PopularPl = popular;
-                SubscribeSearchChange(setIndex);
-                SubscribePopular(setIndex, setTitle, existChannels);
+                SubscribeSearchChange(setIndex, setTitle, getExistId);
+                SubscribePopular(setIndex, setTitle, getExistId);
             }
             else
             {
@@ -119,7 +120,7 @@ namespace v00v.ViewModel.Playlists
                 }
             }
 
-            SubscribePlChange(setIndex, channel.IsStateChannel);
+            SubscribePlChange(setIndex, setSelect, channel);
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Sort(SortExpressionComparer<Playlist>.Ascending(t => t.Order), SortOptimisations.ComparesImmutableValuesOnly, 25)
@@ -254,18 +255,21 @@ namespace v00v.ViewModel.Playlists
             playlist.StateItems = newItems;
         }
 
-        private void SubscribePlChange(Action<byte> setPageIndex, bool isStateChannel)
+        private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)
         {
             this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
             {
                 if (entry != null)
                 {
+                    setSelect?.Invoke(channel.Id);
                     byte index;
                     if (entry.IsStatePlaylist)
                     {
+                        _explorerModel.SetMenu(false);
                         if (entry.Id == "-3")
                         {
                             entry.IsSearchPlaylist = true;
+                            _explorerModel.SetMenu(true);
                         }
                         else
                         {
@@ -275,6 +279,7 @@ namespace v00v.ViewModel.Playlists
                         if (entry.Id == "-4")
                         {
                             entry.IsPopularPlaylist = true;
+                            _explorerModel.SetMenu(true);
                         }
                         else
                         {
@@ -291,7 +296,7 @@ namespace v00v.ViewModel.Playlists
                             await FillPlaylistItems(entry);
                         }
 
-                        if (entry.StateItems?.Count == 0)
+                        if (entry.StateItems == null || entry.StateItems.Count == 0)
                         {
                             index = 1;
                         }
@@ -316,8 +321,9 @@ namespace v00v.ViewModel.Playlists
                 }
                 else
                 {
+                    _explorerModel.SetMenu(false);
                     _explorerModel.SelectedPlaylistId = null;
-                    if (isStateChannel)
+                    if (channel.IsStateChannel)
                     {
                         SearchedPl.IsSearchPlaylist = false;
                         PopularPl.IsPopularPlaylist = false;
@@ -327,7 +333,7 @@ namespace v00v.ViewModel.Playlists
             });
         }
 
-        private void SubscribePopular(Action<byte> setPageIndex, Action<string> setTitle, IEnumerable<string> channelIds)
+        private void SubscribePopular(Action<byte> setPageIndex, Action<string> setTitle, Func<IEnumerable<string>> getExistId)
         {
             this.WhenValueChanged(x => x.PopularPl.SelectedCountry).Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(entry =>
             {
@@ -335,7 +341,7 @@ namespace v00v.ViewModel.Playlists
                 {
                     setTitle?.Invoke($"Working {PopularPl.SelectedCountry} popular..");
                     Stopwatch sw = Stopwatch.StartNew();
-                    PopularPl.StateItems = _youtubeService.GetPopularItems(entry, channelIds).GetAwaiter().GetResult();
+                    PopularPl.StateItems = _youtubeService.GetPopularItems(entry, getExistId.Invoke()).GetAwaiter().GetResult();
                     setTitle?.Invoke($"Done {PopularPl.SelectedCountry}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms");
                     if (PopularPl.StateItems.Count > 0)
                     {
@@ -346,6 +352,7 @@ namespace v00v.ViewModel.Playlists
                         }
 
                         _explorerModel.All.AddOrUpdate(PopularPl.StateItems);
+                        _explorerModel.SetMenu(true);
                     }
                 }
                 else
@@ -361,7 +368,7 @@ namespace v00v.ViewModel.Playlists
             });
         }
 
-        private void SubscribeSearchChange(Action<byte> setPageIndex)
+        private void SubscribeSearchChange(Action<byte> setPageIndex, Action<string> setTitle, Func<IEnumerable<string>> getExistId)
         {
             //.Throttle(TimeSpan.FromMilliseconds(2000)) - avalonia crash
             this.WhenValueChanged(x => x.SearchedPl.SearchText).Subscribe(entry =>
@@ -373,9 +380,20 @@ namespace v00v.ViewModel.Playlists
                         return;
                     }
 
-                    SearchedPl.StateItems = SearchedPl.EnableGlobalSearch
-                        ? _youtubeService.GetSearchedItems(entry.Trim(), PopularPl.SelectedCountry).GetAwaiter().GetResult()
-                        : _itemRepository.GetItemsByTitle(entry.Trim(), 50).GetAwaiter().GetResult();
+                    var term = entry.Trim();
+                    setTitle?.Invoke($"Search {term}..");
+                    bool menu;
+                    if (SearchedPl.EnableGlobalSearch)
+                    {
+                        SearchedPl.StateItems = _youtubeService
+                            .GetSearchedItems(term, getExistId.Invoke(), PopularPl.SelectedCountry ?? "RU").GetAwaiter().GetResult();
+                        menu = true;
+                    }
+                    else
+                    {
+                        SearchedPl.StateItems = _itemRepository.GetItemsByTitle(term, 50).GetAwaiter().GetResult();
+                        menu = false;
+                    }
 
                     if (SearchedPl.StateItems?.Count > 0)
                     {
@@ -386,6 +404,12 @@ namespace v00v.ViewModel.Playlists
                         }
 
                         _explorerModel.All.AddOrUpdate(SearchedPl.StateItems);
+                        _explorerModel.SetMenu(menu);
+                        setTitle?.Invoke($"Found: {SearchedPl.StateItems?.Count}");
+                    }
+                    else
+                    {
+                        setTitle?.Invoke($"Not found: {term} :(");
                     }
                 }
                 else

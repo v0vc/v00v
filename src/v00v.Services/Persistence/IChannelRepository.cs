@@ -18,7 +18,7 @@ namespace v00v.Services.Persistence
 
         Task<List<Channel>> GetChannels();
 
-        Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, IReadOnlyCollection<Channel> channels);
+        Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<Channel> channels);
 
         Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState);
 

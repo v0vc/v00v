@@ -21,5 +21,6 @@
     <EmbeddedResource Include="Icons\Dark\X32.png" />
     <EmbeddedResource Include="Icons\Dark\Checkmark32.png" />
     <EmbeddedResource Include="Icons\Dark\Time32.png" />
+    <EmbeddedResource Include="Icons\Dark\Save32.png" />
   </ItemGroup>
 </Project>

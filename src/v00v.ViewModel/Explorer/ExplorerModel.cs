@@ -39,6 +39,7 @@ namespace v00v.ViewModel.Explorer
 
         #region Fields
 
+        private string _gotoMenu;
         private ItemSort _itemSort;
         private string _logText;
         private string _searchText;
@@ -78,10 +79,8 @@ namespace v00v.ViewModel.Explorer
             DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
             RunItemCommand = new Command(async x => await RunItem(true));
             CopyItemCommand = new Command(async x => await CopyItem((string)x));
-
             IsParentState = channel.IsStateChannel;
-            GoToParentCommand = IsParentState ? new Command(x => SelectChannel()) : new Command(x => SelectPlaylist());
-
+            GoToParentCommand = IsParentState ? new Command(async x => await SelectChannel()) : new Command(x => SelectPlaylist());
             DeleteItemCommand = new Command(async x => await DeleteItem());
             SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
             SetItemWatchStateCommand = new Command(async x => await SetItemState((WatchState)x));
@@ -108,8 +107,16 @@ namespace v00v.ViewModel.Explorer
         public ICommand DownloadCommand { get; }
         public ICommand DownloadItemCommand { get; }
         public bool EnableLog => All.Items.Any();
+
+        public string GotoMenu
+        {
+            get => _gotoMenu;
+            set => Update(ref _gotoMenu, value);
+        }
+
         public ICommand GoToParentCommand { get; }
         public bool IsParentState { get; }
+
         public IEnumerable<Item> Items => _items;
 
         public ItemSort ItemSort
@@ -225,14 +232,20 @@ namespace v00v.ViewModel.Explorer
             LogText += log + Environment.NewLine;
         }
 
+        public void SetMenu(bool isSearch)
+        {
+            GotoMenu = isSearch ? "Subscribe" : "Go to Channel";
+        }
+
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
-            if (playlistId == null || _catalogModel.SelectedEntry.IsStateChannel)
+            if (playlistId == null || playlistId == "0" || playlistId == "-1" || playlistId == "-2" || playlistId == "-3"
+                || playlistId == "-4")
             {
                 return x => true;
             }
 
-            return x => _catalogModel.PlaylistModel.SelectedEntry.Items.Contains(x.Id);
+            return x => _catalogModel.PlaylistModel.Entries.First(y => y.Id == playlistId).Items.Contains(x.Id);
         }
 
         private async Task CopyItem(string par)
@@ -336,7 +349,7 @@ namespace v00v.ViewModel.Explorer
             }
         }
 
-        private void SelectChannel()
+        private async Task SelectChannel()
         {
             if (SelectedEntry == null)
             {
@@ -344,15 +357,21 @@ namespace v00v.ViewModel.Explorer
             }
 
             var oldId = SelectedEntry.ChannelId;
-            var ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
+            Channel ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
             if (ch == null)
             {
-                return;
+                ch = await _youtubeService.GetChannelAsync(oldId, true);
+                if (ch.Items.Count > 0)
+                {
+                    _catalogModel.AddChannelToList(ch);
+                }
             }
-
-            if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
+            else
             {
-                _catalogModel.SelectedEntry = ch;
+                if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
+                {
+                    _catalogModel.SelectedEntry = ch;
+                }
             }
         }
 

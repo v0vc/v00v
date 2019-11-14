@@ -19,12 +19,12 @@ namespace v00v.ViewModel.Popup.Channel
     {
         #region Static and Readonly Fields
 
-        private readonly IReadOnlyCollection<Model.Entities.Channel> _allChannels;
         private readonly IAppLogRepository _appLogRepository;
         private readonly IChannelRepository _channelRepository;
         private readonly ReadOnlyObservableCollection<TagModel> _entries;
+        private readonly Func<IEnumerable<string>> _getExistId;
         private readonly IPopupController _popupController;
-        private readonly Action<Model.Entities.Channel> _setSelect;
+        private readonly Action<string> _setSelect;
         private readonly Action<string> _setTitle;
         private readonly ITagRepository _tagRepository;
         private readonly Action<Model.Entities.Channel> _updateList;
@@ -43,16 +43,18 @@ namespace v00v.ViewModel.Popup.Channel
         #region Constructors
 
         public ChannelPopupContext(Model.Entities.Channel channel,
-            IReadOnlyCollection<Model.Entities.Channel> allChannels,
+            Func<IEnumerable<string>> getExistId,
             Action<string> setTitle,
             Action<Model.Entities.Channel> updateList,
-            Action<Model.Entities.Channel> setSelect) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
-                                                             AvaloniaLocator.Current.GetService<ITagRepository>(),
-                                                             AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                                                             AvaloniaLocator.Current.GetService<IAppLogRepository>(),
-                                                             AvaloniaLocator.Current.GetService<IYoutubeService>())
+            Action<string> setSelect,
+            Action<Model.Entities.Channel> updatePlList = null,
+            Action<int> resortList = null) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
+                                                  AvaloniaLocator.Current.GetService<ITagRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IChannelRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IAppLogRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
-            _allChannels = allChannels;
+            _getExistId = getExistId;
             _setTitle = setTitle;
             _updateList = updateList;
             _setSelect = setSelect;
@@ -75,7 +77,7 @@ namespace v00v.ViewModel.Popup.Channel
             SaveTagCommand = new Command(async x => await SaveTag());
             CloseChannelCommand = channel == null
                 ? new Command(async x => await AddChannel())
-                : new Command(async x => await EditChannel(channel));
+                : new Command(async x => await EditChannel(channel, updatePlList, resortList));
         }
 
         private ChannelPopupContext(IPopupController popupController,
@@ -168,7 +170,7 @@ namespace v00v.ViewModel.Popup.Channel
                 return;
             }
 
-            var task = _youtubeService.GetChannelAsync(parsedId, ChannelTitle);
+            var task = _youtubeService.GetChannelAsync(parsedId, false, ChannelTitle);
             await Task.WhenAll(task).ContinueWith(async done =>
             {
                 if (task.Exception != null)
@@ -194,7 +196,7 @@ namespace v00v.ViewModel.Popup.Channel
 
             _setTitle?.Invoke("New channel: " + task.Result.Title);
             _updateList?.Invoke(task.Result);
-            _setSelect?.Invoke(task.Result);
+            _setSelect?.Invoke(task.Result.Id);
         }
 
         private void AddTag()
@@ -205,7 +207,9 @@ namespace v00v.ViewModel.Popup.Channel
             SelectedTag = tag;
         }
 
-        private async Task EditChannel(Model.Entities.Channel channel)
+        private async Task EditChannel(Model.Entities.Channel channel,
+            Action<Model.Entities.Channel> updatePlList,
+            Action<int> resortList)
         {
             IsWorking = true;
             CloseText = "Working...";
@@ -215,12 +219,23 @@ namespace v00v.ViewModel.Popup.Channel
             channel.Tags.Clear();
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
 
-            _updateList?.Invoke(channel);
+            if (channel.IsNew)
+            {
+                var task = _youtubeService.AddPlaylists(channel);
+                await Task.WhenAll(task).ContinueWith(done =>
+                {
+                    channel.IsNew = false;
+                });
+            }
+
             _popupController.Hide();
 
             var task1 = _channelRepository.SaveChannel(ChannelId, channel.Title, channel.Tags.Select(x => x.Id));
             var task2 = _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
             await Task.WhenAll(task1, task2);
+            _updateList?.Invoke(channel);
+            updatePlList?.Invoke(channel);
+            resortList?.Invoke(task1.Result);
         }
 
         private async Task RemoveTag(TagModel tag)
@@ -246,15 +261,14 @@ namespace v00v.ViewModel.Popup.Channel
 
         private bool SetExisted(string channelId)
         {
-            var existchanel = _allChannels.FirstOrDefault(x => x.Id == channelId);
-            if (existchanel == null)
+            if (!_getExistId.Invoke().Contains(channelId))
             {
                 return false;
             }
 
             _popupController.Hide();
-            _setTitle?.Invoke("Already exist: " + existchanel.Title);
-            _setSelect?.Invoke(existchanel);
+            _setTitle?.Invoke("Already exist: " + channelId);
+            _setSelect?.Invoke(channelId);
             return true;
         }
 

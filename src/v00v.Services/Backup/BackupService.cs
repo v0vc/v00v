@@ -21,7 +21,7 @@ namespace v00v.Services.Backup
         private readonly IChannelRepository _channelRepository;
         private readonly IConfigurationRoot _configuration;
         private readonly IItemRepository _itemRepository;
-        private readonly IYoutubeService _syncService;
+        private readonly IYoutubeService _youtubeService;
 
         #endregion
 
@@ -34,7 +34,7 @@ namespace v00v.Services.Backup
         {
             _configuration = configuration;
             _itemRepository = itemRepository;
-            _syncService = syncService;
+            _youtubeService = syncService;
             _channelRepository = channelRepository;
         }
 
@@ -111,7 +111,7 @@ namespace v00v.Services.Backup
                 setLog?.Invoke("Parallel mode: ON");
 
                 List<Task<Channel>> tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
-                    .Select(item => _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle)).ToList();
+                    .Select(item => _youtubeService.GetChannelAsync(item.ChannelId, false, item.ChannelTitle)).ToList();
 
                 setLog?.Invoke($"Total channels: {tasks.Count}, working..");
 
@@ -199,7 +199,7 @@ namespace v00v.Services.Backup
                     {
                         setLog?.Invoke($"Start restoring {item.ChannelTitle} - {item.ChannelId}..");
                         setTitle.Invoke($"Restoring {item.ChannelTitle}..");
-                        var channel = await _syncService.GetChannelAsync(item.ChannelId, item.ChannelTitle);
+                        var channel = await _youtubeService.GetChannelAsync(item.ChannelId, false, item.ChannelTitle);
                         if (channel == null)
                         {
                             setLog?.Invoke($"Banned {item.ChannelTitle} - {item.ChannelId}, skipping..");

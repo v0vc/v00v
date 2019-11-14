@@ -32,13 +32,21 @@ namespace v00v.Model.Entities
 
         public string ExCache => "e" + Id;
 
+        public string FontStyle => IsNew ? "Italic" : "Normal";
+
         public bool HasNew => Count > 0;
 
         public string Id { get; set; }
 
+        public bool IsNew { get; set; }
+
         public bool IsStateChannel { get; set; } = false;
+
         public long ItemsCount { get; set; }
+
         public bool Loaded => Items.Count > 0;
+
+        public int Order { get; set; }
 
         public long PlannedCount { get; set; }
 

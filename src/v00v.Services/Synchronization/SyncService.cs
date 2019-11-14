@@ -43,7 +43,8 @@ namespace v00v.Services.Synchronization
                 _setLog = setLog;
             }
 
-            List<ChannelStruct> channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channels);
+            List<ChannelStruct> channelStructs =
+                await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).ToHashSet());
 
             _setLog?.Invoke(channelStructs.Count == 1
                                 ? $"Start sync: {channelStructs.First().ChannelTitle}"
@@ -113,7 +114,7 @@ namespace v00v.Services.Synchronization
 
             if (res.Items.Count > 0)
             {
-                _setLog?.Invoke($"New items {res.Items.Count}: {string.Join(", ", res.Items.Select(x => x.Key))}");
+                _setLog?.Invoke($"New items {res.Items.Count}");
                 res.NewItems.AddRange(await _youtubeService.GetItems(res.Items));
             }
 
