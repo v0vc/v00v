@@ -467,6 +467,7 @@ namespace v00v.Services.ContentProvider
             if (channel.Items.Any(x => x.SyncState == SyncState.Unlisted))
             {
                 UnlistedPlaylist unpl = UnlistedPlaylist.Instance;
+                unpl.IsStatePlaylist = false;
                 unpl.Id = channel.Id;
                 unpl.Order = channel.Playlists.Count;
                 unpl.Items.AddRange(channel.Items.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id));

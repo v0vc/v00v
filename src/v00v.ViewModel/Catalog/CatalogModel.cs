@@ -144,17 +144,8 @@ namespace v00v.ViewModel.Catalog
 
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
 
-            AddChannelCommand =
-                new Command(x => _popupController.Show(new ChannelPopupContext(null, GetExistIds, setTitle, UpdateList, SetSelected)));
-            EditChannelCommand =
-                new Command(x => _popupController.Show(new ChannelPopupContext(SelectedEntry,
-                                                                               GetExistIds,
-                                                                               setTitle,
-                                                                               UpdateList,
-                                                                               SetSelected,
-                                                                               UpdatePlaylist,
-                                                                               ResortList)));
-
+            AddChannelCommand = new Command(x => AddChannel());
+            EditChannelCommand = new Command(x => EditChannel());
             SyncChannelCommand = new Command(async x => await SyncChannel());
             SaveChannelCommand = new Command(async x => await SaveChannel());
             ReloadCommand = new Command(async x => await ReloadStatistics());
@@ -353,7 +344,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             channel.IsNew = true;
-            channel.Order = _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min() - 1;
+            channel.Order = GetMinOrder() - 1;
             if (updateList)
             {
                 UpdateList(channel);
@@ -373,6 +364,18 @@ namespace v00v.ViewModel.Catalog
             return channelId == null
                 ? _basePlaylistModel
                 : ViewModelCache.Get<PlaylistModel>(_entries.Single(x => x.Id == channelId).PlCache);
+        }
+
+        private void AddChannel()
+        {
+            _popupController.Show(new ChannelPopupContext(null,
+                                                          GetExistIds,
+                                                          _setTitle,
+                                                          UpdateList,
+                                                          SetSelected,
+                                                          UpdatePlaylist,
+                                                          null,
+                                                          GetMinOrder));
         }
 
         private async Task BackupChannels()
@@ -532,6 +535,23 @@ namespace v00v.ViewModel.Catalog
             // await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel:{deletedId}");
         }
 
+        private void EditChannel()
+        {
+            if (SelectedEntry == null || SelectedEntry.Working)
+            {
+                return;
+            }
+
+            _popupController.Show(new ChannelPopupContext(SelectedEntry,
+                                                          GetExistIds,
+                                                          _setTitle,
+                                                          UpdateList,
+                                                          SetSelected,
+                                                          UpdatePlaylist,
+                                                          ResortList,
+                                                          null));
+        }
+
         private IObservable<SortExpressionComparer<Channel>> GetChannelSorter()
         {
             return this.WhenValueChanged(x => x.ChannelSort).Select(x =>
@@ -566,6 +586,11 @@ namespace v00v.ViewModel.Catalog
         private IEnumerable<string> GetExistIds()
         {
             return _entries.Where(x => !x.IsStateChannel && !x.IsNew).Select(x => x.Id);
+        }
+
+        private int GetMinOrder()
+        {
+            return _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min();
         }
 
         private async Task GetRelatedChannels()
@@ -828,7 +853,13 @@ namespace v00v.ViewModel.Catalog
         {
             if (channel.Playlists.Count > 1)
             {
-                GetCachedPlaylistModel(channel.Id).All.AddOrUpdate(channel.Playlists);
+                var pl = GetCachedPlaylistModel(channel.Id);
+                if (pl != null)
+                {
+                    pl.All.AddOrUpdate(channel.Playlists);
+                }
+
+                //GetCachedPlaylistModel(channel.Id)?.All.AddOrUpdate(channel.Playlists);
             }
         }
 
