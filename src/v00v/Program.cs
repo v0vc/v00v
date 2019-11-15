@@ -108,7 +108,7 @@ namespace v00v
             var closedCount = applog.GetStatusCount(AppStatus.AppClosed).GetAwaiter().GetResult();
             if (closedCount % 10 == 0 && closedCount != 0)
             {
-                context.Database.ExecuteSqlCommandAsync("VACUUM");
+                context.Database.ExecuteSqlRawAsync("VACUUM");
             }
 
             context.Dispose();

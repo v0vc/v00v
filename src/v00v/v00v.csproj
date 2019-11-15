@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <Import Project="..\..\build\ReferenceAssemblies.props" />
-  <Import Project="..\..\build\Rx.props" />
   <Import Project="..\..\build\ExtJson.props" />
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\Avalonia.Desktop.props" />
