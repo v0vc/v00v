@@ -723,11 +723,19 @@ namespace v00v.Services.ContentProvider
             return await GetItems(ids);
         }
 
-        public Task<List<Channel>> GetRelatedChannelsAsync(string channelId)
+        public async Task<List<Channel>> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannels)
         {
-            // string zap =
-            //$"{url}channels?id={id}&key={key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{printType}";
-            throw new NotImplementedException();
+            string zap =
+                $"{Url}channels?id={channelId}&key={Key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{PrintType}";
+
+            var res = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
+
+            List<Task<Channel>> tasks = res.SelectToken("items[0].brandingSettings.channel.featuredChannelsUrls")
+                .Select(x => x.Value<string>()).Where(x => !existChannels.Contains(x)).Select(item => GetChannelAsync(item, true))
+                .ToList();
+
+            var rrr = Task.WhenAll(tasks);
+            return new List<Channel>(rrr.Result);
         }
 
         public async Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region)

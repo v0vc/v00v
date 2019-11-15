@@ -23,7 +23,7 @@ namespace v00v.Services.ContentProvider
 
         Task<List<Item>> GetPopularItems(string country, IEnumerable<string> existChannelsIds);
 
-        Task<List<Channel>> GetRelatedChannelsAsync(string channelId);
+        Task<List<Channel>> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannelsIds);
 
         Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region);
 

@@ -357,13 +357,17 @@ namespace v00v.ViewModel.Explorer
             }
 
             var oldId = SelectedEntry.ChannelId;
-            Channel ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
+            var ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
             if (ch == null)
             {
-                ch = await _youtubeService.GetChannelAsync(oldId, true);
-                if (ch.Items.Count > 0)
+                var chh = await _youtubeService.GetChannelAsync(oldId, true);
+                if (chh.Items.Count > 0)
                 {
-                    _catalogModel.AddChannelToList(ch);
+                    _catalogModel.AddChannelToList(chh, true);
+                }
+                else
+                {
+                    SetLog($"Empty channel: {chh.Title}");
                 }
             }
             else

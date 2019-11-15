@@ -165,6 +165,7 @@ namespace v00v.ViewModel.Catalog
             SyncChannelsCommand = new Command(async x => await SyncChannels());
             SetSortCommand = new Command(x => ChannelSort = (ChannelSort)Enum.Parse(typeof(ChannelSort), (string)x));
             SelectChannelCommand = new Command(x => SelectedEntry = _baseChannel);
+            GetRelatedChannelCommand = new Command(async x => await GetRelatedChannels());
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -210,6 +211,8 @@ namespace v00v.ViewModel.Catalog
         }
 
         public IEnumerable<Item> GetBaseItems => _baseChannel.Items;
+
+        public ICommand GetRelatedChannelCommand { get; }
 
         public bool IsWorking
         {
@@ -342,7 +345,7 @@ namespace v00v.ViewModel.Catalog
 
         #region Methods
 
-        public void AddChannelToList(Channel channel)
+        public void AddChannelToList(Channel channel, bool updateList)
         {
             if (_entries.Select(x => x.Id).Contains(channel.Id))
             {
@@ -351,8 +354,11 @@ namespace v00v.ViewModel.Catalog
 
             channel.IsNew = true;
             channel.Order = _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min() - 1;
-            UpdateList(channel);
-            SetSelected(channel.Id);
+            if (updateList)
+            {
+                UpdateList(channel);
+                SetSelected(channel.Id);
+            }
         }
 
         public ExplorerModel GetCachedExplorerModel(string channelId)
@@ -562,6 +568,29 @@ namespace v00v.ViewModel.Catalog
             return _entries.Where(x => !x.IsStateChannel && !x.IsNew).Select(x => x.Id);
         }
 
+        private async Task GetRelatedChannels()
+        {
+            if (SelectedEntry == null || SelectedEntry.IsNew)
+            {
+                return;
+            }
+
+            IsWorking = true;
+            Stopwatch sw = Stopwatch.StartNew();
+            var oldId = SelectedEntry.Id;
+            var channel = _entries.First(x => x.Id == oldId);
+            _setTitle.Invoke($"Search related to {channel.Title}..");
+            var task = _youtubeService.GetRelatedChannelsAsync(channel.Id, _entries.Where(x => !x.IsStateChannel).Select(x => x.Id));
+            await Task.WhenAll(task).ContinueWith(done =>
+            {
+                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.Count, sw) : $"Error: {task.Exception.Message}");
+                IsWorking = false;
+            });
+            task.Result.ForEach(x => AddChannelToList(x, false));
+            All.AddOrUpdate(task.Result);
+            SetSelected(_baseChannel.Id);
+        }
+
         private async Task ReloadStatistics()
         {
             if (SelectedEntry == null || SelectedEntry.IsNew)
@@ -576,7 +605,8 @@ namespace v00v.ViewModel.Catalog
             var oldId = SelectedEntry.Id;
             var ch = _entries.First(x => x.Id == oldId);
             await _youtubeService.SetItemsStatistic(ch, false);
-            var task = _itemRepository.UpdateItemsStats(ch.Items, ch.IsStateChannel ? null : ch.Id);
+            var chId = ch.IsStateChannel ? null : ch.Id;
+            var task = _itemRepository.UpdateItemsStats(ch.Items, chId);
 
             await Task.WhenAll(task).ContinueWith(done =>
             {
@@ -596,7 +626,7 @@ namespace v00v.ViewModel.Catalog
                 IsWorking = false;
             });
 
-            ExplorerModel.All.AddOrUpdate(ch.Items);
+            GetCachedExplorerModel(chId)?.All.AddOrUpdate(ch.Items);
         }
 
         private void ResortList(int r)
@@ -682,6 +712,7 @@ namespace v00v.ViewModel.Catalog
             {
                 return;
             }
+
             if (SelectedEntry == null)
             {
                 SelectedEntry = channel;
