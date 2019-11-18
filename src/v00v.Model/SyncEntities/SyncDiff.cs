@@ -13,6 +13,7 @@ namespace v00v.Model.SyncEntities
             Channels = new Dictionary<string, ChannelStats>();
             DeletedPlaylists = new List<string>();
             Items = new Dictionary<string, SyncPrivacy>();
+            //Items = new List<SyncPrivacy>();
             NewItems = new List<Item>();
             NewPlaylists = new List<Playlist>();
             ErrorSyncChannels = new List<string>();
@@ -28,6 +29,7 @@ namespace v00v.Model.SyncEntities
         public List<string> ErrorSyncChannels { get; }
         public Dictionary<string, List<ItemPrivacy>> ExistPlaylists { get; set; }
         public Dictionary<string, SyncPrivacy> Items { get; }
+        //public List<SyncPrivacy> Items { get; }
         public List<Item> NewItems { get; }
         public List<Playlist> NewPlaylists { get; }
         public List<string> NoUnlistedAgain { get; }

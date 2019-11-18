@@ -159,7 +159,7 @@ namespace v00v.Services.Persistence.Repositories
                                     ChannelTitle = ch.Title,
                                     Items = ch.Items.Select(y => y.Id),
                                     UnlistedItems =
-                                        ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                        ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
                                     Playlists = ch.Playlists.Select(x => x.Id)
                                 }).ToListAsync();
                         }
@@ -170,7 +170,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelId = ch.Id,
                                 ChannelTitle = ch.Title,
                                 Items = ch.Items.Select(y => y.Id),
-                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet()
                             }).ToListAsync();
                     }
 
@@ -185,7 +185,7 @@ namespace v00v.Services.Persistence.Repositories
                                 Items = ch.Items.Select(y => y.Id),
                                 UnlistedItems =
                                     ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                        .Select(y => y.Id),
+                                        .Select(y => y.Id).ToHashSet(),
                                 Playlists = ch.Playlists.Select(x => x.Id)
                             }).ToListAsync();
                     }
@@ -196,7 +196,7 @@ namespace v00v.Services.Persistence.Repositories
                             ChannelId = ch.Id,
                             ChannelTitle = ch.Title,
                             Items = ch.Items.Select(y => y.Id),
-                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet()
                         }).ToListAsync();
                 }
                 catch (Exception exception)

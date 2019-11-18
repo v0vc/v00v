@@ -180,17 +180,19 @@ namespace v00v.ViewModel.Popup.Channel
             var task = _youtubeService.GetChannelAsync(parsedId, false, ChannelTitle);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                if (task.Exception != null)
-                {
-                    _setTitle?.Invoke("Error: " + task.Exception.Message);
-                    return;
-                }
-
-                if (task.Result == null)
+                if (task.Status != TaskStatus.Faulted && task.Result == null)
                 {
                     _setTitle?.Invoke("Banned channel: " + parsedId);
                 }
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                IsWorking = false;
+                _popupController.Hide();
+                _setTitle?.Invoke($"{task.Exception.Message}");
+                return;
+            }
 
             task.Result.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
             task.Result.Order = _getMinOrder.Invoke() - 1;
@@ -203,7 +205,10 @@ namespace v00v.ViewModel.Popup.Channel
             {
                 IsWorking = false;
                 _popupController.Hide();
-                _setTitle?.Invoke($"New channel: {task.Result.Title}. Saved {task1.Result} rows");
+                if (task.Status != TaskStatus.Faulted && task.Result != null)
+                {
+                    _setTitle?.Invoke($"New channel: {task.Result.Title}. Saved {task1.Result} rows");
+                }
             });
         }
 

@@ -11,7 +11,7 @@
             <Grid ColumnDefinitions="*,auto,auto" 
                   HorizontalAlignment="Stretch" 
                   Width="{Binding $parent[Expander].Bounds.Width}"
-                  IsEnabled="{Binding EnableLog}"
+                  IsEnabled="{Binding EnableLog, Mode=OneWay}"
                   >
                 <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">

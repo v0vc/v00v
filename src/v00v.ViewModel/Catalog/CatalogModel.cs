@@ -100,6 +100,8 @@ namespace v00v.ViewModel.Catalog
                     ? _baseExplorerModel
                     : ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
 
+                ExplorerModel.EnableLog = ExplorerModel.All.Count > 0;
+
                 PlaylistModel = entry.IsStateChannel
                     ? _basePlaylistModel
                     : ViewModelCache.GetOrAdd(entry.PlCache,
@@ -345,11 +347,13 @@ namespace v00v.ViewModel.Catalog
 
             channel.IsNew = true;
             channel.Order = GetMinOrder() - 1;
-            if (updateList)
+            if (!updateList)
             {
-                UpdateList(channel);
-                SetSelected(channel.Id);
+                return;
             }
+
+            UpdateList(channel);
+            SetSelected(channel.Id);
         }
 
         public ExplorerModel GetCachedExplorerModel(string channelId)
@@ -386,9 +390,16 @@ namespace v00v.ViewModel.Catalog
             var task = _backupService.Backup(_entries.Where(x => !x.IsStateChannel), SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result, sw));
         }
 
         private async Task ClearAdded()
@@ -415,6 +426,7 @@ namespace v00v.ViewModel.Catalog
                     if (channel.IsStateChannel)
                     {
                         ExplorerModel.All.Clear();
+                        ExplorerModel.EnableLog = false;
                     }
                     else
                     {
@@ -457,9 +469,13 @@ namespace v00v.ViewModel.Catalog
             var task2 = _channelRepository.UpdateItemsCount(chId, 0);
             await Task.WhenAll(task1, task2).ContinueWith(done =>
             {
-                _setTitle.Invoke(MakeTitle(count, sw));
                 IsWorking = false;
             });
+
+            if (task1.Status != TaskStatus.Faulted && task2.Status != TaskStatus.Faulted)
+            {
+                _setTitle.Invoke(MakeTitle(count, sw));
+            }
         }
 
         private async Task DeleteChannel()
@@ -528,10 +544,18 @@ namespace v00v.ViewModel.Catalog
             var task = _channelRepository.DeleteChannel(deletedId);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
-                GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result, sw));
+
+            GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
             // await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel:{deletedId}");
         }
 
@@ -608,9 +632,17 @@ namespace v00v.ViewModel.Catalog
             var task = _youtubeService.GetRelatedChannelsAsync(channel.Id, _entries.Where(x => !x.IsStateChannel).Select(x => x.Id));
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.Count, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result.Count, sw));
+
             task.Result.ForEach(x => AddChannelToList(x, false));
             All.AddOrUpdate(task.Result);
             SetSelected(_baseChannel.Id);
@@ -635,21 +667,28 @@ namespace v00v.ViewModel.Catalog
 
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                if (task.Result.Count > 0)
-                {
-                    ch.Items.ForEach(x =>
-                    {
-                        x.ViewDiff = task.Result.TryGetValue(x.Id, out long vdiff) ? vdiff : 0;
-                    });
-                }
-                else
-                {
-                    ch.Items.ForEach(x => x.ViewDiff = 0);
-                }
-
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(ch.Items.Count, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(ch.Items.Count, sw));
+
+            if (task.Result.Count > 0)
+            {
+                ch.Items.ForEach(x =>
+                {
+                    x.ViewDiff = task.Result.TryGetValue(x.Id, out long vdiff) ? vdiff : 0;
+                });
+            }
+            else
+            {
+                ch.Items.ForEach(x => x.ViewDiff = 0);
+            }
 
             GetCachedExplorerModel(chId)?.All.AddOrUpdate(ch.Items);
         }
@@ -682,9 +721,16 @@ namespace v00v.ViewModel.Catalog
 
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.ChannelsCount, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result.ChannelsCount, sw));
 
             var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
             pl.Count += task.Result.PlannedCount;
@@ -712,9 +758,16 @@ namespace v00v.ViewModel.Catalog
             var task = _channelRepository.AddChannel(channel);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result, sw));
 
             channel.IsNew = false;
             ResortList(task.Result);
@@ -770,9 +823,16 @@ namespace v00v.ViewModel.Catalog
             var task = _syncService.Sync(true, true, lst, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.NewItems.Count, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result.NewItems.Count, sw));
 
             var plmodel = GetCachedPlaylistModel(channel.Id);
             if (task.Result.NewPlaylists.Count > 0)
@@ -812,18 +872,25 @@ namespace v00v.ViewModel.Catalog
 
         private async Task SyncChannels()
         {
-            var oldId = SelectedEntry.IsStateChannel ? null : SelectedEntry.Id;
-            _setTitle.Invoke($"Working {_entries.Count - 1} channels..");
+            _setTitle?.Invoke($"Working {_entries.Count - 1} channels..");
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted, $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
 
             var task = _syncService.Sync(MassSync, SyncPls, _entries, SetLog);
+
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                _setTitle.Invoke(task.Exception == null ? MakeTitle(task.Result.NewItems.Count, sw) : $"Error: {task.Exception.Message}");
                 IsWorking = false;
             });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            _setTitle?.Invoke(MakeTitle(task.Result.NewItems.Count, sw));
 
             if (task.Result.NoUnlistedAgain.Count > 0)
             {
@@ -835,7 +902,17 @@ namespace v00v.ViewModel.Catalog
             }
 
             All.AddOrUpdate(_entries.Where(x => !x.IsNew));
-            SelectedEntry = oldId == null ? _baseChannel : _entries.First(x => x.Id == oldId);
+            if (task.Result.NewItems.Count > 0)
+            {
+                var expmodel = GetCachedExplorerModel(null);
+                if (expmodel != null)
+                {
+                    expmodel.All.AddOrUpdate(task.Result.NewItems);
+                    expmodel.EnableLog = expmodel.All.Count > 0;
+                }
+            }
+
+            SelectedEntry = _baseChannel;
 
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished, $"Finished simple sync: {sw.Elapsed.Duration()}")
             //SetErroSyncChannels(diff.ErrorSyncChannels);

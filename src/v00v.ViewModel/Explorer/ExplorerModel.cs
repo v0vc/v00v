@@ -45,6 +45,7 @@ namespace v00v.ViewModel.Explorer
         private string _searchText;
         private Item _selectedEntry;
         private string _selectedPlaylistId;
+        private bool _enableLog;
 
         #endregion
 
@@ -106,7 +107,12 @@ namespace v00v.ViewModel.Explorer
         public ICommand DeleteItemCommand { get; }
         public ICommand DownloadCommand { get; }
         public ICommand DownloadItemCommand { get; }
-        public bool EnableLog => All.Items.Any();
+
+        public bool EnableLog
+        {
+            get => _enableLog;
+            set => Update(ref _enableLog, value);
+        }
 
         public string GotoMenu
         {

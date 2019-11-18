@@ -45,17 +45,33 @@ namespace v00v.Model.Extensions
             }
         }
 
-        public static IEnumerable<List<string>> SplitList(this List<string> ids, int nSize = 50)
+        public static IEnumerable<IEnumerable<T>> Split<T>(this List<T> array, int size = 50)
         {
-            var list = new List<List<string>>();
-
-            for (int i = 0; i < ids.Count; i += nSize)
+            for (var i = 0; i < (float)array.Count / size; i++)
             {
-                list.Add(ids.GetRange(i, Math.Min(nSize, ids.Count - i)));
+                yield return array.Skip(i * size).Take(size);
             }
-
-            return list;
         }
+
+        //public static IEnumerable<IEnumerable<string>> Split(this List<string> array, int size = 50)
+        //{
+        //    for (var i = 0; i < (float)array.Count / size; i++)
+        //    {
+        //        yield return array.Skip(i * size).Take(size);
+        //    }
+        //}
+
+        //public static IEnumerable<List<string>> SplitList(this List<string> ids, int nSize = 50)
+        //{
+        //    var list = new List<List<string>>();
+
+        //    for (int i = 0; i < ids.Count; i += nSize)
+        //    {
+        //        list.Add(ids.GetRange(i, Math.Min(nSize, ids.Count - i)));
+        //    }
+
+        //    return list;
+        //}
 
         #endregion
     }

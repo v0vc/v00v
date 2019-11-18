@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
+using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -45,14 +47,29 @@ namespace v00v.Services.Synchronization
 
             if (parallel)
             {
-                var tasks = Task.WhenAll(diffs);
-                await tasks.ContinueWith(x =>
+                IEnumerable<IEnumerable<Task<ChannelDiff>>> result = diffs.Split(99);
+                foreach (IEnumerable<Task<ChannelDiff>> enumerable in result)
                 {
-                    if (tasks.Exception != null)
+                    Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable);
+
+                    await tasks.ContinueWith(x =>
                     {
-                        setLog?.Invoke($"Error: {tasks.Exception.Message}");
-                    }
-                });
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
+                        if (tasks.Exception != null)
+                        {
+                            setLog?.Invoke($"{tasks.Exception.Message}");
+                        }
+                    });
+                }
+                //Task<ChannelDiff[]> tasks = Task.WhenAll(diffs);
+
+                //await tasks.ContinueWith(x =>
+                //{
+                //    if (tasks.Exception != null)
+                //    {
+                //        setLog?.Invoke($"{tasks.Exception.Message}");
+                //    }
+                //});
             }
             else
             {
@@ -62,18 +79,28 @@ namespace v00v.Services.Synchronization
                     try
                     {
                         await diff;
+                        setLog?.Invoke($"{diff.Status}");
                     }
-                    catch
+                    catch (Exception e)
                     {
                         err.Add(diff);
+                        setLog?.Invoke($"Add to second try: {diff.Result.ChannelId}, {e.Message}");
                     }
                 }
 
                 if (err.Count > 0)
                 {
+                    setLog?.Invoke($"Second try: {err.Count}");
                     foreach (Task<ChannelDiff> diff in diffs)
                     {
-                        await diff;
+                        try
+                        {
+                            await diff;
+                        }
+                        catch (Exception e)
+                        {
+                            setLog?.Invoke($"Second try fail: {e.Message}");
+                        }
                     }
                 }
             }
@@ -93,20 +120,17 @@ namespace v00v.Services.Synchronization
                                                                            Description = y.Result.Description
                                                                        });
 
-            foreach (Task<ChannelDiff> task in diffs)
+            foreach (((string item1, string item2), List<ItemPrivacy> value) in diffs.Where(x => x.Status == TaskStatus.RanToCompletion)
+                .ToDictionary(z => new Tuple<string, string>(z.Result.ChannelId, z.Result.ChannelTitle), z => z.Result.AddedItems))
             {
-                ChannelStruct channel = channelStructs.First(x => x.ChannelId == task.Result.ChannelId);
-                foreach (ItemPrivacy item in task.Result.AddedItems)
+                foreach (ItemPrivacy privacy in value)
                 {
-                    res.Items.Add(item.Id,
-                                  new SyncPrivacy
-                                  {
-                                      ChannelId = task.Result.ChannelId, ChannelTitle = channel.ChannelTitle, Status = item.Status
-                                  });
+                    res.Items.Add(privacy.Id, new SyncPrivacy { ChannelId = item1, ChannelTitle = item2, Status = privacy.Status });
                 }
-
-                res.NoUnlistedAgain.AddRange(task.Result.UploadedIds.Where(x => channel.UnlistedItems.Contains(x)));
             }
+
+            res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.Result.UploadedIds)
+                                             .Where(x => channelStructs.SelectMany(y => y.UnlistedItems).Contains(x)));
 
             if (res.Items.Count > 0)
             {
@@ -146,7 +170,7 @@ namespace v00v.Services.Synchronization
                 var chitems = res.NewItems.Where(x => pair.Select(y => y.Key).Contains(x.Id)).ToHashSet();
                 res.Channels[pair.Key].ItemsCount = chitems.Count;
                 res.Channels[pair.Key].Timestamp = chitems.OrderByDescending(x => x.Timestamp).First().Timestamp;
-                var ch = channels?.FirstOrDefault(x => x.Id == pair.Key);
+                var ch = channels.FirstOrDefault(x => x.Id == pair.Key);
                 if (ch == null)
                 {
                     continue;
@@ -161,7 +185,7 @@ namespace v00v.Services.Synchronization
 
             if (res.NewItems.Count > 0)
             {
-                var stateChannel = channels?.First(x => x.IsStateChannel);
+                var stateChannel = channels.First(x => x.IsStateChannel);
                 if (stateChannel != null)
                 {
                     stateChannel.Items.AddRange(res.NewItems);
@@ -170,8 +194,11 @@ namespace v00v.Services.Synchronization
             }
 
             setLog?.Invoke("Saving to db..");
-            int rows = await _channelRepository.StoreDiff(res);
-            setLog?.Invoke($"Saved {rows} rows!");
+            var rows = _channelRepository.StoreDiff(res);
+            await rows.ContinueWith(x =>
+            {
+                setLog?.Invoke($"Saved {rows.Result} rows!");
+            });
 
             return res;
         }

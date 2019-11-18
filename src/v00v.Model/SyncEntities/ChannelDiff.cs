@@ -7,9 +7,10 @@ namespace v00v.Model.SyncEntities
     {
         #region Constructors
 
-        public ChannelDiff(string channelId, bool syncPls)
+        public ChannelDiff(string channelId, string channelTitle, bool syncPls)
         {
             ChannelId = channelId;
+            ChannelTitle = channelTitle;
             AddedItems = new List<ItemPrivacy>();
             UploadedIds = new List<string>();
             DeletedItems = new List<string>();
@@ -28,6 +29,7 @@ namespace v00v.Model.SyncEntities
         public List<ItemPrivacy> AddedItems { get; }
         public Dictionary<Playlist, List<ItemPrivacy>> AddedPls { get; }
         public string ChannelId { get; }
+        public string ChannelTitle { get; }
         public List<string> DeletedItems { get; }
         public List<string> DeletedPls { get; }
         public string Description { get; set; }
