@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <Import Project="..\..\build\ReferenceAssemblies.props" />
-  <Import Project="..\..\build\Ef.props" />
+  <Import Project="..\..\build\EntityFramework.props" />
   <Import Project="..\..\build\NewtonSoft.props" />
   
   <ItemGroup>
