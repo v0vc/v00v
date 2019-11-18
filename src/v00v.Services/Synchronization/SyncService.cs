@@ -18,12 +18,6 @@ namespace v00v.Services.Synchronization
 
         #endregion
 
-        #region Fields
-
-        private Action<string> _setLog;
-
-        #endregion
-
         #region Constructors
 
         public SyncService(IYoutubeService youtubeService, IChannelRepository channelRepository)
@@ -38,25 +32,27 @@ namespace v00v.Services.Synchronization
 
         public async Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels, Action<string> setLog)
         {
-            if (_setLog == null)
-            {
-                _setLog = setLog;
-            }
-
             List<ChannelStruct> channelStructs =
                 await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).ToHashSet());
 
-            _setLog?.Invoke(channelStructs.Count == 1
-                                ? $"Start sync: {channelStructs.First().ChannelTitle}"
-                                : $"Start sync channels: {channelStructs.Count}");
+            setLog?.Invoke(channelStructs.Count == 1
+                               ? $"Start sync: {channelStructs.First().ChannelTitle}"
+                               : $"Start sync channels: {channelStructs.Count}, parallel: {parallel}");
 
             var res = new SyncDiff(syncPls);
 
-            List<Task<ChannelDiff>> diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls)).ToList();
+            List<Task<ChannelDiff>> diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)).ToList();
 
             if (parallel)
             {
-                await Task.WhenAll(diffs);
+                var tasks = Task.WhenAll(diffs);
+                await tasks.ContinueWith(x =>
+                {
+                    if (tasks.Exception != null)
+                    {
+                        setLog?.Invoke($"Error: {tasks.Exception.Message}");
+                    }
+                });
             }
             else
             {
@@ -86,7 +82,7 @@ namespace v00v.Services.Synchronization
 
             if (res.ErrorSyncChannels.Count > 0)
             {
-                _setLog?.Invoke($"Banned channel(s): {string.Join(", ", res.ErrorSyncChannels)}");
+                setLog?.Invoke($"Banned channel(s): {string.Join(", ", res.ErrorSyncChannels)}");
             }
 
             res.Channels = diffs.Where(x => !x.IsFaulted).ToDictionary(x => x.Result.ChannelId,
@@ -114,17 +110,19 @@ namespace v00v.Services.Synchronization
 
             if (res.Items.Count > 0)
             {
-                _setLog?.Invoke($"New items {res.Items.Count}");
                 res.NewItems.AddRange(await _youtubeService.GetItems(res.Items));
             }
+
+            setLog?.Invoke($"New items: {res.NewItems.Count}");
 
             if (syncPls)
             {
                 res.NewPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.AddedPls).Select(x => x.Key));
-
+                setLog?.Invoke(res.NewPlaylists.Count > 0
+                                   ? $"New playlists: {res.NewPlaylists.Count} - {string.Join(", ", res.NewPlaylists.Select(x => x.Title))}"
+                                   : $"New playlists: {res.NewPlaylists.Count}");
                 if (res.NewPlaylists.Count > 0)
                 {
-                    _setLog?.Invoke($"New playlists {res.NewPlaylists.Count} : {string.Join(", ", res.NewPlaylists.Select(x => x.Title))}");
                     await _youtubeService.FillThumbs(res.NewPlaylists);
                     foreach (Playlist playlist in res.NewPlaylists)
                     {
@@ -134,14 +132,13 @@ namespace v00v.Services.Synchronization
                 }
 
                 res.DeletedPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.DeletedPls));
-                if (res.DeletedPlaylists.Count > 0)
-                {
-                    _setLog?.Invoke($"Deleted playlists {res.DeletedPlaylists.Count} : {string.Join(", ", res.DeletedPlaylists)}");
-                }
+                setLog?.Invoke(res.DeletedPlaylists.Count > 0
+                                   ? $"Deleted playlists: {res.DeletedPlaylists.Count} - {string.Join(", ", res.DeletedPlaylists)}"
+                                   : $"Deleted playlists: {res.DeletedPlaylists.Count}");
 
                 res.ExistPlaylists = diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.ExistPls)
                     .ToDictionary(x => x.Key, y => y.Value);
-                _setLog?.Invoke($"Existed playlists {res.ExistPlaylists.Count}");
+                setLog?.Invoke($"Existed playlists: {res.ExistPlaylists.Count}");
             }
 
             foreach (IGrouping<string, KeyValuePair<string, SyncPrivacy>> pair in res.Items.GroupBy(x => x.Value.ChannelId))
@@ -172,9 +169,9 @@ namespace v00v.Services.Synchronization
                 }
             }
 
-            _setLog?.Invoke("Saving to db..");
+            setLog?.Invoke("Saving to db..");
             int rows = await _channelRepository.StoreDiff(res);
-            _setLog?.Invoke($"Saved {rows} rows!");
+            setLog?.Invoke($"Saved {rows} rows!");
 
             return res;
         }

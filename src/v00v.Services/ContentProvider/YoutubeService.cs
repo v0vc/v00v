@@ -478,8 +478,9 @@ namespace v00v.Services.ContentProvider
             return channel;
         }
 
-        public async Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls)
+        public async Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls, Action<string> setLog)
         {
+            setLog?.Invoke($"Syncing: {cs.ChannelTitle}, playlists: {syncPls}...");
             var diff = new ChannelDiff(cs.ChannelId, syncPls);
 
             JObject record = await GetJsonObjectAsync(new Uri(syncPls
@@ -488,7 +489,7 @@ namespace v00v.Services.ContentProvider
 
             if (!record.SelectToken("items").Any())
             {
-                //Console.WriteLine("Sync fail: " + cs.ChannelId);
+                setLog?.Invoke($"Sync fail: {cs.ChannelTitle}");
                 diff.Faulted = true;
                 return diff;
             }
@@ -511,12 +512,11 @@ namespace v00v.Services.ContentProvider
 
             diff.UploadedIds.AddRange(uploadvids);
             diff.AddedItems.AddRange(uploadvids.Except(cs.Items).Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
-
             diff.DeletedItems.AddRange(cs.Items.Except(uploadvids));
 
             if (!syncPls)
             {
-                await Console.Out.WriteLineAsync($"{diff.ChannelId}:{diff.AddedItems.Count}:{diff.DeletedItems.Count}");
+                setLog?.Invoke($"{diff.ChannelId}, added: {diff.AddedItems.Count}, deleted: {diff.DeletedItems.Count}");
                 return diff;
             }
 

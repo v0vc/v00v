@@ -590,7 +590,7 @@ namespace v00v.ViewModel.Catalog
 
         private int GetMinOrder()
         {
-            return _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min();
+            return _entries.Count > 1 ? _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min() : 0;
         }
 
         private async Task GetRelatedChannels()
@@ -853,13 +853,7 @@ namespace v00v.ViewModel.Catalog
         {
             if (channel.Playlists.Count > 1)
             {
-                var pl = GetCachedPlaylistModel(channel.Id);
-                if (pl != null)
-                {
-                    pl.All.AddOrUpdate(channel.Playlists);
-                }
-
-                //GetCachedPlaylistModel(channel.Id)?.All.AddOrUpdate(channel.Playlists);
+                GetCachedPlaylistModel(channel.Id)?.All.AddOrUpdate(channel.Playlists);
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
 using v00v.Model.SyncEntities;
@@ -15,7 +16,7 @@ namespace v00v.Services.ContentProvider
 
         Task<Channel> GetChannelAsync(string channelId, bool withoutPl, string channelTitle = null);
 
-        Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls);
+        Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls, Action<string> setLog);
 
         Task<string> GetChannelId(string inputChannelLink);
 
