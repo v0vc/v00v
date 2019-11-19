@@ -7,6 +7,7 @@
     <UserControl.KeyBindings>
         <KeyBinding Command="{Binding SelectChannelCommand, Mode=OneWay}" Gesture="Home"/>
     </UserControl.KeyBindings>
+
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
 
         <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9"
@@ -17,7 +18,7 @@
             Items="{Binding Entries}"
             SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
             VirtualizationMode="Simple"
-            ScrollViewer.VerticalScrollBarVisibility="Visible"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             Background="Transparent" 
             >
@@ -308,6 +309,38 @@
 
         <Style Selector="RadioButton.sort">
             <Setter Property="Margin" Value="0,0,4,0" />
+        </Style>
+
+        <Style Selector="ScrollBar /template/ Thumb#thumb">
+            <Setter Property="Background" Value="#888888"/>
+        </Style>
+        <Style Selector="ScrollBar:horizontal /template/ Thumb#thumb">
+            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Height" Value="10" />
+        </Style>
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Width" Value="10" />
+        </Style>
+        <Style Selector="ScrollBar:vertical /template/ Thumb#thumb">
+            <Setter Property="MinHeight" Value="10" />
+            <Setter Property="Width" Value="10" />
+        </Style>
+        <Style Selector="ScrollBar /template/ RepeatButton.repeat">
+            <Setter Property="Padding" Value="1" />
+            <Setter Property="Background" Value="#AAAAAA" />
+        </Style>
+        <Style Selector="ScrollBar /template/ RepeatButton.repeattrack">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="#AAAAAA" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ScrollBar /template/ RepeatButton > Path">
+            <Setter Property="Fill" Value="#FF000000" />
+        </Style>
+        <Style Selector="ScrollBar /template/ RepeatButton:pointerover > Path">
+            <Setter Property="Fill" Value="#888888" />
         </Style>
 
     </UserControl.Styles>

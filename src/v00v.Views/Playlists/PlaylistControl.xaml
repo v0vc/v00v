@@ -26,11 +26,13 @@
 
             <ListBox Grid.Row="1" Grid.ColumnSpan="2"
                      Items="{Binding Entries}"
+                     VirtualizationMode="Simple"
                      SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
                      BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Hidden"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     Background="Transparent" VirtualizationMode="Simple">
+                     Background="Transparent"
+                     >
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
