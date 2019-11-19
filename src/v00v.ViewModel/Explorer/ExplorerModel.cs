@@ -39,13 +39,14 @@ namespace v00v.ViewModel.Explorer
 
         #region Fields
 
+        private bool _enableLog;
+
         private string _gotoMenu;
         private ItemSort _itemSort;
         private string _logText;
         private string _searchText;
         private Item _selectedEntry;
         private string _selectedPlaylistId;
-        private bool _enableLog;
 
         #endregion
 

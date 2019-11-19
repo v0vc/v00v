@@ -316,7 +316,6 @@ namespace v00v.ViewModel.Playlists
                     }
 
                     setPageIndex.Invoke(index);
-
                     _explorerModel.SelectedPlaylistId = entry.Id;
                 }
                 else
@@ -327,7 +326,10 @@ namespace v00v.ViewModel.Playlists
                     {
                         SearchedPl.IsSearchPlaylist = false;
                         PopularPl.IsPopularPlaylist = false;
-                        _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
+                        if (_explorerModel.All.Count > 0)
+                        {
+                            _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
+                        }
                     }
                 }
             });
@@ -358,11 +360,6 @@ namespace v00v.ViewModel.Playlists
                 else
                 {
                     PopularPl.StateItems?.Clear();
-                    if (_explorerModel.All.Items.Any())
-                    {
-                        _explorerModel.All.Clear();
-                    }
-
                     setPageIndex(1);
                 }
             });
@@ -370,8 +367,7 @@ namespace v00v.ViewModel.Playlists
 
         private void SubscribeSearchChange(Action<byte> setPageIndex, Action<string> setTitle, Func<IEnumerable<string>> getExistId)
         {
-            //.Throttle(TimeSpan.FromMilliseconds(2000)) - avalonia crash
-            this.WhenValueChanged(x => x.SearchedPl.SearchText).Subscribe(entry =>
+            this.WhenValueChanged(x => x.SearchedPl.SearchText).Throttle(TimeSpan.FromMilliseconds(2000)).Subscribe(entry =>
             {
                 if (!string.IsNullOrEmpty(entry))
                 {
@@ -415,11 +411,6 @@ namespace v00v.ViewModel.Playlists
                 else
                 {
                     SearchedPl.StateItems?.Clear();
-                    if (_explorerModel.All.Items.Any())
-                    {
-                        _explorerModel.All.Clear();
-                    }
-
                     setPageIndex(1);
                 }
             });

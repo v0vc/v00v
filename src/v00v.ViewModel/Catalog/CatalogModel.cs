@@ -100,8 +100,6 @@ namespace v00v.ViewModel.Catalog
                     ? _baseExplorerModel
                     : ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
 
-                ExplorerModel.EnableLog = ExplorerModel.All.Count > 0;
-
                 PlaylistModel = entry.IsStateChannel
                     ? _basePlaylistModel
                     : ViewModelCache.GetOrAdd(entry.PlCache,
@@ -127,25 +125,29 @@ namespace v00v.ViewModel.Catalog
                     ExplorerModel.ItemSort = ItemSort.Timestamp;
                 }
 
-                byte index;
-                ExplorerModel.All.Clear();
-                if (entry.Items.Count == 0)
+                if (entry.IsStateChannel)
                 {
-                    index = 1;
-                }
-                else
-                {
-                    index = 0;
-                    ExplorerModel.All.AddOrUpdate(entry.Items);
+                    if (ExplorerModel.All.Items.Any())
+                    {
+                        if (!ExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
+                        {
+                            ExplorerModel.All.Clear();
+                            ExplorerModel.All.AddOrUpdate(entry.Items);
+                        }
+                    }
+                    else
+                    {
+                        ExplorerModel.All.AddOrUpdate(entry.Items);
+                    }
                 }
 
-                setPageIndex.Invoke(index);
+                bool any = ExplorerModel.Items.Any();
+                ExplorerModel.EnableLog = any;
+                setPageIndex.Invoke((byte)(any ? 0 : 1));
             });
 
             SelectedEntry = _baseChannel;
-
             Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
-
             AddChannelCommand = new Command(x => AddChannel());
             EditChannelCommand = new Command(x => EditChannel());
             SyncChannelCommand = new Command(async x => await SyncChannel());
