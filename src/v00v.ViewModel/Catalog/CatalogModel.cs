@@ -111,16 +111,19 @@ namespace v00v.ViewModel.Catalog
                     {
                         ExplorerModel.All.AddOrUpdate(entry.Items);
                     }
+
+                    PlaylistModel = _basePlaylistModel;
                 }
                 else
                 {
                     ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
+                    PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache,
+                                                            () => new PlaylistModel(entry,
+                                                                                    ExplorerModel,
+                                                                                    setPageIndex,
+                                                                                    setTitle,
+                                                                                    SetSelected));
                 }
-
-                PlaylistModel = entry.IsStateChannel
-                    ? _basePlaylistModel
-                    : ViewModelCache.GetOrAdd(entry.PlCache,
-                                              () => new PlaylistModel(entry, ExplorerModel, setPageIndex, setTitle, SetSelected));
 
                 if (PlaylistModel?.SelectedEntry != null)
                 {
