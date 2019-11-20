@@ -114,7 +114,7 @@
         </Style>-->
 
         <Style Selector="ScrollBar /template/ Thumb#thumb">
-            <Setter Property="Background" Value="#888888"/>
+            <Setter Property="Background" Value="#7190AD"/>
         </Style>
         <Style Selector="ScrollBar:horizontal /template/ Thumb#thumb">
             <Setter Property="MinWidth" Value="10" />
@@ -129,12 +129,12 @@
         </Style>
         <Style Selector="ScrollBar /template/ RepeatButton.repeat">
             <Setter Property="Padding" Value="1" />
-            <Setter Property="Background" Value="#AAAAAA" />
+            <Setter Property="Background" Value="#B1C2D2" />
         </Style>
         <Style Selector="ScrollBar /template/ RepeatButton.repeattrack">
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border Background="#AAAAAA" />
+                    <Border Background="#B1C2D2" />
                 </ControlTemplate>
             </Setter>
         </Style>
