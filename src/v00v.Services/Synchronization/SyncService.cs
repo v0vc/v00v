@@ -47,29 +47,29 @@ namespace v00v.Services.Synchronization
 
             if (parallel)
             {
-                IEnumerable<IEnumerable<Task<ChannelDiff>>> result = diffs.Split(99);
-                foreach (IEnumerable<Task<ChannelDiff>> enumerable in result)
-                {
-                    Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable);
-
-                    await tasks.ContinueWith(x =>
-                    {
-                        Thread.Sleep(TimeSpan.FromSeconds(1));
-                        if (tasks.Exception != null)
-                        {
-                            setLog?.Invoke($"{tasks.Exception.Message}");
-                        }
-                    });
-                }
-                //Task<ChannelDiff[]> tasks = Task.WhenAll(diffs);
-
-                //await tasks.ContinueWith(x =>
+                //IEnumerable<IEnumerable<Task<ChannelDiff>>> result = diffs.Split(99);
+                //foreach (IEnumerable<Task<ChannelDiff>> enumerable in result)
                 //{
-                //    if (tasks.Exception != null)
+                //    Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable);
+
+                //    await tasks.ContinueWith(x =>
                 //    {
-                //        setLog?.Invoke($"{tasks.Exception.Message}");
-                //    }
-                //});
+                //        Thread.Sleep(TimeSpan.FromSeconds(1));
+                //        if (tasks.Exception != null)
+                //        {
+                //            setLog?.Invoke($"{tasks.Exception.Message}");
+                //        }
+                //    });
+                //}
+                Task<ChannelDiff[]> tasks = Task.WhenAll(diffs);
+
+                await tasks.ContinueWith(x =>
+                {
+                    if (tasks.Exception != null)
+                    {
+                        setLog?.Invoke($"{tasks.Exception.Message}");
+                    }
+                });
             }
             else
             {

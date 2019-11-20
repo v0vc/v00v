@@ -96,9 +96,26 @@ namespace v00v.ViewModel.Catalog
                     return;
                 }
 
-                ExplorerModel = entry.IsStateChannel
-                    ? _baseExplorerModel
-                    : ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
+                if (entry.IsStateChannel)
+                {
+                    ExplorerModel = _baseExplorerModel;
+                    if (ExplorerModel.All.Items.Any())
+                    {
+                        if (!ExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
+                        {
+                            ExplorerModel.All.Clear();
+                            ExplorerModel.All.AddOrUpdate(entry.Items);
+                        }
+                    }
+                    else
+                    {
+                        ExplorerModel.All.AddOrUpdate(entry.Items);
+                    }
+                }
+                else
+                {
+                    ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
+                }
 
                 PlaylistModel = entry.IsStateChannel
                     ? _basePlaylistModel
@@ -123,22 +140,6 @@ namespace v00v.ViewModel.Catalog
                 if (ExplorerModel.ItemSort != ItemSort.Timestamp)
                 {
                     ExplorerModel.ItemSort = ItemSort.Timestamp;
-                }
-
-                if (entry.IsStateChannel)
-                {
-                    if (ExplorerModel.All.Items.Any())
-                    {
-                        if (!ExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
-                        {
-                            ExplorerModel.All.Clear();
-                            ExplorerModel.All.AddOrUpdate(entry.Items);
-                        }
-                    }
-                    else
-                    {
-                        ExplorerModel.All.AddOrUpdate(entry.Items);
-                    }
                 }
 
                 bool any = ExplorerModel.Items.Any();
@@ -910,11 +911,15 @@ namespace v00v.ViewModel.Catalog
                 if (expmodel != null)
                 {
                     expmodel.All.AddOrUpdate(task.Result.NewItems);
-                    expmodel.EnableLog = expmodel.All.Count > 0;
+                    expmodel.EnableLog = expmodel.All.Items.Any();
+                    _setPageIndex?.Invoke(0);
                 }
             }
 
-            SelectedEntry = _baseChannel;
+            if (SelectedEntry != _baseChannel)
+            {
+                SelectedEntry = _baseChannel;
+            }
 
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished, $"Finished simple sync: {sw.Elapsed.Duration()}")
             //SetErroSyncChannels(diff.ErrorSyncChannels);
