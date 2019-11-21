@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
-using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -34,16 +32,14 @@ namespace v00v.Services.Synchronization
 
         public async Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels, Action<string> setLog)
         {
-            List<ChannelStruct> channelStructs =
-                await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).ToHashSet());
+            var channelStructs =
+                await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).Select(x => x.Id).ToHashSet());
 
             setLog?.Invoke(channelStructs.Count == 1
                                ? $"Start sync: {channelStructs.First().ChannelTitle}"
                                : $"Start sync channels: {channelStructs.Count}, parallel: {parallel}");
 
-            var res = new SyncDiff(syncPls);
-
-            List<Task<ChannelDiff>> diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)).ToList();
+            var diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)).ToHashSet();
 
             if (parallel)
             {
@@ -104,6 +100,8 @@ namespace v00v.Services.Synchronization
                     }
                 }
             }
+
+            var res = new SyncDiff(syncPls);
 
             res.ErrorSyncChannels.AddRange(diffs.Where(x => x.Result.Faulted).Select(x => x.Result.ChannelId));
 

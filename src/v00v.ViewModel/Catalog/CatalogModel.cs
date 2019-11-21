@@ -311,14 +311,8 @@ namespace v00v.ViewModel.Catalog
                 $"Done {count} {items}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
         }
 
-        private static void MarkUnlisted(Channel channel, ICollection<string> noUnlisted, Playlist unlistedpl, PlaylistModel plmodel)
+        private static void MarkUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
         {
-            if (unlistedpl != null)
-            {
-                unlistedpl.StateItems?.RemoveAll(x => noUnlisted.Contains(x.Id));
-                unlistedpl.Count -= noUnlisted.Count;
-            }
-
             foreach (Item item in channel.Items.Where(x => noUnlisted.Contains(x.Id)))
             {
                 if (item.SyncState != SyncState.Notset)
@@ -898,7 +892,10 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Result.NoUnlistedAgain.Count > 0)
             {
-                MarkUnlisted(channel, task.Result.NoUnlistedAgain, _baseChannel.Playlists.FirstOrDefault(x => x.Id == "-2"), plmodel);
+                var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
+                unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
+                unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
+                MarkUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
             }
 
             All.AddOrUpdate(lst);
@@ -907,7 +904,7 @@ namespace v00v.ViewModel.Catalog
 
         private async Task SyncChannels()
         {
-            _setTitle?.Invoke($"Working {_entries.Count - 1} channels..");
+            _setTitle?.Invoke($"Working {_entries.Count(x => !x.IsNew) - 1} channels..");
             IsWorking = true;
             Stopwatch sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted, $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
@@ -929,10 +926,12 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Result.NoUnlistedAgain.Count > 0)
             {
-                var pl = _baseChannel.Playlists.FirstOrDefault(x => x.Id == "-2");
-                foreach (Channel channel in _entries.Where(x => !x.IsStateChannel))
+                var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
+                unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
+                unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
+                foreach (Channel channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
                 {
-                    MarkUnlisted(channel, task.Result.NoUnlistedAgain, pl, GetCachedPlaylistModel(channel.Id));
+                    MarkUnlisted(channel, task.Result.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
                 }
             }
 

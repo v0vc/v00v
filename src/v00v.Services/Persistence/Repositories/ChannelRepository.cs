@@ -129,62 +129,145 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<Channel> channels)
+        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<string> channels)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                if (channels.Count != 2)
+                if (channels.Count == 2)
+                {
+                    // one channel
+                    var id = channels.Last();
+                    if (syncPls)
+                    {
+                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
+                            .Where(x => x.Id == id).Select(channel => new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems =
+                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                        .Select(y => y.Id),
+                                Playlists = channel.Playlists.Select(x => x.Id)
+                            }).ToListAsync();
+                    }
+                    else
+                    {
+                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Where(x => x.Id == id)
+                            .Select(channel => new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                    .Select(y => y.Id)
+                            }).ToListAsync();
+                    }
+                }
+                else
                 {
                     if (syncPls)
                     {
                         return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
-                            .Select(ch => new ChannelStruct
+                            .Select(channel => new ChannelStruct
                             {
-                                ChannelId = ch.Id,
-                                ChannelTitle = ch.Title,
-                                Items = ch.Items.Select(y => y.Id),
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems =
-                                    ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
-                                Playlists = ch.Playlists.Select(x => x.Id)
+                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                Playlists = channel.Playlists.Select(x => x.Id)
                             }).ToListAsync();
                     }
-
-                    return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
-                        .Select(ch => new ChannelStruct
-                        {
-                            ChannelId = ch.Id,
-                            ChannelTitle = ch.Title,
-                            Items = ch.Items.Select(y => y.Id),
-                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
-                                .ToHashSet()
-                        }).ToListAsync();
-                }
-
-                var id = channels.First(x => !x.IsStateChannel).Id;
-                if (syncPls)
-                {
-                    return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
-                        .Include(x => x.Playlists).Select(ch => new ChannelStruct
-                        {
-                            ChannelId = ch.Id,
-                            ChannelTitle = ch.Title,
-                            Items = ch.Items.Select(y => y.Id),
-                            UnlistedItems =
-                                ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                    .Select(y => y.Id).ToHashSet(),
-                            Playlists = ch.Playlists.Select(x => x.Id)
-                        }).ToListAsync();
-                }
-
-                return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
-                    .Select(ch => new ChannelStruct
+                    else
                     {
-                        ChannelId = ch.Id,
-                        ChannelTitle = ch.Title,
-                        Items = ch.Items.Select(y => y.Id),
-                        UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
-                            .ToHashSet()
-                    }).ToListAsync();
+                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                            .Select(channel => new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                    .Select(y => y.Id)
+                            }).ToListAsync();
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<ChannelStruct> GetChannelsStructYeild(bool syncPls, HashSet<string> channels)
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                if (channels.Count == 2)
+                {
+                    // one channel
+                    var id = channels.Last();
+                    if (syncPls)
+                    {
+                        var channel = context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
+                            .FirstOrDefault(x => x.Id == id);
+
+                        if (channel != null)
+                        {
+                            yield return new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                Playlists = channel.Playlists.Select(x => x.Id)
+                            };
+                        }
+                    }
+                    else
+                    {
+                        var channel = context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                            .FirstOrDefault(x => x.Id == id);
+
+                        if (channel != null)
+                        {
+                            yield return new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                            };
+                        }
+                    }
+                }
+                else
+                {
+                    if (syncPls)
+                    {
+                        foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                            .Include(x => x.Playlists))
+                        {
+                            yield return new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                Playlists = channel.Playlists.Select(x => x.Id)
+                            };
+                        }
+                    }
+                    else
+                    {
+                        foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking())
+                        {
+                            yield return new ChannelStruct
+                            {
+                                ChannelId = channel.Id,
+                                ChannelTitle = channel.Title,
+                                Items = channel.Items.Select(y => y.Id),
+                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                            };
+                        }
+                    }
+                }
             }
         }
 

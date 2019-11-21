@@ -9,9 +9,9 @@ namespace v00v.Model.Entities
         #region Fields
 
         private int _count;
-        private string _searchText;
-        private bool _isSearchPlaylist;
         private bool _isPopularPlaylist;
+        private bool _isSearchPlaylist;
+        private string _searchText;
         private string _selectedCountry;
 
         #endregion

@@ -15,7 +15,7 @@ namespace v00v.Services.Persistence
 
         IEnumerable<Item> GetItemsBySyncState(SyncState state);
 
-        Task<List<Item>> GetItemsByTitle(string search, int resultCount);
+        IEnumerable<Item> GetItemsByTitle(string search, int resultCount);
 
         Task<Dictionary<string, byte>> GetItemsState();
 

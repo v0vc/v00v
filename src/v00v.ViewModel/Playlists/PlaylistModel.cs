@@ -97,7 +97,7 @@ namespace v00v.ViewModel.Playlists
                         channel.Playlists.AddRange(res);
 
                         var unlisted = channel.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted)
-                            .ToList();
+                            .ToHashSet();
 
                         if (unlisted.Count > 0)
                         {
@@ -386,7 +386,7 @@ namespace v00v.ViewModel.Playlists
                     }
                     else
                     {
-                        SearchedPl.StateItems = _itemRepository.GetItemsByTitle(term, 50).GetAwaiter().GetResult();
+                        SearchedPl.StateItems = _itemRepository.GetItemsByTitle(term, 50).ToList();
                         menu = false;
                     }
 

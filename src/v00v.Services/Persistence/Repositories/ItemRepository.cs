@@ -76,19 +76,21 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<Item>> GetItemsByTitle(string search, int resultCount)
+        public IEnumerable<Item> GetItemsByTitle(string search, int resultCount)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                var i = 0;
+                foreach (Database.Models.Item item in context.Items.AsNoTracking()
+                    .Where(x => x.Title.ToLower().Contains(search.ToLower())))
                 {
-                    return await context.Items.AsNoTracking().Where(x => x.Title.ToLower().Contains(search.ToLower()))
-                        .OrderByDescending(x => x.Timestamp).Take(resultCount).Select(x => _mapper.Map<Item>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    if (i == resultCount)
+                    {
+                        yield break;
+                    }
+
+                    i++;
+                    yield return _mapper.Map<Item>(item);
                 }
             }
         }
