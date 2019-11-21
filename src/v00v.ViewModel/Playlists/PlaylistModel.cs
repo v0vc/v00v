@@ -60,19 +60,18 @@ namespace v00v.ViewModel.Playlists
                 WatchedPlaylist watched = WatchedPlaylist.Instance;
                 SearchPlaylist searched = SearchPlaylist.Instance;
                 PopularPlaylist popular = PopularPlaylist.Instance;
-                //popular.SelectedCountry = popular.Countries.First();
-                var stateCounts = _playlistRepository.GetStatePlaylistsItemsCount().GetAwaiter().GetResult();
+
+                var stateCounts = _playlistRepository.GetStatePlaylistsItemsCount();
                 unlisted.Count = stateCounts[0];
                 planned.Count = stateCounts[1];
                 watched.Count = stateCounts[2];
-                channel.Playlists.Add(planned);
-                channel.Playlists.Add(watched);
-                channel.Playlists.Add(unlisted);
-                channel.Playlists.Add(searched);
-                channel.Playlists.Add(popular);
+
+                channel.Playlists.AddRange(new Playlist[] { planned, watched, unlisted, searched, popular });
                 All.AddOrUpdate(channel.Playlists);
+
                 SearchedPl = searched;
                 PopularPl = popular;
+
                 SubscribeSearchChange(setIndex, setTitle, getExistId);
                 SubscribePopular(setIndex, setTitle, getExistId);
             }
@@ -80,12 +79,12 @@ namespace v00v.ViewModel.Playlists
             {
                 if (channel.Playlists.Count == 0)
                 {
-                    List<Playlist> res = _playlistRepository.GetPlaylists(channel.Id).GetAwaiter().GetResult();
+                    var res = _playlistRepository.GetPlaylists(channel.Id).ToList();
 
-                    if (res.Count != 0)
+                    if (res.Any())
                     {
                         int i = 0;
-                        foreach (var pl in res.SkipLast(1).OrderBy(y => y.Title.ToLower()))
+                        foreach (var pl in res.SkipLast(1).OrderBy(y => y.Title))
                         {
                             pl.Order = i;
                             i++;

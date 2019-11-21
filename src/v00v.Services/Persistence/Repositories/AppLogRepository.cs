@@ -61,13 +61,13 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> GetStatusCount(AppStatus status)
+        public int GetStatusCount(AppStatus status)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
-                    return await context.AppLogs.AsNoTracking().CountAsync(x => x.AppStatus == (byte)status);
+                    return context.AppLogs.AsNoTracking().Count(x => x.AppStatus == (byte)status);
                 }
                 catch (Exception exception)
                 {

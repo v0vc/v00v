@@ -15,7 +15,7 @@ namespace v00v.Services.Persistence
 
         Task<AppStatus> GetAppSyncStatus(string appId);
 
-        Task<int> GetStatusCount(AppStatus status);
+        int GetStatusCount(AppStatus status);
 
         Task<int> SetStatus(AppStatus status, string comment = null);
 

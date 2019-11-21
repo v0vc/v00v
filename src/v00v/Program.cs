@@ -105,7 +105,7 @@ namespace v00v
             var applog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
             applog.SetStatus(AppStatus.AppClosed, "App closed");
             var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
-            var closedCount = applog.GetStatusCount(AppStatus.AppClosed).GetAwaiter().GetResult();
+            var closedCount = applog.GetStatusCount(AppStatus.AppClosed);
             if (closedCount % 10 == 0 && closedCount != 0)
             {
                 context.Database.ExecuteSqlCommand("VACUUM");

@@ -16,15 +16,15 @@ namespace v00v.Services.Persistence
 
         Task<int> DeleteChannel(string channelId);
 
-        Task<List<Channel>> GetChannels();
+        IEnumerable<Channel> GetChannels();
 
         Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<Channel> channels);
 
         Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState);
 
-        Task<string> GetChannelSubtitle(string channelId);
+        string GetChannelSubtitle(string channelId);
 
-        Task<int> GetItemsCount(SyncState state, string channelId = null);
+        int GetItemsCount(SyncState state, string channelId = null);
 
         Task<int> SaveChannel(string channelId, string newTitle, IEnumerable<int> tags);
 

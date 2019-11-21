@@ -19,7 +19,6 @@ namespace v00v.Services.Persistence.Repositories
         #region Static and Readonly Fields
 
         private readonly IContextFactory _contextFactory;
-
         private readonly IMapper _mapper;
 
         #endregion
@@ -114,30 +113,18 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<Channel>> GetChannels()
+        public IEnumerable<Channel> GetChannels()
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                var i = 0;
+                foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
+                    .OrderBy(x => x.Title))
                 {
-                    var res = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title)
-                        .ToListAsync();
-                    var i = 0;
-                    var r = new List<Channel>(res.Count);
-                    foreach (Channel ch in res.Select(channel => _mapper.Map<Channel>(channel)))
-                    {
-                        ch.Order = i;
-                        r.Add(ch);
-                        i++;
-                    }
-                    return r;
-                    //return await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title)
-                    //    .Select(x => _mapper.Map<Channel>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    var ch = _mapper.Map<Channel>(channel);
+                    ch.Order = i;
+                    i++;
+                    yield return ch;
                 }
             }
         }
@@ -146,64 +133,58 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                if (channels.Count != 2)
                 {
-                    if (channels.Count != 2)
+                    if (syncPls)
                     {
-                        if (syncPls)
-                        {
-                            return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
-                                .Select(ch => new ChannelStruct
-                                {
-                                    ChannelId = ch.Id,
-                                    ChannelTitle = ch.Title,
-                                    Items = ch.Items.Select(y => y.Id),
-                                    UnlistedItems =
-                                        ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
-                                    Playlists = ch.Playlists.Select(x => x.Id)
-                                }).ToListAsync();
-                        }
-
-                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                        return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists)
                             .Select(ch => new ChannelStruct
                             {
                                 ChannelId = ch.Id,
                                 ChannelTitle = ch.Title,
                                 Items = ch.Items.Select(y => y.Id),
-                                UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet()
-                            }).ToListAsync();
-                    }
-
-                    var id = channels.First(x => !x.IsStateChannel).Id;
-                    if (syncPls)
-                    {
-                        return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
-                            .Include(x => x.Playlists).Select(ch => new ChannelStruct
-                            {
-                                ChannelId = ch.Id,
-                                ChannelTitle = ch.Title,
-                                Items = ch.Items.Select(y => y.Id),
                                 UnlistedItems =
-                                    ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                        .Select(y => y.Id).ToHashSet(),
+                                    ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
                                 Playlists = ch.Playlists.Select(x => x.Id)
                             }).ToListAsync();
                     }
 
-                    return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
+                    return await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
                         .Select(ch => new ChannelStruct
                         {
                             ChannelId = ch.Id,
                             ChannelTitle = ch.Title,
                             Items = ch.Items.Select(y => y.Id),
-                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet()
+                            UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                                .ToHashSet()
                         }).ToListAsync();
                 }
-                catch (Exception exception)
+
+                var id = channels.First(x => !x.IsStateChannel).Id;
+                if (syncPls)
                 {
-                    Console.WriteLine(exception);
-                    throw;
+                    return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
+                        .Include(x => x.Playlists).Select(ch => new ChannelStruct
+                        {
+                            ChannelId = ch.Id,
+                            ChannelTitle = ch.Title,
+                            Items = ch.Items.Select(y => y.Id),
+                            UnlistedItems =
+                                ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
+                                    .Select(y => y.Id).ToHashSet(),
+                            Playlists = ch.Playlists.Select(x => x.Id)
+                        }).ToListAsync();
                 }
+
+                return await context.Channels.AsNoTracking().Where(x => x.Id == id).Include(x => x.Items).AsNoTracking()
+                    .Select(ch => new ChannelStruct
+                    {
+                        ChannelId = ch.Id,
+                        ChannelTitle = ch.Title,
+                        Items = ch.Items.Select(y => y.Id),
+                        UnlistedItems = ch.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                            .ToHashSet()
+                    }).ToListAsync();
             }
         }
 
@@ -211,52 +192,26 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
-                {
-                    Dictionary<string, int> res = await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
-                        .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState));
-
-                    return res;
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                return await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
+                    .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState));
             }
         }
 
-        public async Task<string> GetChannelSubtitle(string channelId)
+        public string GetChannelSubtitle(string channelId)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
-                {
-                    return (await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId))?.SubTitle;
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                return context.Channels.AsNoTracking().FirstOrDefault(x => x.Id == channelId)?.SubTitle;
             }
         }
 
-        public async Task<int> GetItemsCount(SyncState state, string channelId = null)
+        public int GetItemsCount(SyncState state, string channelId = null)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
-                {
-                    return channelId == null
-                        ? await context.Items.AsNoTracking().CountAsync(x => x.SyncState == (byte)state)
-                        : await context.Items.AsNoTracking().CountAsync(x => x.ChannelId == channelId && x.SyncState == (byte)state);
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                return channelId == null
+                    ? context.Items.AsNoTracking().Count(x => x.SyncState == (byte)state)
+                    : context.Items.AsNoTracking().Count(x => x.ChannelId == channelId && x.SyncState == (byte)state);
             }
         }
 
@@ -270,31 +225,29 @@ namespace v00v.Services.Persistence.Repositories
                     {
                         Database.Models.Channel ch = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
                             .FirstOrDefaultAsync(x => x.Id == channelId);
-                        if (ch != null)
+
+                        if (ch == null)
                         {
-                            if (!string.IsNullOrEmpty(newTitle) && ch.Title != newTitle)
-                            {
-                                ch.Title = newTitle;
-                            }
-
-                            if (ch.Tags.Count > 0)
-                            {
-                                context.ChannelTags.RemoveRange(ch.Tags);
-                            }
-
-                            await context.ChannelTags.AddRangeAsync(tags.Select(x => new ChannelTag
-                            {
-                                TagId = x, ChannelId = channelId
-                            }));
-
-                            context.Entry(ch).State = EntityState.Modified;
-                            int res = await context.SaveChangesAsync();
-                            transaction.Commit();
-                            return res;
+                            transaction.Rollback();
+                            return -1;
                         }
 
-                        transaction.Rollback();
-                        return -1;
+                        if (!string.IsNullOrEmpty(newTitle) && ch.Title != newTitle)
+                        {
+                            ch.Title = newTitle;
+                        }
+
+                        if (ch.Tags.Count > 0)
+                        {
+                            context.ChannelTags.RemoveRange(ch.Tags);
+                        }
+
+                        await context.ChannelTags.AddRangeAsync(tags.Select(x => new ChannelTag { TagId = x, ChannelId = channelId }));
+
+                        context.Entry(ch).State = EntityState.Modified;
+                        int res = await context.SaveChangesAsync();
+                        transaction.Commit();
+                        return res;
                     }
                     catch (Exception exception)
                     {

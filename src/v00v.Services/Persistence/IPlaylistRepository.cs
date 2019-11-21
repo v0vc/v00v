@@ -9,15 +9,11 @@ namespace v00v.Services.Persistence
     {
         #region Methods
 
-        Task<List<Playlist>> GetPlaylists(string channelId);
+        IEnumerable<Playlist> GetPlaylists(string channelId);
 
         Task<List<Item>> GetPlaylistsItems(WatchState state);
 
-        Task<int> GetPlaylistsItemsCount(WatchState state);
-
-        Task<int> GetPlaylistsItemsCount(SyncState state);
-
-        Task<List<int>> GetStatePlaylistsItemsCount();
+        int[] GetStatePlaylistsItemsCount();
 
         Task<List<Item>> GetUnlistedPlaylistsItems();
 

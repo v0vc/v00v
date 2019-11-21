@@ -11,9 +11,9 @@ namespace v00v.Services.Persistence
 
         Task<string> GetItemDescription(string itemId);
 
-        Task<List<Item>> GetItems(string channelId);
+        IEnumerable<Item> GetItems(string channelId);
 
-        Task<List<Item>> GetItemsBySyncState(SyncState state);
+        IEnumerable<Item> GetItemsBySyncState(SyncState state);
 
         Task<List<Item>> GetItemsByTitle(string search, int resultCount);
 

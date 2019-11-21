@@ -40,7 +40,6 @@ namespace v00v.ViewModel.Explorer
         #region Fields
 
         private bool _enableLog;
-
         private string _gotoMenu;
         private ItemSort _itemSort;
         private string _logText;
@@ -66,8 +65,8 @@ namespace v00v.ViewModel.Explorer
             if (channel.Items.Count == 0)
             {
                 channel.Items.AddRange(channel.IsStateChannel
-                                           ? _itemRepository.GetItemsBySyncState(SyncState.Added).GetAwaiter().GetResult()
-                                           : _itemRepository.GetItems(channel.Id).GetAwaiter().GetResult());
+                                           ? _itemRepository.GetItemsBySyncState(SyncState.Added)
+                                           : _itemRepository.GetItems(channel.Id));
             }
 
             All.AddOrUpdate(channel.Items);

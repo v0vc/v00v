@@ -32,19 +32,14 @@ namespace v00v.Services.Persistence.Repositories
 
         #region Methods
 
-        public async Task<List<Playlist>> GetPlaylists(string channelId)
+        public IEnumerable<Playlist> GetPlaylists(string channelId)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (Database.Models.Playlist playlist in context.Playlists.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                    .Where(x => x.ChannelId == channelId))
                 {
-                    return await context.Playlists.AsNoTracking().Include(x => x.Items).AsNoTracking()
-                        .Where(x => x.ChannelId == channelId).Select(x => _mapper.Map<Playlist>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Playlist>(playlist);
                 }
             }
         }
@@ -66,49 +61,17 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> GetPlaylistsItemsCount(WatchState state)
+        public int[] GetStatePlaylistsItemsCount()
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
-                    return await context.Items.AsNoTracking().Where(x => x.WatchState == (byte)state).CountAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
-            }
-        }
-
-        public async Task<int> GetPlaylistsItemsCount(SyncState state)
-        {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
-            {
-                try
-                {
-                    return await context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state).CountAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
-            }
-        }
-
-        public async Task<List<int>> GetStatePlaylistsItemsCount()
-        {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
-            {
-                try
-                {
-                    return new List<int>
+                    return new[]
                     {
-                        await context.Items.AsNoTracking().Where(x => x.SyncState == 2).CountAsync(),
-                        await context.Items.AsNoTracking().Where(x => x.WatchState == 2).CountAsync(),
-                        await context.Items.AsNoTracking().Where(x => x.WatchState == 1).CountAsync()
+                        context.Items.AsNoTracking().Count(x => x.SyncState == 2),
+                        context.Items.AsNoTracking().Count(x => x.WatchState == 2),
+                        context.Items.AsNoTracking().Count(x => x.WatchState == 1)
                     };
                 }
                 catch (Exception exception)

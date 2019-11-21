@@ -21,9 +21,9 @@ namespace v00v.ViewModel.Popup.Channel
         #region Static and Readonly Fields
 
         private readonly Action<Tag> _addNewTag;
-        private readonly Action<int> _deleteNewTag;
         private readonly IAppLogRepository _appLogRepository;
         private readonly IChannelRepository _channelRepository;
+        private readonly Action<int> _deleteNewTag;
         private readonly ReadOnlyObservableCollection<Tag> _entries;
         private readonly Func<IEnumerable<string>> _getExistId;
         private readonly Func<int> _getMinOrder;
@@ -94,7 +94,7 @@ namespace v00v.ViewModel.Popup.Channel
             IsChannelEnabled = channel == null;
             if (channel != null && channel.SubTitle == null)
             {
-                channel.SubTitle = _channelRepository.GetChannelSubtitle(channel.Id).GetAwaiter().GetResult();
+                channel.SubTitle = _channelRepository.GetChannelSubtitle(channel.Id);
             }
 
             SubTitle = channel?.SubTitle;

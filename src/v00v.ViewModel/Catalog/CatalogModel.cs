@@ -41,10 +41,7 @@ namespace v00v.ViewModel.Catalog
         private readonly IPopupController _popupController;
         private readonly Action<byte> _setPageIndex;
         private readonly Action<string> _setTitle;
-
         private readonly ISyncService _syncService;
-
-        //private readonly IOrderedEnumerable<Tuple<int, int>> _tagOrder;
         private readonly List<int> _tagOrder;
         private readonly ITagRepository _tagRepository;
         private readonly List<Tag> _tags;
@@ -81,14 +78,14 @@ namespace v00v.ViewModel.Catalog
             _setPageIndex = setPageIndex;
 
             All = new SourceCache<Channel, string>(m => m.Id);
-            var channels = _channelRepository.GetChannels().GetAwaiter().GetResult();
+
             _baseChannel = StateChannel.Instance;
-            _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
+            _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added);
             _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex);
             _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, SetSelected, GetExistIds);
+            All.AddOrUpdate(_baseChannel);
 
-            channels.Add(_baseChannel);
-            All.AddOrUpdate(channels);
+            All.AddOrUpdate(_channelRepository.GetChannels());
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedTag).Select(BuildTagFilter))
@@ -159,6 +156,7 @@ namespace v00v.ViewModel.Catalog
             _tags = _tagRepository.GetTags();
             _tagOrder = _tagRepository.GetOrder();
             Tags.AddRange(_tags);
+
             AddChannelCommand = new Command(x => AddChannel());
             EditChannelCommand = new Command(x => EditChannel());
             SyncChannelCommand = new Command(async x => await SyncChannel());

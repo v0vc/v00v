@@ -52,36 +52,26 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<Item>> GetItems(string channelId)
+        public IEnumerable<Item> GetItems(string channelId)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (Database.Models.Item item in context.Items.AsNoTracking().Where(x => x.ChannelId == channelId)
+                    .Include(x => x.Channel).AsNoTracking())
                 {
-                    return await context.Items.AsNoTracking().Where(x => x.ChannelId == channelId).Include(x => x.Channel).AsNoTracking()
-                        .Select(x => _mapper.Map<Item>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Item>(item);
                 }
             }
         }
 
-        public async Task<List<Item>> GetItemsBySyncState(SyncState state)
+        public IEnumerable<Item> GetItemsBySyncState(SyncState state)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (Database.Models.Item item in context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state)
+                    .Include(x => x.Channel).AsNoTracking())
                 {
-                    return await context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state).Include(x => x.Channel)
-                        .AsNoTracking().Select(x => _mapper.Map<Item>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Item>(item);
                 }
             }
         }
