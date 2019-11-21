@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using v00v.Model.Entities;
 using v00v.Services.Database;
 using v00v.Services.Persistence.Helpers;
@@ -35,9 +34,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public Task<int> Add(string text)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -59,9 +58,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> DeleteTag(string text)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -90,7 +89,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public List<int> GetOrder()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -111,7 +110,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public List<Tag> GetTags()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {

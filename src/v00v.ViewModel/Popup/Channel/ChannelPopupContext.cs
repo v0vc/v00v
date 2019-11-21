@@ -77,7 +77,7 @@ namespace v00v.ViewModel.Popup.Channel
             All = new SourceList<Tag>();
             if (channel?.Tags.Count > 0)
             {
-                foreach (Tag tag in alltags)
+                foreach (var tag in alltags)
                 {
                     tag.IsEnabled = channel.Tags.Select(x => x.Id).Contains(tag.Id);
                 }

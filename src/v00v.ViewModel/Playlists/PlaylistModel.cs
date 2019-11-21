@@ -55,11 +55,11 @@ namespace v00v.ViewModel.Playlists
 
             if (channel.IsStateChannel)
             {
-                UnlistedPlaylist unlisted = UnlistedPlaylist.Instance;
-                PlannedPlaylist planned = PlannedPlaylist.Instance;
-                WatchedPlaylist watched = WatchedPlaylist.Instance;
-                SearchPlaylist searched = SearchPlaylist.Instance;
-                PopularPlaylist popular = PopularPlaylist.Instance;
+                var unlisted = UnlistedPlaylist.Instance;
+                var planned = PlannedPlaylist.Instance;
+                var watched = WatchedPlaylist.Instance;
+                var searched = SearchPlaylist.Instance;
+                var popular = PopularPlaylist.Instance;
 
                 var stateCounts = _playlistRepository.GetStatePlaylistsItemsCount();
                 unlisted.Count = stateCounts[0];
@@ -101,7 +101,7 @@ namespace v00v.ViewModel.Playlists
 
                         if (unlisted.Count > 0)
                         {
-                            UnlistedPlaylist unpl = UnlistedPlaylist.Instance;
+                            var unpl = UnlistedPlaylist.Instance;
                             unpl.IsStatePlaylist = false;
                             unpl.Id = channel.Id;
                             unpl.Order = channel.Playlists.Count;
@@ -341,7 +341,7 @@ namespace v00v.ViewModel.Playlists
                 if (!string.IsNullOrWhiteSpace(entry))
                 {
                     setTitle?.Invoke($"Working {PopularPl.SelectedCountry} popular..");
-                    Stopwatch sw = Stopwatch.StartNew();
+                    var sw = Stopwatch.StartNew();
                     PopularPl.StateItems = _youtubeService.GetPopularItems(entry, getExistId.Invoke()).GetAwaiter().GetResult();
                     setTitle?.Invoke($"Done {PopularPl.SelectedCountry}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms");
                     if (PopularPl.StateItems.Count > 0)

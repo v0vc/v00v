@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.Database;
@@ -36,7 +35,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<string> GetItemDescription(string itemId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -54,10 +53,10 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<Item> GetItems(string channelId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                foreach (Database.Models.Item item in context.Items.AsNoTracking().Where(x => x.ChannelId == channelId)
-                    .Include(x => x.Channel).AsNoTracking())
+                foreach (var item in context.Items.AsNoTracking().Where(x => x.ChannelId == channelId).Include(x => x.Channel)
+                    .AsNoTracking())
                 {
                     yield return _mapper.Map<Item>(item);
                 }
@@ -66,10 +65,10 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<Item> GetItemsBySyncState(SyncState state)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                foreach (Database.Models.Item item in context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state)
-                    .Include(x => x.Channel).AsNoTracking())
+                foreach (var item in context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state).Include(x => x.Channel)
+                    .AsNoTracking())
                 {
                     yield return _mapper.Map<Item>(item);
                 }
@@ -78,11 +77,10 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<Item> GetItemsByTitle(string search, int resultCount)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 var i = 0;
-                foreach (Database.Models.Item item in context.Items.AsNoTracking()
-                    .Where(x => x.Title.ToLower().Contains(search.ToLower())))
+                foreach (var item in context.Items.AsNoTracking().Where(x => x.Title.ToLower().Contains(search.ToLower())))
                 {
                     if (i == resultCount)
                     {
@@ -97,7 +95,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<Dictionary<string, byte>> GetItemsState()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -114,9 +112,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> SetItemsWatchState(WatchState state, string itemId, string channelId = null)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -199,9 +197,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdateItemFileName(string itemId, string filename)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -228,9 +226,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<Dictionary<string, long>> UpdateItemsStats(List<Item> items, string channelId = null)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -271,9 +269,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdateItemsWatchState(string parsedId, byte watch)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -283,9 +281,6 @@ namespace v00v.Services.Persistence.Repositories
                             item.WatchState = watch;
                             context.Entry(item).Property(x => x.WatchState).IsModified = true;
                         }
-                        //int res =
-                        //    await context.Database
-                        //        .ExecuteSqlCommandAsync($"UPDATE [Items] SET [WatchState]='{watch}' WHERE [Id]='{parsedId}'");
 
                         var res = await context.SaveChangesAsync();
                         transaction.Commit();

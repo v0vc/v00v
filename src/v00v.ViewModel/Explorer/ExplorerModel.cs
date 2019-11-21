@@ -17,7 +17,6 @@ using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
-using v00v.ViewModel.Playlists;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Item;
 
@@ -425,14 +424,14 @@ namespace v00v.ViewModel.Explorer
                     bitem.WatchState = par;
                 }
 
-                Item citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
+                var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
                     .Items.FirstOrDefault(x => x.Id == id);
                 if (citem != null && citem.WatchState != par)
                 {
                     citem.WatchState = par;
                 }
 
-                PlaylistModel plmodel = _catalogModel.GetCachedPlaylistModel(null);
+                var plmodel = _catalogModel.GetCachedPlaylistModel(null);
 
                 if (plmodel == null)
                 {
@@ -472,7 +471,7 @@ namespace v00v.ViewModel.Explorer
 
                         if (oldState == WatchState.Watched)
                         {
-                            Playlist pl = plmodel.Entries.Single(x => x.State == oldState);
+                            var pl = plmodel.Entries.Single(x => x.State == oldState);
                             pl.Count -= 1;
                             pl.StateItems?.RemoveAll(x => x.Id == item.Id);
                         }

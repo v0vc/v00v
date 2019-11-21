@@ -37,7 +37,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<AppStatus> GetAppSyncStatus(string appId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -63,7 +63,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public int GetStatusCount(AppStatus status)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -84,9 +84,9 @@ namespace v00v.Services.Persistence.Repositories
                 return -1;
             }
 
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {

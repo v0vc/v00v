@@ -15,7 +15,6 @@ using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Model.Extensions;
-using v00v.Model.SyncEntities;
 using v00v.Services.Backup;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -313,7 +312,7 @@ namespace v00v.ViewModel.Catalog
 
         private static void MarkUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
         {
-            foreach (Item item in channel.Items.Where(x => noUnlisted.Contains(x.Id)))
+            foreach (var item in channel.Items.Where(x => noUnlisted.Contains(x.Id)))
             {
                 if (item.SyncState != SyncState.Notset)
                 {
@@ -405,7 +404,7 @@ namespace v00v.ViewModel.Catalog
         private async Task BackupChannels()
         {
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             _setTitle.Invoke($"Backup {_entries.Count - 1} channels..");
             var task = _backupService.Backup(_entries.Where(x => !x.IsStateChannel), SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
@@ -430,7 +429,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
 
             int count;
 
@@ -440,7 +439,7 @@ namespace v00v.ViewModel.Catalog
                 count = _baseChannel.Items.Count;
                 _baseChannel.Items.Clear();
 
-                foreach (Channel channel in _entries.Where(x => x.Count > 0))
+                foreach (var channel in _entries.Where(x => x.Count > 0))
                 {
                     channel.Count = 0;
                     if (channel.IsStateChannel)
@@ -461,7 +460,7 @@ namespace v00v.ViewModel.Catalog
                             continue;
                         }
 
-                        foreach (Item item in cmodel.All.Items.Where(x => x.SyncState == SyncState.Added))
+                        foreach (var item in cmodel.All.Items.Where(x => x.SyncState == SyncState.Added))
                         {
                             item.SyncState = SyncState.Notset;
                         }
@@ -474,7 +473,7 @@ namespace v00v.ViewModel.Catalog
             {
                 var channel = _entries.First(x => x.Id == chId);
                 var ids = channel.Items.Where(x => x.SyncState == SyncState.Added).Select(x => x.Id).ToList();
-                foreach (Item item in channel.Items.Where(x => ids.Contains(x.Id)))
+                foreach (var item in channel.Items.Where(x => ids.Contains(x.Id)))
                 {
                     item.SyncState = SyncState.Notset;
                 }
@@ -519,7 +518,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             ViewModelCache.Remove(ch.ExCache);
             ViewModelCache.Remove(ch.PlCache);
             All.Remove(ch);
@@ -529,10 +528,10 @@ namespace v00v.ViewModel.Catalog
             if (ch.Items.Any(x => x.WatchStateSet)
                 || ch.Items.Any(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted))
             {
-                PlaylistModel plmodel = GetCachedPlaylistModel(null);
+                var plmodel = GetCachedPlaylistModel(null);
                 if (plmodel != null)
                 {
-                    List<Item> watched = ch.Items.Where(x => x.WatchState == WatchState.Watched).ToList();
+                    var watched = ch.Items.Where(x => x.WatchState == WatchState.Watched).ToList();
                     if (watched.Any())
                     {
                         var pl = plmodel.Entries.First(x => x.Id == "0");
@@ -540,7 +539,7 @@ namespace v00v.ViewModel.Catalog
                         pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Watched);
                     }
 
-                    List<Item> planned = ch.Items.Where(x => x.WatchState == WatchState.Planned).ToList();
+                    var planned = ch.Items.Where(x => x.WatchState == WatchState.Planned).ToList();
                     if (planned.Any())
                     {
                         var pl = plmodel.Entries.First(x => x.Id == "-1");
@@ -548,8 +547,7 @@ namespace v00v.ViewModel.Catalog
                         pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Planned);
                     }
 
-                    List<Item> unlisted = ch.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted)
-                        .ToList();
+                    var unlisted = ch.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted).ToList();
                     if (unlisted.Any())
                     {
                         var pl = plmodel.Entries.First(x => x.Id == "-2");
@@ -654,7 +652,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             var oldId = SelectedEntry.Id;
             var channel = _entries.First(x => x.Id == oldId);
             _setTitle.Invoke($"Search related to {channel.Title}..");
@@ -686,7 +684,7 @@ namespace v00v.ViewModel.Catalog
 
             _setTitle.Invoke("Update statistics..");
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
 
             var oldId = SelectedEntry.Id;
             var ch = _entries.First(x => x.Id == oldId);
@@ -727,7 +725,7 @@ namespace v00v.ViewModel.Catalog
             var channels = _entries.Where(x => !x.IsNew && !x.IsStateChannel).ToList();
             channels.Sort(SortExpressionComparer<Channel>.Ascending(x => x.Title));
             var i = 0;
-            foreach (Channel ch in channels)
+            foreach (var ch in channels)
             {
                 ch.Order = i;
                 i++;
@@ -740,7 +738,7 @@ namespace v00v.ViewModel.Catalog
         private async Task RestoreChannels()
         {
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
 
             var task = _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
                                               MassSync,
@@ -781,7 +779,7 @@ namespace v00v.ViewModel.Catalog
             channel.Title = channel.Title.Trim();
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
 
             await _youtubeService.AddPlaylists(channel);
             var task = _channelRepository.AddChannel(channel);
@@ -845,7 +843,7 @@ namespace v00v.ViewModel.Catalog
 
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start full sync: {SelectedEntry.Id}");
 
             var lst = new List<Channel> { _baseChannel, channel };
@@ -877,7 +875,7 @@ namespace v00v.ViewModel.Catalog
                 plmodel?.All.Remove(plmodel.All.Items.Where(x => deletedpl.Contains(x.Id)));
             }
 
-            foreach ((string key, List<ItemPrivacy> value) in task.Result.ExistPlaylists)
+            foreach ((string key, var value) in task.Result.ExistPlaylists)
             {
                 var pl = plmodel?.All.Items.FirstOrDefault(x => x.Id == key);
                 if (pl == null)
@@ -906,7 +904,7 @@ namespace v00v.ViewModel.Catalog
         {
             _setTitle?.Invoke($"Working {_entries.Count(x => !x.IsNew) - 1} channels..");
             IsWorking = true;
-            Stopwatch sw = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted, $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
 
             var task = _syncService.Sync(MassSync, SyncPls, _entries, SetLog);
@@ -929,7 +927,7 @@ namespace v00v.ViewModel.Catalog
                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
                 unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
                 unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
-                foreach (Channel channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
+                foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
                 {
                     MarkUnlisted(channel, task.Result.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
                 }

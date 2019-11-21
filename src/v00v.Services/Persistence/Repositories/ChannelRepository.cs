@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using v00v.Model.Enums;
 using v00v.Model.SyncEntities;
 using v00v.Services.Database;
@@ -61,9 +60,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> AddChannels(List<Channel> channels)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -85,9 +84,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> DeleteChannel(string channelId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -115,11 +114,10 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<Channel> GetChannels()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 var i = 0;
-                foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
-                    .OrderBy(x => x.Title))
+                foreach (var channel in context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking().OrderBy(x => x.Title))
                 {
                     var ch = _mapper.Map<Channel>(channel);
                     ch.Order = i;
@@ -131,7 +129,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<string> channels)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 if (channels.Count == 2)
                 {
@@ -197,7 +195,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<ChannelStruct> GetChannelsStructYeild(bool syncPls, HashSet<string> channels)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 if (channels.Count == 2)
                 {
@@ -241,7 +239,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     if (syncPls)
                     {
-                        foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                        foreach (var channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking()
                             .Include(x => x.Playlists))
                         {
                             yield return new ChannelStruct
@@ -256,7 +254,7 @@ namespace v00v.Services.Persistence.Repositories
                     }
                     else
                     {
-                        foreach (Database.Models.Channel channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking())
+                        foreach (var channel in context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking())
                         {
                             yield return new ChannelStruct
                             {
@@ -273,7 +271,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 return await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
                     .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState));
@@ -282,7 +280,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public string GetChannelSubtitle(string channelId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 return context.Channels.AsNoTracking().FirstOrDefault(x => x.Id == channelId)?.SubTitle;
             }
@@ -290,7 +288,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public int GetItemsCount(SyncState state, string channelId = null)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 return channelId == null
                     ? context.Items.AsNoTracking().Count(x => x.SyncState == (byte)state)
@@ -300,13 +298,13 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> SaveChannel(string channelId, string newTitle, IEnumerable<int> tags)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
-                        Database.Models.Channel ch = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
+                        var ch = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
                             .FirstOrDefaultAsync(x => x.Id == channelId);
 
                         if (ch == null)
@@ -344,9 +342,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> StoreDiff(SyncDiff fdiff)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -370,9 +368,9 @@ namespace v00v.Services.Persistence.Repositories
                             if (fdiff.ExistPlaylists.Count > 0)
                             {
                                 var current = new List<ItemPlaylist>();
-                                foreach ((string key, List<ItemPrivacy> value) in fdiff.ExistPlaylists)
+                                foreach ((string key, var value) in fdiff.ExistPlaylists)
                                 {
-                                    foreach (ItemPrivacy item in value)
+                                    foreach (var item in value)
                                     {
                                         current.Add(new ItemPlaylist { ItemId = item.Id, PlaylistId = key });
                                     }
@@ -439,7 +437,7 @@ namespace v00v.Services.Persistence.Repositories
                         if (fdiff.Channels.Count > 0)
                         {
                             var chs = context.Channels.AsNoTracking().Where(x => fdiff.Channels.ContainsKey(x.Id)).ToList();
-                            foreach ((string s, ChannelStats value) in fdiff.Channels)
+                            foreach ((string s, var value) in fdiff.Channels)
                             {
                                 var ch = chs.First(x => x.Id == s);
                                 ch.ViewCount = value.ViewCount;
@@ -463,7 +461,7 @@ namespace v00v.Services.Persistence.Repositories
 
                             context.Channels.UpdateRange(chs);
 
-                            foreach (Database.Models.Channel channel in chs)
+                            foreach (var channel in chs)
                             {
                                 context.Entry(channel).Property(x => x.SubsCountDiff).IsModified = false;
                                 context.Entry(channel).Property(x => x.ViewCountDiff).IsModified = false;
@@ -487,17 +485,17 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdateChannelSyncState(string channelId, byte state)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
-                        IQueryable<Item> items = channelId == null
+                        var items = channelId == null
                             ? context.Items.AsNoTracking().Where(x => x.SyncState == 1)
                             : context.Items.AsNoTracking().Where(x => x.ChannelId == channelId && x.SyncState == 1);
 
-                        foreach (Item item in items)
+                        foreach (var item in items)
                         {
                             item.SyncState = state;
                             context.Entry(item).Property(x => x.SyncState).IsModified = true;
@@ -519,9 +517,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdateItemsCount(string channelId, int count)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -559,9 +557,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdatePlannedCount(string channelId, int count, bool decrease = false)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {
@@ -603,9 +601,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<int> UpdateWatchedCount(string channelId, int count, bool decrease = false)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
+                using (var transaction = TransactionHelper.Get(context))
                 {
                     try
                     {

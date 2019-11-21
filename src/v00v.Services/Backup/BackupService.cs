@@ -110,7 +110,7 @@ namespace v00v.Services.Backup
                 setTitle?.Invoke("Working..");
                 setLog?.Invoke("Parallel mode: ON");
 
-                List<Task<Channel>> tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
+                var tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
                     .Select(item => _youtubeService.GetChannelAsync(item.ChannelId, false, item.ChannelTitle)).ToList();
 
                 setLog?.Invoke($"Total channels: {tasks.Count}, working..");
@@ -118,9 +118,9 @@ namespace v00v.Services.Backup
                 var channels = new List<Channel>();
                 await Task.WhenAll(tasks).ContinueWith(done =>
                 {
-                    foreach (Task<Channel> task in tasks)
+                    foreach (var task in tasks)
                     {
-                        BackupItem rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
+                        var rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
                         if (rr == null)
                         {
                             continue;
@@ -193,7 +193,7 @@ namespace v00v.Services.Backup
             while (true)
             {
                 var err = new List<BackupItem>();
-                foreach (BackupItem item in lst)
+                foreach (var item in lst)
                 {
                     try
                     {

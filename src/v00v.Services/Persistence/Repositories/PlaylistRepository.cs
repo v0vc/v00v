@@ -34,9 +34,9 @@ namespace v00v.Services.Persistence.Repositories
 
         public IEnumerable<Playlist> GetPlaylists(string channelId)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
-                foreach (Database.Models.Playlist playlist in context.Playlists.AsNoTracking().Include(x => x.Items).AsNoTracking()
+                foreach (var playlist in context.Playlists.AsNoTracking().Include(x => x.Items).AsNoTracking()
                     .Where(x => x.ChannelId == channelId))
                 {
                     yield return _mapper.Map<Playlist>(playlist);
@@ -46,7 +46,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<List<Item>> GetPlaylistsItems(WatchState state)
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -63,7 +63,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public int[] GetStatePlaylistsItemsCount()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
@@ -84,7 +84,7 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<List<Item>> GetUnlistedPlaylistsItems()
         {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
+            using (var context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
