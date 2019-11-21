@@ -57,7 +57,7 @@ namespace v00v.Services.Synchronization
                 //        }
                 //    });
                 //}
-                Task<ChannelDiff[]> tasks = Task.WhenAll(diffs);
+                var tasks = Task.WhenAll(diffs);
 
                 await tasks.ContinueWith(x =>
                 {
@@ -70,7 +70,7 @@ namespace v00v.Services.Synchronization
             else
             {
                 var err = new List<Task<ChannelDiff>>();
-                foreach (Task<ChannelDiff> diff in diffs)
+                foreach (var diff in diffs)
                 {
                     try
                     {
@@ -87,7 +87,7 @@ namespace v00v.Services.Synchronization
                 if (err.Count > 0)
                 {
                     setLog?.Invoke($"Second try: {err.Count}");
-                    foreach (Task<ChannelDiff> diff in diffs)
+                    foreach (var diff in diffs)
                     {
                         try
                         {
@@ -118,10 +118,10 @@ namespace v00v.Services.Synchronization
                                                                            Description = y.Result.Description
                                                                        });
 
-            foreach (((string item1, string item2), List<ItemPrivacy> value) in diffs.Where(x => x.Status == TaskStatus.RanToCompletion)
+            foreach (((string item1, string item2), var value) in diffs.Where(x => x.Status == TaskStatus.RanToCompletion)
                 .ToDictionary(z => new Tuple<string, string>(z.Result.ChannelId, z.Result.ChannelTitle), z => z.Result.AddedItems))
             {
-                foreach (ItemPrivacy privacy in value)
+                foreach (var privacy in value)
                 {
                     res.Items.Add(privacy.Id, new SyncPrivacy { ChannelId = item1, ChannelTitle = item2, Status = privacy.Status });
                 }
@@ -146,7 +146,7 @@ namespace v00v.Services.Synchronization
                 if (res.NewPlaylists.Count > 0)
                 {
                     await _youtubeService.FillThumbs(res.NewPlaylists);
-                    foreach (Playlist playlist in res.NewPlaylists)
+                    foreach (var playlist in res.NewPlaylists)
                     {
                         playlist.Items.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.AddedPls)
                                                     .First(x => x.Key.Id == playlist.Id).Value.Select(x => x.Id));
@@ -163,7 +163,7 @@ namespace v00v.Services.Synchronization
                 setLog?.Invoke($"Existed playlists: {res.ExistPlaylists.Count}");
             }
 
-            foreach (IGrouping<string, KeyValuePair<string, SyncPrivacy>> pair in res.Items.GroupBy(x => x.Value.ChannelId))
+            foreach (var pair in res.Items.GroupBy(x => x.Value.ChannelId))
             {
                 var chitems = res.NewItems.Where(x => pair.Select(y => y.Key).Contains(x.Id)).ToHashSet();
                 res.Channels[pair.Key].ItemsCount = chitems.Count;

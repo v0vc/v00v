@@ -145,7 +145,7 @@ namespace v00v.Services.Persistence.Repositories
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems =
                                     channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                        .Select(y => y.Id),
+                                        .Select(y => y.Id).ToHashSet(),
                                 Playlists = channel.Playlists.Select(x => x.Id)
                             }).ToListAsync();
                     }
@@ -158,7 +158,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                    .Select(y => y.Id)
+                                    .Select(y => y.Id).ToHashSet()
                             }).ToListAsync();
                     }
                 }
@@ -173,7 +173,8 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems =
-                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                                        .ToHashSet(),
                                 Playlists = channel.Playlists.Select(x => x.Id)
                             }).ToListAsync();
                     }
@@ -186,7 +187,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3)
-                                    .Select(y => y.Id)
+                                    .Select(y => y.Id).ToHashSet()
                             }).ToListAsync();
                     }
                 }
@@ -213,7 +214,8 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelId = channel.Id,
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
-                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                UnlistedItems =
+                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
                                 Playlists = channel.Playlists.Select(x => x.Id)
                             };
                         }
@@ -231,6 +233,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                                    .ToHashSet()
                             };
                         }
                     }
@@ -247,7 +250,8 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelId = channel.Id,
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
-                                UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                                UnlistedItems =
+                                    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
                                 Playlists = channel.Playlists.Select(x => x.Id)
                             };
                         }
@@ -262,6 +266,7 @@ namespace v00v.Services.Persistence.Repositories
                                 ChannelTitle = channel.Title,
                                 Items = channel.Items.Select(y => y.Id),
                                 UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
+                                    .ToHashSet()
                             };
                         }
                     }
