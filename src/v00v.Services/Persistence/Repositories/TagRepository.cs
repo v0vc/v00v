@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using v00v.Model.Entities;
 using v00v.Services.Database;
-using v00v.Services.Database.Models;
 using v00v.Services.Persistence.Helpers;
 
 namespace v00v.Services.Persistence.Repositories
@@ -33,28 +33,6 @@ namespace v00v.Services.Persistence.Repositories
 
         #region Methods
 
-        public void Add(Tag[] tags)
-        {
-            using (VideoContext context = _contextFactory.CreateVideoContext())
-            {
-                using (IDbContextTransaction transaction = TransactionHelper.Get(context))
-                {
-                    try
-                    {
-                        context.Tags.AddRange(tags);
-                        context.SaveChanges();
-                        transaction.Commit();
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception);
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
-            }
-        }
-
         public Task<int> Add(string text)
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
@@ -63,7 +41,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var tag = new Tag { Text = text };
+                        var tag = new Database.Models.Tag { Text = text };
                         var res = context.Tags.AddAsync(tag);
                         context.SaveChanges();
                         transaction.Commit();
@@ -110,26 +88,34 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<Model.Entities.Tag>> GetTags(bool useOrder)
+        public List<int> GetOrder()
         {
             using (VideoContext context = _contextFactory.CreateVideoContext())
             {
                 try
                 {
-                    var res = await context.Tags.AsNoTracking().OrderBy(x => x.Text).ToListAsync();
+                    var res = context.ChannelTags.AsNoTracking().ToHashSet().GroupBy(x => x.TagId)
+                        .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
 
-                    if (!useOrder)
-                    {
-                        return res.Select(x => _mapper.Map<Model.Entities.Tag>(x));
-                    }
+                    res.AddRange(context.Tags.AsNoTracking().Select(x => x.Id).Where(y => !res.Contains(y)));
 
-                    var dres = (await context.ChannelTags.AsNoTracking().ToListAsync()).GroupBy(x => x.TagId)
-                        .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2)
-                        .Select(x => new Tag { Id = x.Item1, Text = res.First(y => y.Id == x.Item1).Text }).ToList();
+                    return res;
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    throw;
+                }
+            }
+        }
 
-                    dres.AddRange(res.Where(x => !dres.Select(y => y.Id).Contains(x.Id)));
-
-                    return dres.Select(x => _mapper.Map<Model.Entities.Tag>(x));
+        public List<Tag> GetTags()
+        {
+            using (VideoContext context = _contextFactory.CreateVideoContext())
+            {
+                try
+                {
+                    return context.Tags.AsNoTracking().OrderBy(x => x.Text).Select(x => _mapper.Map<Tag>(x)).ToList();
                 }
                 catch (Exception exception)
                 {

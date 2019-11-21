@@ -23,7 +23,5 @@
     <ProjectReference Include="..\v00v.Model\v00v.Model.csproj" />
     <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
   </ItemGroup>
-  
- 
 
 </Project>

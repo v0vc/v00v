@@ -9,6 +9,7 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using v00v.Model.Core;
+using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
@@ -19,9 +20,11 @@ namespace v00v.ViewModel.Popup.Channel
     {
         #region Static and Readonly Fields
 
+        private readonly Action<Tag> _addNewTag;
+        private readonly Action<int> _deleteNewTag;
         private readonly IAppLogRepository _appLogRepository;
         private readonly IChannelRepository _channelRepository;
-        private readonly ReadOnlyObservableCollection<TagModel> _entries;
+        private readonly ReadOnlyObservableCollection<Tag> _entries;
         private readonly Func<IEnumerable<string>> _getExistId;
         private readonly Func<int> _getMinOrder;
         private readonly IPopupController _popupController;
@@ -39,7 +42,7 @@ namespace v00v.ViewModel.Popup.Channel
 
         private string _closeText;
         private string _filterTag;
-        private TagModel _selectedTag;
+        private Tag _selectedTag;
 
         #endregion
 
@@ -47,6 +50,9 @@ namespace v00v.ViewModel.Popup.Channel
 
         public ChannelPopupContext(Model.Entities.Channel channel,
             Func<IEnumerable<string>> getExistId,
+            IReadOnlyCollection<Tag> alltags,
+            Action<Tag> addNewTag,
+            Action<int> deleteNewTag,
             Action<string> setTitle,
             Action<Model.Entities.Channel> updateList,
             Action<string> setSelect,
@@ -59,16 +65,28 @@ namespace v00v.ViewModel.Popup.Channel
                                                  AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
             _getExistId = getExistId;
+            _addNewTag = addNewTag;
+            _deleteNewTag = deleteNewTag;
             _setTitle = setTitle;
             _updateList = updateList;
             _setSelect = setSelect;
             _updatePlList = updatePlList;
             _resortList = resortList;
             _getMinOrder = getMinOrder;
-            All = new SourceList<TagModel>();
-            All.AddRange(_tagRepository.GetTags(true).GetAwaiter().GetResult().Select(x => TagModel.FromDbTag(x, channel?.Tags)));
+
+            All = new SourceList<Tag>();
+            if (channel?.Tags.Count > 0)
+            {
+                foreach (Tag tag in alltags)
+                {
+                    tag.IsEnabled = channel.Tags.Select(x => x.Id).Contains(tag.Id);
+                }
+            }
+
+            All.AddRange(alltags);
             All.Connect().Filter(this.WhenValueChanged(t => t.FilterTag).Select(BuildSearchFilter)).Bind(out _entries).DisposeMany()
                 .Subscribe();
+
             CloseText = channel == null ? "Add" : "Save";
             Title = channel == null ? "Add" : $"Edit: {channel.Title}";
             ChannelId = channel?.Id;
@@ -105,9 +123,7 @@ namespace v00v.ViewModel.Popup.Channel
         #region Properties
 
         public ICommand AddTagCommand { get; set; }
-
-        public SourceList<TagModel> All { get; }
-
+        public SourceList<Tag> All { get; }
         public string ChannelId { get; set; }
         public string ChannelTitle { get; set; }
         public ICommand CloseChannelCommand { get; set; }
@@ -118,7 +134,7 @@ namespace v00v.ViewModel.Popup.Channel
             set => Update(ref _closeText, value);
         }
 
-        public IEnumerable<TagModel> Entries => _entries;
+        public IEnumerable<Tag> Entries => _entries;
 
         public string FilterTag
         {
@@ -129,7 +145,7 @@ namespace v00v.ViewModel.Popup.Channel
         public bool IsChannelEnabled { get; set; }
         public ICommand SaveTagCommand { get; set; }
 
-        public TagModel SelectedTag
+        public Tag SelectedTag
         {
             get => _selectedTag;
             set => Update(ref _selectedTag, value);
@@ -141,14 +157,14 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Static Methods
 
-        private static Func<TagModel, bool> BuildSearchFilter(string searchText)
+        private static Func<Tag, bool> BuildSearchFilter(string searchText)
         {
             if (string.IsNullOrEmpty(searchText))
             {
                 return x => true;
             }
 
-            return x => x.TagText.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -186,6 +202,11 @@ namespace v00v.ViewModel.Popup.Channel
                 }
             });
 
+            if (task.Result == null)
+            {
+                return;
+            }
+
             if (task.Status == TaskStatus.Faulted)
             {
                 IsWorking = false;
@@ -194,7 +215,7 @@ namespace v00v.ViewModel.Popup.Channel
                 return;
             }
 
-            task.Result.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
+            task.Result.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
             task.Result.Order = _getMinOrder.Invoke() - 1;
             _updateList?.Invoke(task.Result);
             _setSelect?.Invoke(task.Result.Id);
@@ -214,7 +235,7 @@ namespace v00v.ViewModel.Popup.Channel
 
         private void AddTag()
         {
-            var tag = new TagModel { TagText = string.Empty, IsEditable = true, IsRemovable = true };
+            var tag = new Tag { Text = string.Empty, IsEditable = true, IsRemovable = true };
             tag.RemoveCommand = new Command(async x => await RemoveTag(tag));
             All.Add(tag);
             SelectedTag = tag;
@@ -228,7 +249,7 @@ namespace v00v.ViewModel.Popup.Channel
 
             channel.Title = ChannelTitle.Trim();
             channel.Tags.Clear();
-            channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled).Select(TagModel.ToTag));
+            channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
 
             if (channel.IsNew)
             {
@@ -249,23 +270,25 @@ namespace v00v.ViewModel.Popup.Channel
             _resortList?.Invoke(task1.Result);
         }
 
-        private async Task RemoveTag(TagModel tag)
+        private async Task RemoveTag(Tag tag)
         {
-            All.Remove(tag);
-            if (tag.IsSaved && !string.IsNullOrEmpty(tag.TagText))
+            if (tag.IsSaved && !string.IsNullOrEmpty(tag.Text))
             {
-                await _tagRepository.DeleteTag(tag.TagText);
+                All.Remove(tag);
+                await _tagRepository.DeleteTag(tag.Text);
+                _deleteNewTag?.Invoke(tag.Id);
             }
         }
 
         private async Task SaveTag()
         {
-            foreach (TagModel tag in All.Items.Where(x => !x.IsSaved))
+            foreach (var tag in All.Items.Where(x => !x.IsSaved))
             {
-                if (All.Items.Count(x => x.TagText == tag.TagText) == 1)
+                if (All.Items.Count(x => x.Text == tag.Text) == 1)
                 {
                     tag.IsSaved = true;
-                    tag.Id = await _tagRepository.Add(tag.TagText);
+                    tag.Id = await _tagRepository.Add(tag.Text);
+                    _addNewTag?.Invoke(tag);
                 }
             }
         }

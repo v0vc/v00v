@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using v00v.Services.Database.Models;
 
 namespace v00v.Services.Persistence
 {
@@ -8,13 +7,13 @@ namespace v00v.Services.Persistence
     {
         #region Methods
 
-        void Add(Tag[] tags);
-
         Task<int> Add(string text);
 
         Task<int> DeleteTag(string text);
 
-        Task<IEnumerable<Model.Entities.Tag>> GetTags(bool useOrder);
+        List<int> GetOrder();
+
+        List<Model.Entities.Tag> GetTags();
 
         #endregion
     }

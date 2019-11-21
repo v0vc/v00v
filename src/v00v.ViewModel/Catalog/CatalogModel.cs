@@ -14,6 +14,7 @@ using v00v.Model.Core;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
+using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
 using v00v.Services.Backup;
 using v00v.Services.ContentProvider;
@@ -40,8 +41,13 @@ namespace v00v.ViewModel.Catalog
         private readonly IPopupController _popupController;
         private readonly Action<byte> _setPageIndex;
         private readonly Action<string> _setTitle;
+
         private readonly ISyncService _syncService;
+
+        //private readonly IOrderedEnumerable<Tuple<int, int>> _tagOrder;
+        private readonly List<int> _tagOrder;
         private readonly ITagRepository _tagRepository;
+        private readonly List<Tag> _tags;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -75,7 +81,6 @@ namespace v00v.ViewModel.Catalog
             _setPageIndex = setPageIndex;
 
             All = new SourceCache<Channel, string>(m => m.Id);
-
             var channels = _channelRepository.GetChannels().GetAwaiter().GetResult();
             _baseChannel = StateChannel.Instance;
             _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added).GetAwaiter().GetResult();
@@ -151,7 +156,9 @@ namespace v00v.ViewModel.Catalog
             });
 
             SelectedEntry = _baseChannel;
-            Tags.AddRange(_tagRepository.GetTags(false).GetAwaiter().GetResult());
+            _tags = _tagRepository.GetTags();
+            _tagOrder = _tagRepository.GetOrder();
+            Tags.AddRange(_tags);
             AddChannelCommand = new Command(x => AddChannel());
             EditChannelCommand = new Command(x => EditChannel());
             SyncChannelCommand = new Command(async x => await SyncChannel());
@@ -380,12 +387,27 @@ namespace v00v.ViewModel.Catalog
         {
             _popupController.Show(new ChannelPopupContext(null,
                                                           GetExistIds,
+                                                          _tags.OrderBySequence(_tagOrder, x => x.Id).ToList(),
+                                                          AddNewTag,
+                                                          DeleteNewTag,
                                                           _setTitle,
                                                           UpdateList,
                                                           SetSelected,
                                                           UpdatePlaylist,
                                                           null,
                                                           GetMinOrder));
+        }
+
+        private void AddNewTag(Tag tag)
+        {
+            if (tag == null)
+            {
+                return;
+            }
+
+            Tags.Add(tag);
+            _tagOrder.Add(tag.Id);
+            _tags.Add(tag);
         }
 
         private async Task BackupChannels()
@@ -565,6 +587,13 @@ namespace v00v.ViewModel.Catalog
             // await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel:{deletedId}");
         }
 
+        private void DeleteNewTag(int tagId)
+        {
+            Tags.RemoveAll(x => x.Id == tagId);
+            _tagOrder.RemoveAll(x => x == tagId);
+            _tags.RemoveAll(x => x.Id == tagId);
+        }
+
         private void EditChannel()
         {
             if (SelectedEntry == null || SelectedEntry.Working)
@@ -574,12 +603,14 @@ namespace v00v.ViewModel.Catalog
 
             _popupController.Show(new ChannelPopupContext(SelectedEntry,
                                                           GetExistIds,
+                                                          _tags.OrderBySequence(_tagOrder, x => x.Id).ToList(),
+                                                          AddNewTag,
+                                                          DeleteNewTag,
                                                           _setTitle,
                                                           UpdateList,
                                                           SetSelected,
                                                           UpdatePlaylist,
-                                                          ResortList,
-                                                          null));
+                                                          ResortList));
         }
 
         private IObservable<SortExpressionComparer<Channel>> GetChannelSorter()

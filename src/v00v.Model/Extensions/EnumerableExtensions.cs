@@ -45,6 +45,18 @@ namespace v00v.Model.Extensions
             }
         }
 
+        public static IEnumerable<T> OrderBySequence<T, TId>(this IEnumerable<T> source, IEnumerable<TId> order, Func<T, TId> idSelector)
+        {
+            var lookup = source.ToLookup(idSelector, t => t);
+            foreach (var id in order)
+            {
+                foreach (var t in lookup[id])
+                {
+                    yield return t;
+                }
+            }
+        }
+
         public static IEnumerable<IEnumerable<T>> Split<T>(this List<T> array, int size = 50)
         {
             for (var i = 0; i < (float)array.Count / size; i++)
@@ -53,13 +65,7 @@ namespace v00v.Model.Extensions
             }
         }
 
-        //public static IEnumerable<IEnumerable<string>> Split(this List<string> array, int size = 50)
-        //{
-        //    for (var i = 0; i < (float)array.Count / size; i++)
-        //    {
-        //        yield return array.Skip(i * size).Take(size);
-        //    }
-        //}
+        #endregion
 
         //public static IEnumerable<List<string>> SplitList(this List<string> ids, int nSize = 50)
         //{
@@ -72,7 +78,5 @@ namespace v00v.Model.Extensions
 
         //    return list;
         //}
-
-        #endregion
     }
 }

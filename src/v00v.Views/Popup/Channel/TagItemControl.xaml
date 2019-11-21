@@ -17,7 +17,7 @@
             Grid.Column="0" />
         
         <TextBlock
-            Text="{Binding TagText}"
+            Text="{Binding Text, Mode=TwoWay}"
             Grid.Column="1" />
         
         <TextBlock

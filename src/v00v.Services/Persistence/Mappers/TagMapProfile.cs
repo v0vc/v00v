@@ -9,7 +9,7 @@ namespace v00v.Services.Persistence.Mappers
 
         public TagMapProfile()
         {
-            CreateMap<Tag, Model.Entities.Tag>();
+            CreateMap<Tag, Model.Entities.Tag>().ForMember(dto => dto.IsSaved, opt => opt.MapFrom(src => true));
             CreateMap<Model.Entities.Tag, Tag>();
         }
 
