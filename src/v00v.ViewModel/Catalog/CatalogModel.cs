@@ -146,7 +146,7 @@ namespace v00v.ViewModel.Catalog
                     ExplorerModel.ItemSort = ItemSort.Timestamp;
                 }
 
-                bool any = ExplorerModel.Items.Any();
+                var any = ExplorerModel.Items.Any();
                 ExplorerModel.EnableLog = any;
                 setPageIndex.Invoke((byte)(any ? 0 : 1));
             });
@@ -385,7 +385,6 @@ namespace v00v.ViewModel.Catalog
                                                           UpdateList,
                                                           SetSelected,
                                                           UpdatePlaylist,
-                                                          null,
                                                           GetMinOrder));
         }
 
@@ -509,18 +508,18 @@ namespace v00v.ViewModel.Catalog
             var ch = _entries.First(x => x.Id == deletedId);
             var count = ch.Count;
             var index = All.Items.IndexOf(ch);
+            ViewModelCache.Remove(ch.ExCache);
+            ViewModelCache.Remove(ch.PlCache);
             if (ch.IsNew)
             {
                 _explorerModel.All.Remove(ch.Items);
                 All.Remove(ch);
-                SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
+                SelectedEntry = _baseChannel;
                 return;
             }
 
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            ViewModelCache.Remove(ch.ExCache);
-            ViewModelCache.Remove(ch.PlCache);
             All.Remove(ch);
             _baseChannel.Count -= count;
             _baseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
@@ -600,6 +599,7 @@ namespace v00v.ViewModel.Catalog
                                                           UpdateList,
                                                           SetSelected,
                                                           UpdatePlaylist,
+                                                          null,
                                                           ResortList));
         }
 
@@ -668,11 +668,18 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result.Count, sw));
-
-            task.Result.ForEach(x => AddChannelToList(x, false));
-            All.AddOrUpdate(task.Result);
-            SetSelected(_baseChannel.Id);
+            if (task.Result != null)
+            {
+                _setTitle?.Invoke(MakeTitle(task.Result.Count, sw));
+                task.Result.ForEach(x => AddChannelToList(x, false));
+                All.AddOrUpdate(task.Result);
+                SetSelected(_baseChannel.Id);
+            }
+            else
+            {
+                _setTitle?.Invoke(MakeTitle(0, sw));
+                SetSelected(oldId);
+            }
         }
 
         private async Task ReloadStatistics()

@@ -31,7 +31,7 @@
 
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Save" Command="{Binding SaveChannelCommand, Mode=OneWay}" 
+                    <MenuItem Header="Add" Command="{Binding SaveChannelCommand, Mode=OneWay}" 
                               IsVisible="{Binding SelectedEntry.IsNew, Mode=OneWay}"
                               >
                         <MenuItem.Icon>

@@ -702,6 +702,11 @@ namespace v00v.Services.ContentProvider
 
             var res = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
 
+            if (!res.SelectToken("items").Any())
+            {
+                return null;
+            }
+
             var tasks = res.SelectToken("items[0].brandingSettings.channel.featuredChannelsUrls").Select(x => x.Value<string>())
                 .Where(x => !existChannels.Contains(x)).Select(item => GetChannelAsync(item, true)).ToList();
 

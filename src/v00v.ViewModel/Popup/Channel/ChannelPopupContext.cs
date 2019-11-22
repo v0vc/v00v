@@ -57,12 +57,12 @@ namespace v00v.ViewModel.Popup.Channel
             Action<Model.Entities.Channel> updateList,
             Action<string> setSelect,
             Action<Model.Entities.Channel> updatePlList = null,
-            Action<int> resortList = null,
-            Func<int> getMinOrder = null) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
-                                                 AvaloniaLocator.Current.GetService<ITagRepository>(),
-                                                 AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                                                 AvaloniaLocator.Current.GetService<IAppLogRepository>(),
-                                                 AvaloniaLocator.Current.GetService<IYoutubeService>())
+            Func<int> getMinOrder = null,
+            Action<int> resortList = null) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
+                                                  AvaloniaLocator.Current.GetService<ITagRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IChannelRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IAppLogRepository>(),
+                                                  AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
             _getExistId = getExistId;
             _addNewTag = addNewTag;
@@ -80,6 +80,15 @@ namespace v00v.ViewModel.Popup.Channel
                 foreach (var tag in alltags)
                 {
                     tag.IsEnabled = channel.Tags.Select(x => x.Id).Contains(tag.Id);
+                    tag.IsRemovable = false;
+                }
+            }
+            else
+            {
+                foreach (var tag in alltags.Where(x => x.IsEnabled || x.IsRemovable))
+                {
+                    tag.IsEnabled = false;
+                    tag.IsRemovable = false;
                 }
             }
 
@@ -251,7 +260,8 @@ namespace v00v.ViewModel.Popup.Channel
             channel.Tags.Clear();
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
 
-            if (channel.IsNew)
+            var isNew = channel.IsNew;
+            if (isNew)
             {
                 var task = _youtubeService.AddPlaylists(channel);
                 await Task.WhenAll(task).ContinueWith(done =>
@@ -262,12 +272,16 @@ namespace v00v.ViewModel.Popup.Channel
 
             _popupController.Hide();
 
-            var task1 = _channelRepository.SaveChannel(ChannelId, channel.Title, channel.Tags.Select(x => x.Id));
+            var task1 = _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
             var task2 = _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
             await Task.WhenAll(task1, task2);
             _updateList?.Invoke(channel);
             _updatePlList?.Invoke(channel);
-            _resortList?.Invoke(task1.Result);
+            _setSelect?.Invoke(channel.Id);
+            if (isNew)
+            {
+                _resortList?.Invoke(task1.Result);
+            }
         }
 
         private async Task RemoveTag(Tag tag)
