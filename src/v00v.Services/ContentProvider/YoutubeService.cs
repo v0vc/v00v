@@ -588,24 +588,29 @@ namespace v00v.Services.ContentProvider
             {
                 if (sp.Contains(YouUser))
                 {
-                    int indexuser = Array.IndexOf(sp, YouUser);
+                    var indexuser = Array.IndexOf(sp, YouUser);
                     if (indexuser < 0)
                     {
                         return string.Empty;
                     }
 
-                    string user = sp[indexuser + 1];
+                    var user = sp[indexuser + 1];
                     parsedChannelId = await GetChannelIdByUserNameNetAsync(user);
                 }
                 else if (sp.Contains(YouChannel))
                 {
-                    int indexchannel = Array.IndexOf(sp, YouChannel);
+                    var indexchannel = Array.IndexOf(sp, YouChannel);
                     if (indexchannel < 0)
                     {
                         return string.Empty;
                     }
 
                     parsedChannelId = sp[indexchannel + 1];
+                    var appSp = parsedChannelId.Split('?');
+                    if (appSp.Length > 1)
+                    {
+                        parsedChannelId = appSp[0];
+                    }
                 }
                 else
                 {
@@ -616,7 +621,7 @@ namespace v00v.Services.ContentProvider
                         return parsedChannelId;
                     }
 
-                    string zap =
+                    var zap =
                         $"{Url}videos?&id={match.Groups[1].Value}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}";
 
                     parsedChannelId = (await GetJsonObjectAsync(new Uri(zap))).SelectToken("items[0].snippet.channelId")?.Value<string>();

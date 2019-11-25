@@ -205,20 +205,18 @@ namespace v00v.ViewModel.Popup.Channel
             var task = _youtubeService.GetChannelAsync(parsedId, false, ChannelTitle);
             await Task.WhenAll(task).ContinueWith(done =>
             {
-                if (task.Status != TaskStatus.Faulted && task.Result == null)
-                {
-                    _setTitle?.Invoke("Banned channel: " + parsedId);
-                }
+                IsWorking = false;
             });
 
             if (task.Result == null)
             {
+                _popupController.Hide();
+                _setTitle?.Invoke("Banned channel: " + parsedId);
                 return;
             }
 
             if (task.Status == TaskStatus.Faulted)
             {
-                IsWorking = false;
                 _popupController.Hide();
                 _setTitle?.Invoke($"{task.Exception.Message}");
                 return;
@@ -228,13 +226,12 @@ namespace v00v.ViewModel.Popup.Channel
             task.Result.Order = _getMinOrder.Invoke() - 1;
             _updateList?.Invoke(task.Result);
             _setSelect?.Invoke(task.Result.Id);
+            _popupController.Hide();
 
             var task1 = _channelRepository.AddChannel(task.Result);
             var task2 = _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{task.Result.Id}:{task.Result.Title}");
             await Task.WhenAll(task1, task2).ContinueWith(done =>
             {
-                IsWorking = false;
-                _popupController.Hide();
                 if (task.Status != TaskStatus.Faulted && task.Result != null)
                 {
                     _setTitle?.Invoke($"New channel: {task.Result.Title}. Saved {task1.Result} rows");
