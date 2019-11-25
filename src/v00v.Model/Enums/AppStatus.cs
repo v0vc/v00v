@@ -15,6 +15,7 @@
         SyncPlaylistStarted = 10,
         SyncPlaylistFinished = 11,
         SyncWithoutPlaylistStarted = 12,
-        SyncWithoutPlaylistFinished = 13
+        SyncWithoutPlaylistFinished = 13,
+        ExceptionFired = 14
     }
 }
