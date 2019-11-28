@@ -716,7 +716,7 @@ namespace v00v.ViewModel.Catalog
             {
                 ch.Items.ForEach(x =>
                 {
-                    x.ViewDiff = task.Result.TryGetValue(x.Id, out long vdiff) ? vdiff : 0;
+                    x.ViewDiff = task.Result.TryGetValue(x.Id, out var vdiff) ? vdiff : 0;
                 });
             }
             else
