@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using Avalonia.Media.Imaging;
-using v00v.Model.Core;
 
 namespace v00v.Model.Entities
 {

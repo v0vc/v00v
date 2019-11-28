@@ -7,7 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Styling;
-using v00v.Model.Core;
+using ReactiveUI;
 
 namespace v00v.Views.Controls
 {
@@ -34,9 +34,8 @@ namespace v00v.Views.Controls
 
         public ExtendedTextBox()
         {
-            CopyCommand = new Command(async x => await CopyAsync());
-
-            PasteCommand = new Command(async x => await PasteAsync());
+            CopyCommand = ReactiveCommand.CreateFromTask(CopyAsync, null, RxApp.MainThreadScheduler);
+            PasteCommand = ReactiveCommand.CreateFromTask(PasteAsync, null, RxApp.MainThreadScheduler);
 
             this.GetObservable(IsReadOnlyProperty).Subscribe(isReadOnly =>
             {
@@ -108,7 +107,7 @@ namespace v00v.Views.Controls
         {
             base.OnTemplateApplied(e);
 
-            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls(), Cursor = Cursor.Default };
+            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls() };
 
             var menuItems = (Avalonia.Controls.Controls)ContextMenu.Items;
             if (IsCopyEnabled)

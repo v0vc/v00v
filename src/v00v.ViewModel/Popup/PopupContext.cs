@@ -1,5 +1,5 @@
 ﻿using System.Windows.Input;
-using v00v.Model.Core;
+using v00v.Model;
 
 namespace v00v.ViewModel.Popup
 {

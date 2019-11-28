@@ -72,7 +72,7 @@
                     Grid.ColumnSpan="3"
                     MinWidth="380"
                     MinHeight="20"
-                    Margin="10"
+                    Margin="6"
                     Items="{Binding Contexts, Mode=OneWay}"
                     SelectedItem="{Binding Context, Mode=OneWay}">
                     

@@ -11,7 +11,8 @@ using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
 using Microsoft.Extensions.Configuration;
-using v00v.Model.Core;
+using ReactiveUI;
+using v00v.Model;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
@@ -32,6 +33,7 @@ namespace v00v.ViewModel.Explorer
         private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IPopupController _popupController;
         private readonly Action<byte> _setPageIndex;
+        private readonly Action<string> _setTitle;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -50,7 +52,7 @@ namespace v00v.ViewModel.Explorer
 
         #region Constructors
 
-        public ExplorerModel(Channel channel, CatalogModel catalogModel, Action<byte> setPageIndex) :
+        public ExplorerModel(Channel channel, CatalogModel catalogModel, Action<byte> setPageIndex, Action<string> setTitle) :
             this(AvaloniaLocator.Current.GetService<IItemRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
@@ -58,6 +60,7 @@ namespace v00v.ViewModel.Explorer
         {
             _catalogModel = catalogModel;
             _setPageIndex = setPageIndex;
+            _setTitle = setTitle;
 
             All = new SourceCache<Item, string>(m => m.Id);
 
@@ -72,18 +75,26 @@ namespace v00v.ViewModel.Explorer
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedPlaylistId).Select(BuildPlFilter))
-                .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _items).DisposeMany().Subscribe();
+                .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
+                .Bind(out _items).DisposeMany().Subscribe();
 
-            OpenCommand = new Command(async x => await OpenItem(x));
-            DownloadCommand = new Command(async x => await Download("simple", (Item)x));
-            DownloadItemCommand = new Command(async x => await Download((string)x, SelectedEntry));
-            RunItemCommand = new Command(async x => await RunItem(true));
-            CopyItemCommand = new Command(async x => await CopyItem((string)x));
             IsParentState = channel.IsStateChannel;
-            GoToParentCommand = IsParentState ? new Command(async x => await SelectChannel()) : new Command(x => SelectPlaylist());
-            DeleteItemCommand = new Command(async x => await DeleteItem());
-            SetSortCommand = new Command(x => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), (string)x));
-            SetItemWatchStateCommand = new Command(async x => await SetItemState((WatchState)x));
+            GoToParentCommand = IsParentState
+                ? ReactiveCommand.CreateFromTask(SelectChannel, null, RxApp.MainThreadScheduler)
+                : ReactiveCommand.Create(SelectPlaylist, null, RxApp.MainThreadScheduler);
+            OpenCommand = ReactiveCommand.Create((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
+            DownloadCommand =
+                ReactiveCommand.CreateFromTask((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
+            DownloadItemCommand =
+                ReactiveCommand.Create((string par) => DownloadItem(par, SelectedEntry), null, RxApp.MainThreadScheduler);
+            RunItemCommand = ReactiveCommand.CreateFromTask(RunItem, null, RxApp.MainThreadScheduler);
+            CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
+            DeleteItemCommand = ReactiveCommand.CreateFromTask(DeleteItem, null, RxApp.MainThreadScheduler);
+            SetItemWatchStateCommand =
+                ReactiveCommand.CreateFromTask((WatchState par) => SetItemState(par), null, RxApp.MainThreadScheduler);
+            SetSortCommand = ReactiveCommand.Create((string par) => ItemSort = (ItemSort)Enum.Parse(typeof(ItemSort), par),
+                                                    null,
+                                                    RxApp.MainThreadScheduler);
         }
 
         private ExplorerModel(IItemRepository itemRepository,
@@ -283,6 +294,11 @@ namespace v00v.ViewModel.Explorer
             }
         }
 
+        private async Task DownloadItem(string par, Item item)
+        {
+            await Download(par, item);
+        }
+
         private IObservable<SortExpressionComparer<Item>> GetSorter()
         {
             return this.WhenValueChanged(x => x.ItemSort).Select(x =>
@@ -303,18 +319,18 @@ namespace v00v.ViewModel.Explorer
                         return SortExpressionComparer<Item>.Ascending(t => t.Duration);
                     case ItemSort.Diff:
                         return SortExpressionComparer<Item>.Descending(t => t.ViewDiff);
+                    case ItemSort.File:
+                        return SortExpressionComparer<Item>.Descending(t => t.Downloaded);
                     case ItemSort.Title:
                         return SortExpressionComparer<Item>.Ascending(t => t.Title);
-
                     default:
                         return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                 }
             });
         }
 
-        private async Task OpenItem(object o)
+        private async Task OpenItem(Item item)
         {
-            var item = (Item)o;
             if (item.Description == null)
             {
                 item.Description = await _itemRepository.GetItemDescription(item.Id);
@@ -344,14 +360,11 @@ namespace v00v.ViewModel.Explorer
             _popupController.Show(new ItemPopupContext(item));
         }
 
-        private async Task RunItem(bool setState)
+        private async Task RunItem()
         {
             SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
                                    _configuration.GetValue<string>("AppSettings:BaseDir"));
-            if (setState)
-            {
-                await SetItemState(WatchState.Watched);
-            }
+            await SetItemState(WatchState.Watched);
         }
 
         private async Task SelectChannel()
@@ -365,10 +378,12 @@ namespace v00v.ViewModel.Explorer
             var ch = _catalogModel.Entries.FirstOrDefault(y => y.Id == oldId);
             if (ch == null)
             {
+                _setTitle?.Invoke($"Working: {oldId}..");
                 var chh = await _youtubeService.GetChannelAsync(oldId, true);
                 if (chh.Items.Count > 0)
                 {
                     _catalogModel.AddChannelToList(chh, true);
+                    _setTitle?.Invoke($"Ready: {chh.Title}");
                 }
                 else
                 {

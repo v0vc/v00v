@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
-using v00v.Model.Core;
+using ReactiveUI;
+using v00v.Model;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
@@ -123,11 +125,12 @@ namespace v00v.ViewModel.Playlists
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Sort(SortExpressionComparer<Playlist>.Ascending(t => t.Order), SortOptimisations.ComparesImmutableValuesOnly, 25)
-                .Bind(out _entries).DisposeMany().Subscribe();
+                .ObserveOn(RxApp.MainThreadScheduler).Bind(out _entries).DisposeMany().Subscribe();
 
-            CopyItemCommand = new Command(async x => await CopyItem((string)x));
-            DownloadItemCommand = new Command(x => DownloadItem((string)x));
-            DeleteCommand = new Command(x => DeleteFiles());
+            CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
+            DeleteCommand = ReactiveCommand.CreateFromObservable(DeleteFiles, null, RxApp.MainThreadScheduler);
+            DownloadItemCommand =
+                ReactiveCommand.CreateFromObservable((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
         }
 
         private PlaylistModel(IPlaylistRepository playlistRepository, IItemRepository itemRepository, IYoutubeService youtubeService)
@@ -205,34 +208,40 @@ namespace v00v.ViewModel.Playlists
             }
         }
 
-        private void DeleteFiles()
+        private IObservable<Unit> DeleteFiles()
         {
-            if (SelectedEntry == null)
+            return Observable.Start(() =>
             {
-                return;
-            }
+                if (SelectedEntry == null)
+                {
+                    return;
+                }
 
-            Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id) && x.Downloaded),
-                             new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                             async x =>
-                             {
-                                 await _explorerModel.DeleteItem(x);
-                             });
+                Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id) && x.Downloaded),
+                                 new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
+                                 async x =>
+                                 {
+                                     await _explorerModel.DeleteItem(x);
+                                 });
+            });
         }
 
-        private void DownloadItem(string par)
+        private IObservable<Unit> DownloadItem(string par)
         {
-            if (SelectedEntry == null)
+            return Observable.Start(() =>
             {
-                return;
-            }
+                if (SelectedEntry == null)
+                {
+                    return;
+                }
 
-            Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
-                             new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                             async x =>
-                             {
-                                 await _explorerModel.Download(par, x);
-                             });
+                Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
+                                 new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
+                                 async x =>
+                                 {
+                                     await _explorerModel.Download(par, x);
+                                 });
+            });
         }
 
         private async Task FillPlaylistItems(Playlist playlist)
@@ -349,6 +358,7 @@ namespace v00v.ViewModel.Playlists
                     var sw = Stopwatch.StartNew();
                     PopularPl.StateItems = _youtubeService.GetPopularItems(entry, getExistId.Invoke()).GetAwaiter().GetResult();
                     setTitle?.Invoke($"Done {PopularPl.SelectedCountry}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms");
+                    bool enableLog;
                     if (PopularPl.StateItems.Count > 0)
                     {
                         setPageIndex(0);
@@ -359,11 +369,18 @@ namespace v00v.ViewModel.Playlists
 
                         _explorerModel.All.AddOrUpdate(PopularPl.StateItems);
                         _explorerModel.SetMenu(true);
+                        enableLog = true;
                     }
+                    else
+                    {
+                        enableLog = false;
+                    }
+                    _explorerModel.EnableLog = enableLog;
                 }
                 else
                 {
                     PopularPl.StateItems?.Clear();
+                    _explorerModel.EnableLog = false;
                     setPageIndex(1);
                 }
             });
@@ -395,6 +412,7 @@ namespace v00v.ViewModel.Playlists
                         menu = false;
                     }
 
+                    bool enableLog;
                     if (SearchedPl.StateItems?.Count > 0)
                     {
                         setPageIndex(0);
@@ -406,15 +424,20 @@ namespace v00v.ViewModel.Playlists
                         _explorerModel.All.AddOrUpdate(SearchedPl.StateItems);
                         _explorerModel.SetMenu(menu);
                         setTitle?.Invoke($"Found: {SearchedPl.StateItems?.Count}");
+                        enableLog = true;
                     }
                     else
                     {
                         setTitle?.Invoke($"Not found: {term} :(");
+                        enableLog = false;
                     }
+
+                    _explorerModel.EnableLog = enableLog;
                 }
                 else
                 {
                     SearchedPl.StateItems?.Clear();
+                    _explorerModel.EnableLog = false;
                     setPageIndex(1);
                 }
             });

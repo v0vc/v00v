@@ -14,6 +14,7 @@
   <Import Project="..\..\build\EmbedXaml.props" />
   <Import Project="..\..\build\DynamicData.props" />
   <Import Project="..\..\build\LazyCache.props" />
+  <Import Project="..\..\build\ReactiveUI.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />

@@ -1,4 +1,4 @@
-using v00v.Model.Core;
+using ReactiveUI;
 
 namespace v00v.ViewModel.Popup
 {
@@ -35,7 +35,11 @@ namespace v00v.ViewModel.Popup
 
         public static PopupModel NoHidden(PopupContext context, IPopupController popupController)
         {
-            return new PopupModel(context) { IsVisible = true, Context = { CloseCommand = new Command(x => popupController.Hide()) } };
+            return new PopupModel(context)
+            {
+                IsVisible = true,
+                Context = { CloseCommand = ReactiveCommand.Create(popupController.Hide, null, RxApp.MainThreadScheduler) }
+            };
         }
 
         #endregion

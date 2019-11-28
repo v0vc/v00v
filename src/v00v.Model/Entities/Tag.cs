@@ -1,5 +1,4 @@
 ﻿using System.Windows.Input;
-using v00v.Model.Core;
 
 namespace v00v.Model.Entities
 {

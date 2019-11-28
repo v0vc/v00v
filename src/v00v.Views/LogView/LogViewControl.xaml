@@ -45,6 +45,11 @@
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Duration"
                                  />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By file"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.File}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="File"
+                                 />
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By title"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"

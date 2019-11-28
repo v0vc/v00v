@@ -1,6 +1,6 @@
 ﻿using System;
 using Avalonia;
-using v00v.Model.Core;
+using v00v.Model;
 using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Popup;
 

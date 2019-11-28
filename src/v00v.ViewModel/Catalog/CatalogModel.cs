@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -10,7 +11,8 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using LazyCache;
-using v00v.Model.Core;
+using ReactiveUI;
+using v00v.Model;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
@@ -80,7 +82,7 @@ namespace v00v.ViewModel.Catalog
 
             _baseChannel = StateChannel.Instance;
             _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added);
-            _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex);
+            _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex, setTitle);
             _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, SetSelected, GetExistIds);
             All.AddOrUpdate(_baseChannel);
 
@@ -88,7 +90,8 @@ namespace v00v.ViewModel.Catalog
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedTag).Select(BuildTagFilter))
-                .Sort(GetChannelSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).Bind(out _entries).DisposeMany().Subscribe();
+                .Sort(GetChannelSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
+                .Bind(out _entries).DisposeMany().Subscribe();
 
             this.WhenValueChanged(x => x.SelectedEntry).Subscribe(entry =>
             {
@@ -99,25 +102,31 @@ namespace v00v.ViewModel.Catalog
 
                 if (entry.IsStateChannel)
                 {
-                    ExplorerModel = _baseExplorerModel;
-                    if (ExplorerModel.All.Items.Any())
+                    if (_baseExplorerModel.All.Items.Any())
                     {
-                        if (!ExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
+                        if (!_baseExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
                         {
-                            ExplorerModel.All.Clear();
-                            ExplorerModel.All.AddOrUpdate(entry.Items);
+                            _baseExplorerModel.All.Clear();
+                            if (entry.Items.Count > 0)
+                            {
+                                _baseExplorerModel.All.AddOrUpdate(entry.Items);
+                            }
                         }
                     }
                     else
                     {
-                        ExplorerModel.All.AddOrUpdate(entry.Items);
+                        if (entry.Items.Count > 0)
+                        {
+                            _baseExplorerModel.All.AddOrUpdate(entry.Items);
+                        }
                     }
 
+                    ExplorerModel = _baseExplorerModel;
                     PlaylistModel = _basePlaylistModel;
                 }
                 else
                 {
-                    ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex));
+                    ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex, setTitle));
                     PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache,
                                                             () => new PlaylistModel(entry,
                                                                                     ExplorerModel,
@@ -156,19 +165,26 @@ namespace v00v.ViewModel.Catalog
             _tagOrder = _tagRepository.GetOrder();
             Tags.AddRange(_tags);
 
-            AddChannelCommand = new Command(x => AddChannel());
-            EditChannelCommand = new Command(x => EditChannel());
-            SyncChannelCommand = new Command(async x => await SyncChannel());
-            SaveChannelCommand = new Command(async x => await SaveChannel());
-            ReloadCommand = new Command(async x => await ReloadStatistics());
-            DeleteChannelCommand = new Command(async x => await DeleteChannel());
-            ClearAddedCommand = new Command(async x => await ClearAdded());
-            BackupCommand = new Command(async x => await BackupChannels());
-            RestoreCommand = new Command(async x => await RestoreChannels());
-            SyncChannelsCommand = new Command(async x => await SyncChannels());
-            SetSortCommand = new Command(x => ChannelSort = (ChannelSort)Enum.Parse(typeof(ChannelSort), (string)x));
-            SelectChannelCommand = new Command(x => SelectedEntry = _baseChannel);
-            GetRelatedChannelCommand = new Command(async x => await GetRelatedChannels());
+            AddChannelCommand = ReactiveCommand.Create(AddChannel, null, RxApp.MainThreadScheduler);
+            EditChannelCommand = ReactiveCommand.Create(EditChannel, null, RxApp.MainThreadScheduler);
+            SyncChannelCommand = ReactiveCommand.CreateFromTask(SyncChannel, null, RxApp.MainThreadScheduler);
+            SyncChannelsCommand = ReactiveCommand.CreateFromTask(SyncChannels, null, RxApp.MainThreadScheduler);
+            SaveChannelCommand = ReactiveCommand.CreateFromTask(SaveChannel, null, RxApp.MainThreadScheduler);
+            ReloadCommand = ReactiveCommand.CreateFromTask(ReloadStatistics, null, RxApp.MainThreadScheduler);
+            DeleteChannelCommand = ReactiveCommand.CreateFromTask(DeleteChannel, null, RxApp.MainThreadScheduler);
+            ClearAddedCommand = ReactiveCommand.CreateFromTask(ClearAdded, null, RxApp.MainThreadScheduler);
+            BackupCommand = ReactiveCommand.CreateFromTask(BackupChannels, null, RxApp.MainThreadScheduler);
+            RestoreCommand = ReactiveCommand.CreateFromTask(RestoreChannels, null, RxApp.MainThreadScheduler);
+            SelectChannelCommand = ReactiveCommand.Create(() => SelectedEntry = _baseChannel, null, RxApp.MainThreadScheduler);
+            GetRelatedChannelCommand = ReactiveCommand.CreateFromTask(GetRelatedChannels, null, RxApp.MainThreadScheduler);
+            SetSortCommand = ReactiveCommand.Create((string par) => ChannelSort = (ChannelSort)Enum.Parse(typeof(ChannelSort), par),
+                                                    null,
+                                                    RxApp.MainThreadScheduler);
+
+            AddChannelCommand.ThrownExceptions.Subscribe(OnException);
+            SyncChannelCommand.ThrownExceptions.Subscribe(OnException);
+            SyncChannelsCommand.ThrownExceptions.Subscribe(OnException);
+            RestoreCommand.ThrownExceptions.Subscribe(OnException);
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -192,7 +208,7 @@ namespace v00v.ViewModel.Catalog
 
         #region Properties
 
-        public ICommand AddChannelCommand { get; }
+        public ReactiveCommand<Unit, Unit> AddChannelCommand { get; }
         public SourceCache<Channel, string> All { get; }
         public ICommand BackupCommand { get; }
 
@@ -236,7 +252,7 @@ namespace v00v.ViewModel.Catalog
         }
 
         public ICommand ReloadCommand { get; }
-        public ICommand RestoreCommand { get; }
+        public ReactiveCommand<Unit, Unit> RestoreCommand { get; }
 
         public ICommand SaveChannelCommand { get; set; }
 
@@ -262,8 +278,8 @@ namespace v00v.ViewModel.Catalog
 
         public ICommand SetSortCommand { get; }
 
-        public ICommand SyncChannelCommand { get; }
-        public ICommand SyncChannelsCommand { get; }
+        public ReactiveCommand<Unit, Unit> SyncChannelCommand { get; }
+        public ReactiveCommand<Unit, Unit> SyncChannelsCommand { get; }
 
         public bool SyncPls
         {
@@ -362,16 +378,24 @@ namespace v00v.ViewModel.Catalog
 
         public ExplorerModel GetCachedExplorerModel(string channelId)
         {
-            return channelId == null
-                ? _baseExplorerModel
-                : ViewModelCache.Get<ExplorerModel>(_entries.Single(x => x.Id == channelId).ExCache);
+            if (channelId == null)
+            {
+                return _baseExplorerModel;
+            }
+
+            var exc = _entries.FirstOrDefault(x => x.Id == channelId)?.ExCache;
+            return exc != null ? ViewModelCache.Get<ExplorerModel>(exc) : null;
         }
 
         public PlaylistModel GetCachedPlaylistModel(string channelId)
         {
-            return channelId == null
-                ? _basePlaylistModel
-                : ViewModelCache.Get<PlaylistModel>(_entries.Single(x => x.Id == channelId).PlCache);
+            if (channelId == null)
+            {
+                return _basePlaylistModel;
+            }
+
+            var plc = _entries.FirstOrDefault(x => x.Id == channelId)?.PlCache;
+            return plc != null ? ViewModelCache.Get<PlaylistModel>(plc) : null;
         }
 
         private void AddChannel()
@@ -679,6 +703,22 @@ namespace v00v.ViewModel.Catalog
             {
                 _setTitle?.Invoke(MakeTitle(0, sw));
                 SetSelected(oldId);
+            }
+        }
+
+        private void OnException(Exception exception)
+        {
+            _setTitle?.Invoke(exception.Message);
+            var exm = GetCachedExplorerModel(null);
+            if (exm == null)
+            {
+                return;
+            }
+
+            exm.SetLog(exception.Message);
+            if (exception.InnerException != null && !string.IsNullOrEmpty(exception.InnerException.Message))
+            {
+                exm.SetLog(exception.InnerException.Message);
             }
         }
 

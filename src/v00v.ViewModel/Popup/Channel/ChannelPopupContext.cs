@@ -8,7 +8,7 @@ using System.Windows.Input;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
-using v00v.Model.Core;
+using ReactiveUI;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
@@ -107,11 +107,11 @@ namespace v00v.ViewModel.Popup.Channel
             }
 
             SubTitle = channel?.SubTitle;
-            AddTagCommand = new Command(x => AddTag());
-            SaveTagCommand = new Command(async x => await SaveTag());
+            AddTagCommand = ReactiveCommand.Create(AddTag, null, RxApp.MainThreadScheduler);
+            SaveTagCommand = ReactiveCommand.CreateFromTask(SaveTag, null, RxApp.MainThreadScheduler);
             CloseChannelCommand = channel == null
-                ? new Command(async x => await AddChannel())
-                : new Command(async x => await EditChannel(channel));
+                ? ReactiveCommand.CreateFromTask(AddChannel, null, RxApp.MainThreadScheduler)
+                : ReactiveCommand.CreateFromTask(() => EditChannel(channel), null, RxApp.MainThreadScheduler);
         }
 
         private ChannelPopupContext(IPopupController popupController,
@@ -241,8 +241,13 @@ namespace v00v.ViewModel.Popup.Channel
 
         private void AddTag()
         {
-            var tag = new Tag { Text = string.Empty, IsEditable = true, IsRemovable = true };
-            tag.RemoveCommand = new Command(async x => await RemoveTag(tag));
+            var tag = new Tag
+            {
+                Text = string.Empty,
+                IsEditable = true,
+                IsRemovable = true,
+                RemoveCommand = ReactiveCommand.CreateFromTask((Tag x) => RemoveTag(x), null, RxApp.MainThreadScheduler)
+            };
             All.Add(tag);
             SelectedTag = tag;
         }
@@ -283,9 +288,9 @@ namespace v00v.ViewModel.Popup.Channel
 
         private async Task RemoveTag(Tag tag)
         {
+            All.Remove(tag);
             if (tag.IsSaved && !string.IsNullOrEmpty(tag.Text))
             {
-                All.Remove(tag);
                 await _tagRepository.DeleteTag(tag.Text);
                 _deleteNewTag?.Invoke(tag.Id);
             }

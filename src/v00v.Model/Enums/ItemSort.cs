@@ -9,6 +9,7 @@
         Comment,
         Duration,
         Title,
-        Diff
+        Diff,
+        File
     }
 }

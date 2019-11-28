@@ -2,7 +2,7 @@
 using System.IO;
 using AutoMapper;
 using Avalonia;
-using Avalonia.Logging.Serilog;
+using Avalonia.ReactiveUI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using v00v.MainApp;
@@ -22,7 +22,7 @@ namespace v00v
     {
         #region Static Methods
 
-        public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect().LogToDebug();
+        public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect().UseReactiveUI(); //.LogToDebug();
 
         [STAThread]
         private static void Main(string[] args)
@@ -31,18 +31,22 @@ namespace v00v
 
             PreAppStart(true);
 
-            try
-            {
-                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            }
-            catch (Exception e)
-            {
-                AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
-            }
-            finally
-            {
-                Shutdown();
-            }
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+
+            Shutdown();
+
+            //try
+            //{
+            //    BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            //}
+            //catch (Exception e)
+            //{
+            //    AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
+            //}
+            //finally
+            //{
+            //    Shutdown();
+            //}
         }
 
         private static void PreAppStart(bool needMigrate)
