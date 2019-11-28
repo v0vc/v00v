@@ -10,7 +10,8 @@ namespace v00v.Model.Entities.Instance
             new UnlistedPlaylist
             {
                 IsStatePlaylist = true,
-                Title = "Unlisted",
+                ThumbSize = 25,
+                Title = " Unlisted",
                 Order = 1,
                 Id = "-2",
                 Thumbnail =

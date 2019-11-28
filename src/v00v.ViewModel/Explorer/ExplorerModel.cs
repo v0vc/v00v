@@ -14,10 +14,12 @@ using Microsoft.Extensions.Configuration;
 using ReactiveUI;
 using v00v.Model;
 using v00v.Model.Entities;
+using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Catalog;
+using v00v.ViewModel.Playlists;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Item;
 
@@ -28,6 +30,7 @@ namespace v00v.ViewModel.Explorer
         #region Static and Readonly Fields
 
         private readonly CatalogModel _catalogModel;
+        private readonly Channel _channel;
         private readonly IConfiguration _configuration;
         private readonly IItemRepository _itemRepository;
         private readonly ReadOnlyObservableCollection<Item> _items;
@@ -58,6 +61,7 @@ namespace v00v.ViewModel.Explorer
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
                  AvaloniaLocator.Current.GetService<IConfigurationRoot>())
         {
+            _channel = channel;
             _catalogModel = catalogModel;
             _setPageIndex = setPageIndex;
             _setTitle = setTitle;
@@ -227,7 +231,7 @@ namespace v00v.ViewModel.Explorer
 
         public async Task Download(string par, Item item)
         {
-            bool skip = par == "subs";
+            var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
             var task = item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
                                      _configuration.GetValue<string>("AppSettings:YouParam"),
@@ -251,6 +255,47 @@ namespace v00v.ViewModel.Explorer
         public void SetMenu(bool isSearch)
         {
             GotoMenu = isSearch ? "Subscribe" : "Go to Channel";
+        }
+
+        private void AddNewPl(PlaylistModel plmodel, Item item, WatchState par, bool isState, bool isPlanned)
+        {
+            Playlist plp;
+            if (isState)
+            {
+                plp = plmodel.Entries.Single(x => x.State == par);
+            }
+            else
+            {
+                plp = plmodel.Entries.FirstOrDefault(x => x.State == par);
+                if (plp == null)
+                {
+                    if (isPlanned)
+                    {
+                        plp = PlannedPlaylist.Instance;
+                        plp.Id = _channel.PlCache;
+                    }
+                    else
+                    {
+                        plp = WatchedPlaylist.Instance;
+                        plp.Id = _channel.ExCache;
+                    }
+
+                    plp.IsStatePlaylist = false;
+                    plp.Order = _channel.Playlists.Count;
+                    _channel.Playlists.Add(plp);
+                    plmodel.All.AddOrUpdate(plp);
+                }
+            }
+
+            plp.Count += 1;
+            if (isState)
+            {
+                plp.StateItems?.Add(item);
+            }
+            else
+            {
+                plp.Items.Add(item.Id);
+            }
         }
 
         private Func<Item, bool> BuildPlFilter(string playlistId)
@@ -360,6 +405,87 @@ namespace v00v.ViewModel.Explorer
             _popupController.Show(new ItemPopupContext(item));
         }
 
+        private void PlaylistArrange(PlaylistModel plmodel, WatchState par, WatchState oldState, Item item, bool isState)
+        {
+            if (plmodel == null)
+            {
+                return;
+            }
+
+            switch (par)
+            {
+                case WatchState.Notset:
+
+                    var pln = plmodel.Entries.Single(x => x.State == oldState);
+                    pln.Count -= 1;
+
+                    if (isState)
+                    {
+                        pln.StateItems?.RemoveAll(x => x.Id == item.Id);
+                    }
+                    else
+                    {
+                        pln.Items.RemoveAll(x => x == item.Id);
+                    }
+
+                    if (!isState && pln.Count == 0)
+                    {
+                        _channel.Playlists.Remove(pln);
+                        plmodel.All.RemoveKey(pln.Id);
+                    }
+
+                    break;
+
+                case WatchState.Watched:
+
+                    AddNewPl(plmodel, item, par, isState, false);
+
+                    if (oldState == WatchState.Planned)
+                    {
+                        RemovePrevPl(plmodel, item, oldState, isState);
+                    }
+
+                    break;
+
+                case WatchState.Planned:
+
+                    AddNewPl(plmodel, item, par, isState, true);
+
+                    if (oldState == WatchState.Watched)
+                    {
+                        RemovePrevPl(plmodel, item, oldState, isState);
+                    }
+
+                    break;
+            }
+        }
+
+        private void RemovePrevPl(PlaylistModel plmodel, Item item, WatchState oldState, bool isState)
+        {
+            var pl = isState
+                ? plmodel.Entries.Single(x => x.State == oldState)
+                : plmodel.Entries.FirstOrDefault(x => x.State == oldState);
+
+            if (pl != null)
+            {
+                pl.Count -= 1;
+                if (isState)
+                {
+                    pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+                }
+                else
+                {
+                    pl.Items.RemoveAll(x => x == item.Id);
+                }
+
+                if (!isState && pl.Count == 0)
+                {
+                    _channel.Playlists.Remove(pl);
+                    plmodel.All.RemoveKey(pl.Id);
+                }
+            }
+        }
+
         private async Task RunItem()
         {
             SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
@@ -446,53 +572,8 @@ namespace v00v.ViewModel.Explorer
                     citem.WatchState = par;
                 }
 
-                var plmodel = _catalogModel.GetCachedPlaylistModel(null);
-
-                if (plmodel == null)
-                {
-                    return;
-                }
-
-                switch (par)
-                {
-                    case WatchState.Notset:
-
-                        var pln = plmodel.Entries.Single(x => x.State == oldState);
-                        pln.Count -= 1;
-                        pln.StateItems?.RemoveAll(x => x.Id == item.Id);
-
-                        break;
-
-                    case WatchState.Watched:
-
-                        var plw = plmodel.Entries.Single(x => x.State == par);
-                        plw.Count += 1;
-                        plw.StateItems?.Add(item);
-
-                        if (oldState == WatchState.Planned)
-                        {
-                            var pl = plmodel.Entries.Single(x => x.State == oldState);
-                            pl.Count -= 1;
-                            pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                        }
-
-                        break;
-
-                    case WatchState.Planned:
-
-                        var plp = plmodel.Entries.Single(x => x.State == par);
-                        plp.Count += 1;
-                        plp.StateItems?.Add(item);
-
-                        if (oldState == WatchState.Watched)
-                        {
-                            var pl = plmodel.Entries.Single(x => x.State == oldState);
-                            pl.Count -= 1;
-                            pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                        }
-
-                        break;
-                }
+                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
+                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id), par, oldState, item, false);
             });
 
             All.AddOrUpdate(item);

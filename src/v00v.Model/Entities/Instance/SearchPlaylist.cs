@@ -10,8 +10,8 @@ namespace v00v.Model.Entities.Instance
             new SearchPlaylist
             {
                 IsStatePlaylist = true,
-                //IsSearchPlaylist = false,
-                Title = "Search",
+                ThumbSize = 25,
+                Title = " Search",
                 Order = 3,
                 Id = "-3",
                 Thumbnail =

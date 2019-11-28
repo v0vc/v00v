@@ -42,9 +42,9 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        channel.Playlists.RemoveAll(x => x.Id == channel.Id);
+                        channel.Playlists.RemoveAll(x => x.Id == channel.Id || x.Id == channel.ExCache || x.Id == channel.PlCache);
                         await context.Channels.AddAsync(_mapper.Map<Database.Models.Channel>(channel));
-                        int res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
                     }
@@ -66,9 +66,9 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        channels.ForEach(x => x.Playlists.RemoveAll(y => y.Id == x.Id));
+                        channels.ForEach(x => x.Playlists.RemoveAll(y => y.Id == x.Id || y.Id == x.ExCache || y.Id == x.PlCache));
                         await context.Channels.AddRangeAsync(channels.Select(x => _mapper.Map<Database.Models.Channel>(x)));
-                        int res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
                     }
@@ -98,7 +98,7 @@ namespace v00v.Services.Persistence.Repositories
                         }
 
                         context.Channels.Remove(channel);
-                        int res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
                     }
@@ -331,7 +331,7 @@ namespace v00v.Services.Persistence.Repositories
                         await context.ChannelTags.AddRangeAsync(tags.Select(x => new ChannelTag { TagId = x, ChannelId = channelId }));
 
                         context.Entry(ch).State = EntityState.Modified;
-                        int res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync();
                         transaction.Commit();
                         return res;
                     }

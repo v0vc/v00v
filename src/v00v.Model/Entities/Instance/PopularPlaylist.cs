@@ -10,8 +10,8 @@ namespace v00v.Model.Entities.Instance
             new PopularPlaylist
             {
                 IsStatePlaylist = true,
-                //IsPopularPlaylist = true,
-                Title = "Popular",
+                ThumbSize = 25,
+                Title = " Popular",
                 Order = 2,
                 Id = "-4",
                 Thumbnail =

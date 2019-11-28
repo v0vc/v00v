@@ -276,7 +276,13 @@ namespace v00v.ViewModel.Popup.Channel
 
             var task1 = _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
             var task2 = _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
-            await Task.WhenAll(task1, task2);
+            await Task.WhenAll(task1, task2).ContinueWith(x =>
+            {
+                if (task1.Status != TaskStatus.Faulted)
+                {
+                    _setTitle?.Invoke($"Done: {channel.Title}. Saved {task1.Result} rows");
+                }
+            });
             _updateList?.Invoke(channel);
             _updatePlList?.Invoke(channel);
             _setSelect?.Invoke(channel.Id);

@@ -6,6 +6,7 @@
     >
     <UserControl.KeyBindings>
         <KeyBinding Command="{Binding SelectChannelCommand, Mode=OneWay}" Gesture="Home"/>
+        <KeyBinding Command="{Binding ClearAddedCommand, Mode=OneWay}" Gesture="Delete"/>
     </UserControl.KeyBindings>
 
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">

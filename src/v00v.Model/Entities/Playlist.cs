@@ -82,7 +82,7 @@ namespace v00v.Model.Entities
 
         public string ThumbnailLink { get; set; }
 
-        public int ThumbSize => IsStatePlaylist ? 25 : 30;
+        public int ThumbSize { get; set; } = 30;
 
         public string Title { get; set; }
 

@@ -98,9 +98,32 @@ namespace v00v.ViewModel.Playlists
 
                         channel.Playlists.AddRange(res);
 
+                        var planned = channel.Items.Where(x => x.WatchState == WatchState.Planned).ToHashSet();
+                        if (planned.Count > 0)
+                        {
+                            var plp = PlannedPlaylist.Instance;
+                            plp.IsStatePlaylist = false;
+                            plp.Id = channel.PlCache;
+                            plp.Order = channel.Playlists.Count;
+                            plp.Count = planned.Count;
+                            plp.Items.AddRange(planned.Select(x => x.Id));
+                            channel.Playlists.Add(plp);
+                        }
+
+                        var watched = channel.Items.Where(x => x.WatchState == WatchState.Watched).ToHashSet();
+                        if (watched.Count > 0)
+                        {
+                            var wpl = WatchedPlaylist.Instance;
+                            wpl.IsStatePlaylist = false;
+                            wpl.Id = channel.ExCache;
+                            wpl.Order = channel.Playlists.Count;
+                            wpl.Count = watched.Count;
+                            wpl.Items.AddRange(watched.Select(x => x.Id));
+                            channel.Playlists.Add(wpl);
+                        }
+
                         var unlisted = channel.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted)
                             .ToHashSet();
-
                         if (unlisted.Count > 0)
                         {
                             var unpl = UnlistedPlaylist.Instance;
@@ -271,7 +294,7 @@ namespace v00v.ViewModel.Playlists
                 {
                     setSelect?.Invoke(channel.Id);
                     byte index;
-                    if (entry.IsStatePlaylist)
+                    if (entry.IsStatePlaylist && entry.Id != channel.Id && entry.Id != channel.PlCache && entry.Id != channel.ExCache)
                     {
                         _explorerModel.SetMenu(false);
                         if (entry.Id == "-3")
@@ -375,6 +398,7 @@ namespace v00v.ViewModel.Playlists
                     {
                         enableLog = false;
                     }
+
                     _explorerModel.EnableLog = enableLog;
                 }
                 else

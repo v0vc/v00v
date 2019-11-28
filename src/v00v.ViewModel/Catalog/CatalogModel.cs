@@ -321,7 +321,7 @@ namespace v00v.ViewModel.Catalog
 
         private static string MakeTitle(int count, Stopwatch sw)
         {
-            string items = count == 1 ? "item" : "items";
+            var items = count == 1 ? "item" : "items";
             return
                 $"Done {count} {items}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
         }
@@ -453,13 +453,17 @@ namespace v00v.ViewModel.Catalog
 
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-
             int count;
-
             var chId = SelectedEntry.IsStateChannel ? null : SelectedEntry.Id;
             if (chId == null)
             {
                 count = _baseChannel.Items.Count;
+                if (count == 0 && _baseChannel.Items.Count == 0)
+                {
+                    IsWorking = false;
+                    return;
+                }
+
                 _baseChannel.Items.Clear();
 
                 foreach (var channel in _entries.Where(x => x.Count > 0))
