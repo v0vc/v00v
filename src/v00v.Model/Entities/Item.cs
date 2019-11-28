@@ -129,21 +129,21 @@ namespace v00v.Model.Entities
                 return 0;
             }
 
-            Match match = NumRegex.Match(input);
+            var match = NumRegex.Match(input);
             return !match.Success ? 0 :
-                double.TryParse(match.Value.TrimEnd('%'), NumberStyles.Any, CultureInfo.InvariantCulture, out double res) ? res : 0;
+                double.TryParse(match.Value.TrimEnd('%'), NumberStyles.Any, CultureInfo.InvariantCulture, out var res) ? res : 0;
         }
 
         private static string IntTostrTime(int duration)
         {
-            TimeSpan t = TimeSpan.FromSeconds(duration);
+            var t = TimeSpan.FromSeconds(duration);
             return t.Days > 0 ? $"{t.Days:D2}:{t.Hours:D2}:{t.Minutes:D2}:{t.Seconds:D2}" :
                 t.Hours > 0 ? $"{t.Hours:D2}:{t.Minutes:D2}:{t.Seconds:D2}" : $"{t.Minutes:D2}:{t.Seconds:D2}";
         }
 
         private static string TimeAgo(DateTimeOffset dt)
         {
-            TimeSpan span = DateTime.Now - dt;
+            var span = DateTime.Now - dt;
             if (span.Days > 365)
             {
                 int years = span.Days / 365;
@@ -219,7 +219,7 @@ namespace v00v.Model.Entities
 
         public void RunItem(string mpcpath, string basedir)
         {
-            string param = Downloaded && FileName != null ? $"\"{Path.Combine(basedir, ChannelId, FileName)}\" /play" : $"{Link} /play";
+            var param = Downloaded && FileName != null ? $"\"{Path.Combine(basedir, ChannelId, FileName)}\" /play" : $"{Link} /play";
             var startInfo = new ProcessStartInfo(mpcpath, param)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -247,8 +247,11 @@ namespace v00v.Model.Entities
                 try
                 {
                     var fileName =
-                        $"{Title.RemoveInvalidChars().Replace('"', ' ').Replace('\'', ' ').Replace('?', ' ').Replace('/', ' ').Trim()}{fn.Extension}";
+                        $"{Title.RemoveInvalidChars().Replace('"', ' ').Replace('\'', ' ').Replace('?', ' ').Replace('/', ' ').Trim()}{fn.Extension}"
+                            .FilterWhiteSpaces();
+
                     var fulname = Path.Combine(SaveDir, fileName);
+
                     if (File.Exists(fulname))
                     {
                         File.Delete(fulname);
@@ -273,7 +276,7 @@ namespace v00v.Model.Entities
 
         private string MakeParam(string par, string youParam)
         {
-            string param = string.Empty;
+            var param = string.Empty;
             var basePar = $"{SaveDir}\\{Id}.%(ext)s\" \"{Link}\" {youParam}";
             switch (par)
             {

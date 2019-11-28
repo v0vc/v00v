@@ -19,6 +19,26 @@ namespace v00v.Model.Extensions
             return text.PadRight(40 - text.Length, ' ');
         }
 
+        public static string FilterWhiteSpaces(this string input)
+        {
+            if (input == null)
+            {
+                return string.Empty;
+            }
+
+            var stringBuilder = new StringBuilder(input.Length);
+            for (var i = 0; i < input.Length; i++)
+            {
+                var c = input[i];
+                if (i == 0 || !char.IsWhiteSpace(c) || char.IsWhiteSpace(c) && !char.IsWhiteSpace(input[i - 1]))
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString();
+        }
+
         public static string RemoveInvalidChars(this string filename)
         {
             return string.Concat(filename.Split(Path.GetInvalidPathChars())).Replace(":", string.Empty);

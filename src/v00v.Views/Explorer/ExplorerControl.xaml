@@ -8,6 +8,7 @@
 
     <UserControl.KeyBindings>
         <KeyBinding Command="{Binding RunItemCommand, Mode=OneWay}" Gesture="Enter"/>
+        <KeyBinding Command="{Binding DeleteItemCommand, Mode=OneWay}" Gesture="Delete"/>
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Planned}" Gesture="q"/>
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Watched}" Gesture="w"/>
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Notset}" Gesture="e"/>
