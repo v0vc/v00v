@@ -35,6 +35,9 @@ namespace v00v.Services.Synchronization
             var channelStructs =
                 await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).Select(x => x.Id).ToHashSet());
 
+            //var channelStructs =
+            //    _channelRepository.GetChannelsStructYield(syncPls, channels.Where(x => !x.IsNew).Select(x => x.Id).ToHashSet());
+
             setLog?.Invoke(channelStructs.Count == 1
                                ? $"Start sync: {channelStructs.First().ChannelTitle}"
                                : $"Start sync channels: {channelStructs.Count}, parallel: {parallel}");
@@ -45,18 +48,8 @@ namespace v00v.Services.Synchronization
             {
                 //IEnumerable<IEnumerable<Task<ChannelDiff>>> result = diffs.Split(99);
                 //foreach (IEnumerable<Task<ChannelDiff>> enumerable in result)
-                //{
-                //    Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable);
+                //{Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable)};
 
-                //    await tasks.ContinueWith(x =>
-                //    {
-                //        Thread.Sleep(TimeSpan.FromSeconds(1));
-                //        if (tasks.Exception != null)
-                //        {
-                //            setLog?.Invoke($"{tasks.Exception.Message}");
-                //        }
-                //    });
-                //}
                 var tasks = Task.WhenAll(diffs);
 
                 await tasks.ContinueWith(x =>
