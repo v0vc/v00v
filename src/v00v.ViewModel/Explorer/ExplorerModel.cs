@@ -402,6 +402,11 @@ namespace v00v.ViewModel.Explorer
                 }
             }
 
+            if (item.ChannelTitle == null)
+            {
+                item.ChannelTitle = _catalogModel.Entries.FirstOrDefault(x => x.Id == item.ChannelId)?.Title;
+            }
+
             _popupController.Show(new ItemPopupContext(item));
         }
 
