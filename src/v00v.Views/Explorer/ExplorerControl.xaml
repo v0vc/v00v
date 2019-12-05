@@ -14,7 +14,7 @@
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Notset}" Gesture="e"/>
     </UserControl.KeyBindings>
 
-    <Grid Background="#242e44" Margin="-0.7,-0.7,0,0">
+    <Grid Background="#242e44" Margin="-0.8,-0.8,0.7,0">
         <ListBox Grid.Row="0" Name="ItemList" BorderThickness="0"
                  Items="{Binding Items}"
                  SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
