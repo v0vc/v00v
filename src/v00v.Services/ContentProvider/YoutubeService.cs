@@ -485,9 +485,10 @@ namespace v00v.Services.ContentProvider
             diff.AddedItems.AddRange(uploadvids.Except(cs.Items).Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
             diff.DeletedItems.AddRange(cs.Items.Except(uploadvids));
 
+            setLog?.Invoke($"{diff.ChannelTitle}, added: {diff.AddedItems.Count}, deleted: {diff.DeletedItems.Count}");
+
             if (!syncPls)
             {
-                setLog?.Invoke($"{diff.ChannelTitle}, added: {diff.AddedItems.Count}, deleted: {diff.DeletedItems.Count}");
                 return diff;
             }
 
