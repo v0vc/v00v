@@ -87,8 +87,7 @@ namespace v00v.ViewModel.Explorer
                 ? ReactiveCommand.CreateFromTask(SelectChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.Create(SelectPlaylist, null, RxApp.MainThreadScheduler);
             OpenCommand = ReactiveCommand.Create((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
-            DownloadCommand =
-                ReactiveCommand.CreateFromTask((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
+            DownloadCommand = ReactiveCommand.Create((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
                 ReactiveCommand.Create((string par) => DownloadItem(par, SelectedEntry), null, RxApp.MainThreadScheduler);
             RunItemCommand = ReactiveCommand.CreateFromTask(RunItem, null, RxApp.MainThreadScheduler);

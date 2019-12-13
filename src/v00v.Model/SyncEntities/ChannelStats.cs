@@ -8,7 +8,7 @@ namespace v00v.Model.SyncEntities
         public string Description { get; set; }
         public long ItemsCount { get; set; }
         public long SubsCount { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
         public long ViewCount { get; set; }
 
         #endregion

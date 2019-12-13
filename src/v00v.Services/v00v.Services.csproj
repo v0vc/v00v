@@ -12,6 +12,7 @@
  
   <Import Project="..\..\build\EntityFramework.props" />
   <Import Project="..\..\build\NewtonSoft.props" />
+  <Import Project="..\..\build\Quartz.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />

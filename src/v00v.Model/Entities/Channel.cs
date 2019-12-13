@@ -64,7 +64,7 @@ namespace v00v.Model.Entities
 
         public byte[] Thumbnail { get; set; }
 
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
 
         public string Title
         {

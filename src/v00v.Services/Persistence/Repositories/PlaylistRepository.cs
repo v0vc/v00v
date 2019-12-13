@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using v00v.Model.Entities;
@@ -44,19 +42,14 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<Item>> GetPlaylistsItems(WatchState state)
+        public IEnumerable<Item> GetPlaylistsItems(WatchState state)
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (var item in context.Items.AsNoTracking().Include(x => x.Channel).AsNoTracking()
+                    .Where(x => x.WatchState == (byte)state))
                 {
-                    return await context.Items.AsNoTracking().Include(x => x.Channel).AsNoTracking()
-                        .Where(x => x.WatchState == (byte)state).Select(x => _mapper.Map<Item>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Item>(item);
                 }
             }
         }
@@ -65,37 +58,23 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                try
+                return new[]
                 {
-                    return new[]
-                    {
-                        context.Items.AsNoTracking().Count(x => x.SyncState == 2),
-                        context.Items.AsNoTracking().Count(x => x.WatchState == 2),
-                        context.Items.AsNoTracking().Count(x => x.WatchState == 1)
-                    };
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                    context.Items.AsNoTracking().Count(x => x.SyncState == 2),
+                    context.Items.AsNoTracking().Count(x => x.WatchState == 2),
+                    context.Items.AsNoTracking().Count(x => x.WatchState == 1)
+                };
             }
         }
 
-        public async Task<List<Item>> GetUnlistedPlaylistsItems()
+        public IEnumerable<Item> GetUnlistedPlaylistsItems()
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (var item in context.Items.AsNoTracking().Include(x => x.Channel).AsNoTracking()
+                    .Where(x => x.SyncState == (byte)SyncState.Unlisted || x.SyncState == (byte)SyncState.Deleted))
                 {
-                    return await context.Items.AsNoTracking().Include(x => x.Channel).AsNoTracking()
-                        .Where(x => x.SyncState == (byte)SyncState.Unlisted || x.SyncState == (byte)SyncState.Deleted)
-                        .Select(x => _mapper.Map<Item>(x)).ToListAsync();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Item>(item);
                 }
             }
         }

@@ -10,6 +10,7 @@ using v00v.Model.Enums;
 using v00v.Services.Backup;
 using v00v.Services.ContentProvider;
 using v00v.Services.Database;
+using v00v.Services.Dispatcher;
 using v00v.Services.Persistence;
 using v00v.Services.Persistence.Mappers;
 using v00v.Services.Persistence.Repositories;
@@ -69,6 +70,8 @@ namespace v00v
         {
             AvaloniaLocator.CurrentMutable.Bind<IYoutubeService>().ToSingleton<YoutubeService>();
 
+            AvaloniaLocator.CurrentMutable.Bind<ITaskDispatcher>().ToSingleton<TaskDispatcher>();
+
             AvaloniaLocator.CurrentMutable.Bind<IPopupController>().ToSingleton<PopupController>();
 
             AvaloniaLocator.CurrentMutable.Bind<IContextFactory>().ToSingleton<ContextFactory>();
@@ -123,7 +126,7 @@ namespace v00v
             var closedCount = applog.GetStatusCount(AppStatus.AppClosed);
             if (closedCount % 10 == 0 && closedCount != 0)
             {
-                context.Database.ExecuteSqlCommand("VACUUM");
+                context.Database.ExecuteSqlRaw("VACUUM");
             }
 
             context.Dispose();

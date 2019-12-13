@@ -21,7 +21,7 @@ namespace v00v.Services.Database.Models
         public string SubTitle { get; set; }
         public byte Sync { get; set; }
         public byte[] Thumbnail { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
         public string Title { get; set; }
         public long ViewCount { get; set; }
         public long ViewCountDiff { get; set; }

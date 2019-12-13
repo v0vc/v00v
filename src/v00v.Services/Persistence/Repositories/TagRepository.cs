@@ -108,18 +108,13 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public List<Tag> GetTags()
+        public IEnumerable<Tag> GetTags()
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                try
+                foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text))
                 {
-                    return context.Tags.AsNoTracking().OrderBy(x => x.Text).Select(x => _mapper.Map<Tag>(x)).ToList();
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
+                    yield return _mapper.Map<Tag>(tag);
                 }
             }
         }

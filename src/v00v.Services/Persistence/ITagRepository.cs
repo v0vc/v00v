@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using v00v.Model.Entities;
 
 namespace v00v.Services.Persistence
 {
@@ -13,7 +14,7 @@ namespace v00v.Services.Persistence
 
         List<int> GetOrder();
 
-        List<Model.Entities.Tag> GetTags();
+        IEnumerable<Tag> GetTags();
 
         #endregion
     }

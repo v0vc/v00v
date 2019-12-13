@@ -21,18 +21,19 @@ namespace v00v.Services.ContentProvider
     public class YoutubeService : IYoutubeService
     {
         #region Constants
+
         private const int ItemsPerPage = 50;
+
         private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
+
         //private const string Key = "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc";
         private const string PrintType = "prettyPrint=false";
         private const string Url = "https://www.googleapis.com/youtube/v3/";
         private const string YouChannel = "channel";
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
-        #endregion
 
-        //private string Key => _keys[new Random().Next(0, _keys.Length)];
-        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
+        #endregion
 
         #region Static Methods
 
@@ -179,7 +180,7 @@ namespace v00v.Services.ContentProvider
                         Timestamp =
                             x.SelectToken("snippet.publishedAt")
                                 ?.Value<DateTime?>()
-                            ?? DateTimeOffset.MinValue,
+                            ?? DateTime.MinValue,
                         Description =
                             x.SelectToken("snippet.description")
                                 ?.Value<string>(),
@@ -232,8 +233,7 @@ namespace v00v.Services.ContentProvider
 
         public async Task FillThumbs(IReadOnlyCollection<Playlist> items)
         {
-            var itasks =
-                items.Select(item => new Tuple<string, Task<byte[]>>(item.Id, GetStreamFromUrl(item.ThumbnailLink))).ToList();
+            var itasks = items.Select(item => new Tuple<string, Task<byte[]>>(item.Id, GetStreamFromUrl(item.ThumbnailLink))).ToList();
 
             await Task.WhenAll(itasks.Select(x => x.Item2));
 
@@ -297,7 +297,7 @@ namespace v00v.Services.ContentProvider
                             .RemoveSpecialCharacters(),
                     Timestamp =
                         x.SelectToken("contentDetails.videoPublishedAt", false)
-                            ?.Value<DateTime?>() ?? DateTimeOffset.MinValue,
+                            ?.Value<DateTime?>() ?? DateTime.MinValue,
                     ThumbnailLink = x.SelectToken("snippet.thumbnails.default.url", false)
                         .Value<string>()
                 }).ToList();
@@ -396,7 +396,7 @@ namespace v00v.Services.ContentProvider
                         Timestamp =
                             x.SelectToken("snippet.publishedAt")
                                 ?.Value<DateTime?>()
-                            ?? DateTimeOffset.MinValue,
+                            ?? DateTime.MinValue,
                         Description =
                             x.SelectToken("snippet.description")
                                 ?.Value<string>(),
@@ -658,8 +658,7 @@ namespace v00v.Services.ContentProvider
                                               x.SelectToken("snippet.title")?.Value<string>().RemoveNewLine()
                                                   .RemoveSpecialCharacters(),
                                           Timestamp =
-                                              x.SelectToken("snippet.publishedAt")?.Value<DateTime?>()
-                                              ?? DateTimeOffset.MinValue,
+                                              x.SelectToken("snippet.publishedAt")?.Value<DateTime?>() ?? DateTime.MinValue,
                                           Description = x.SelectToken("snippet.description")?.Value<string>(),
                                           ViewCount = x.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0,
                                           Comments = x.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0,
@@ -851,5 +850,8 @@ namespace v00v.Services.ContentProvider
         }
 
         #endregion
+
+        //private string Key => _keys[new Random().Next(0, _keys.Length)];
+        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
     }
 }

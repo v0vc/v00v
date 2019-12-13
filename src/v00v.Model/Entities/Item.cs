@@ -101,7 +101,7 @@ namespace v00v.Model.Entities
 
         public string ThumbnailLink { get; set; }
 
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
 
         public string Title { get; set; }
 
@@ -240,10 +240,10 @@ namespace v00v.Model.Entities
         private void HandleDownload(bool skip)
         {
             IsWorking = false;
-            Downloaded = true;
             var fn = new DirectoryInfo(SaveDir).GetFiles($"{Id}.*").FirstOrDefault();
             if (fn != null)
             {
+                Downloaded = true;
                 try
                 {
                     var fileName =
@@ -268,6 +268,10 @@ namespace v00v.Model.Entities
                     FileName = fn.Name;
                     _setLog?.Invoke(e.Message);
                 }
+            }
+            else
+            {
+                Downloaded = false;
             }
 
             _proc.OutputDataReceived -= OutputDataReceived;

@@ -23,7 +23,7 @@ namespace v00v.Model.Entities.Instance
                 WatchedCount = -512,
                 PlannedCount = -512,
                 Order = -512,
-                Timestamp = DateTimeOffset.MinValue
+                Timestamp = DateTime.MinValue
             };
         }
 

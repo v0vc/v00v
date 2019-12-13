@@ -33,7 +33,7 @@ namespace v00v.Services.Database.Models
 
         public string ThumbnailLink { get; set; }
 
-        public DateTimeOffset Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
 
         public string Title { get; set; }
 

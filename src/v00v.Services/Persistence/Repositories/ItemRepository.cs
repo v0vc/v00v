@@ -97,16 +97,7 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                try
-                {
-                    return await context.Items.AsNoTracking().Where(x => x.WatchState != 0)
-                        .ToDictionaryAsync(x => x.Id, y => y.WatchState);
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                return await context.Items.AsNoTracking().Where(x => x.WatchState != 0).ToDictionaryAsync(x => x.Id, y => y.WatchState);
             }
         }
 
@@ -203,7 +194,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
                         if (item != null)
                         {
                             item.FileName = filename;
@@ -232,7 +223,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var itemsdb = items.Select(x => _mapper.Map<Database.Models.Item>(x)).ToList();
+                        var itemsdb = items.Select(x => _mapper.Map<Database.Models.Item>(x)).ToHashSet();
                         context.Items.UpdateRange(itemsdb);
 
                         foreach (var item in itemsdb)
@@ -249,12 +240,13 @@ namespace v00v.Services.Persistence.Repositories
 
                         await context.SaveChangesAsync();
                         transaction.Commit();
+                        var ids = items.Select(y => y.Id);
 
                         return channelId != null
                             ? await context.Items.AsNoTracking()
-                                .Where(x => x.ChannelId == channelId && x.ViewDiff > 0 && items.Select(y => y.Id).Contains(x.Id))
+                                .Where(x => x.ChannelId == channelId && x.ViewDiff > 0 && ids.Contains(x.Id))
                                 .ToDictionaryAsync(id => id.Id, v => v.ViewDiff)
-                            : await context.Items.AsNoTracking().Where(x => x.ViewDiff > 0 && items.Select(y => y.Id).Contains(x.Id))
+                            : await context.Items.AsNoTracking().Where(x => x.ViewDiff > 0 && ids.Contains(x.Id))
                                 .ToDictionaryAsync(id => id.Id, v => v.ViewDiff);
                     }
                     catch (Exception exception)
@@ -275,7 +267,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsTracking().FirstOrDefaultAsync(x => x.Id == parsedId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == parsedId);
                         if (item != null)
                         {
                             item.WatchState = watch;

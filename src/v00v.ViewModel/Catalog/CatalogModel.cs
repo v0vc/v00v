@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -11,14 +12,17 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using LazyCache;
+using Microsoft.Extensions.Configuration;
 using ReactiveUI;
 using v00v.Model;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Model.Extensions;
+using v00v.Model.SyncEntities;
 using v00v.Services.Backup;
 using v00v.Services.ContentProvider;
+using v00v.Services.Dispatcher;
 using v00v.Services.Persistence;
 using v00v.Services.Synchronization;
 using v00v.ViewModel.Explorer;
@@ -32,11 +36,13 @@ namespace v00v.ViewModel.Catalog
     {
         #region Static and Readonly Fields
 
+        private readonly IAppLogRepository _appLogRepository;
         private readonly IBackupService _backupService;
         private readonly Channel _baseChannel;
         private readonly ExplorerModel _baseExplorerModel;
         private readonly PlaylistModel _basePlaylistModel;
         private readonly IChannelRepository _channelRepository;
+        private readonly IConfiguration _configuration;
         private readonly ReadOnlyObservableCollection<Channel> _entries;
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
@@ -46,6 +52,7 @@ namespace v00v.ViewModel.Catalog
         private readonly List<int> _tagOrder;
         private readonly ITagRepository _tagRepository;
         private readonly List<Tag> _tags;
+        private readonly ITaskDispatcher _taskDispatcher;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -68,12 +75,15 @@ namespace v00v.ViewModel.Catalog
 
         public CatalogModel(Action<string> setTitle, Action<byte> setPageIndex) :
             this(AvaloniaLocator.Current.GetService<IChannelRepository>(),
+                 AvaloniaLocator.Current.GetService<IItemRepository>(),
                  AvaloniaLocator.Current.GetService<ITagRepository>(),
+                 AvaloniaLocator.Current.GetService<IAppLogRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<ISyncService>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                 AvaloniaLocator.Current.GetService<IItemRepository>(),
-                 AvaloniaLocator.Current.GetService<IBackupService>())
+                 AvaloniaLocator.Current.GetService<IBackupService>(),
+                 AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
+                 AvaloniaLocator.Current.GetService<ITaskDispatcher>())
         {
             _setTitle = setTitle;
             _setPageIndex = setPageIndex;
@@ -85,7 +95,6 @@ namespace v00v.ViewModel.Catalog
             _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex, setTitle);
             _basePlaylistModel = new PlaylistModel(_baseChannel, _baseExplorerModel, setPageIndex, setTitle, SetSelected, GetExistIds);
             All.AddOrUpdate(_baseChannel);
-
             All.AddOrUpdate(_channelRepository.GetChannels());
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildSearchFilter))
@@ -161,7 +170,7 @@ namespace v00v.ViewModel.Catalog
             });
 
             SelectedEntry = _baseChannel;
-            _tags = _tagRepository.GetTags();
+            _tags = _tagRepository.GetTags().ToList();
             _tagOrder = _tagRepository.GetOrder();
             Tags.AddRange(_tags);
 
@@ -185,23 +194,64 @@ namespace v00v.ViewModel.Catalog
             SyncChannelCommand.ThrownExceptions.Subscribe(OnException);
             SyncChannelsCommand.ThrownExceptions.Subscribe(OnException);
             RestoreCommand.ThrownExceptions.Subscribe(OnException);
+
+            // scheduler
+            var enabled = _configuration.GetValue<bool>("AppSettings:EnableSchedule");
+            if (!enabled)
+            {
+                return;
+            }
+
+            var timeSchedule = _configuration.GetValue<string>("AppSettings:TimeSchedule(HH:mm)");
+            if (DateTime.TryParseExact(timeSchedule, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+            {
+                _taskDispatcher.DailySync = dt.TimeOfDay;
+                var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
+                                                                                _appLogRepository,
+                                                                                _entries.Where(x => !x.IsNew).ToList(),
+                                                                                true,
+                                                                                SetLog,
+                                                                                UpdateChannels),
+                                                 TaskCreationOptions.LongRunning);
+                ExceptionHandling(task);
+            }
+
+            var repeatSchedule = _configuration.GetValue<string>("AppSettings:RepeatSchedule(sec)");
+            if (int.TryParse(repeatSchedule, NumberStyles.None, CultureInfo.InvariantCulture, out var sec) && sec > 30)
+            {
+                _taskDispatcher.RepeatSync = sec;
+                var task = Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
+                                                                                 _appLogRepository,
+                                                                                 _entries.Where(x => !x.IsNew).ToList(),
+                                                                                 false,
+                                                                                 SetLog,
+                                                                                 UpdateChannels),
+                                                 TaskCreationOptions.LongRunning);
+                ExceptionHandling(task);
+            }
         }
 
         private CatalogModel(IChannelRepository channelRepository,
+            IItemRepository itemRepository,
             ITagRepository tagRepository,
+            IAppLogRepository appLogRepository,
             IPopupController popupController,
             ISyncService syncService,
             IYoutubeService youtubeService,
-            IItemRepository itemRepository,
-            IBackupService backupService)
+            IBackupService backupService,
+            IConfiguration configuration,
+            ITaskDispatcher taskDispatcher)
         {
             _channelRepository = channelRepository;
             _tagRepository = tagRepository;
+            _appLogRepository = appLogRepository;
+            _itemRepository = itemRepository;
             _popupController = popupController;
             _syncService = syncService;
             _youtubeService = youtubeService;
-            _itemRepository = itemRepository;
             _backupService = backupService;
+            _configuration = configuration;
+            _taskDispatcher = taskDispatcher;
         }
 
         #endregion
@@ -601,7 +651,7 @@ namespace v00v.ViewModel.Catalog
             _setTitle?.Invoke(MakeTitle(task.Result, sw));
 
             GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
-            // await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel:{deletedId}");
+            await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel: {deletedId} - {title}");
         }
 
         private void DeleteNewTag(int tagId)
@@ -629,6 +679,18 @@ namespace v00v.ViewModel.Catalog
                                                           UpdatePlaylist,
                                                           null,
                                                           ResortList));
+        }
+
+        private void ExceptionHandling(Task task)
+        {
+            task.ContinueWith(t =>
+            {
+                var exception = t.Exception;
+                if (exception != null)
+                {
+                    SetLog(exception.Message);
+                }
+            });
         }
 
         private IObservable<SortExpressionComparer<Channel>> GetChannelSorter()
@@ -895,7 +957,7 @@ namespace v00v.ViewModel.Catalog
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            //await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start full sync: {SelectedEntry.Id}");
+            await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start sync: {oldId}");
 
             var lst = new List<Channel> { _baseChannel, channel };
             var task = _syncService.Sync(true, true, lst, SetLog);
@@ -906,7 +968,9 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Status == TaskStatus.Faulted)
             {
-                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                var str = task.Exception == null ? "Faulted" : $"{task.Exception.Message}";
+                _setTitle?.Invoke(str);
+                await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, str);
                 return;
             }
 
@@ -949,16 +1013,19 @@ namespace v00v.ViewModel.Catalog
 
             All.AddOrUpdate(lst);
             SelectedEntry = channel;
+            await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
         }
 
         private async Task SyncChannels()
         {
             _setTitle?.Invoke($"Working {_entries.Count(x => !x.IsNew) - 1} channels..");
             IsWorking = true;
+            var syncPls = SyncPls;
             var sw = Stopwatch.StartNew();
-            //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistStarted, $"Start simple sync:{Entries.Count(x => !x.IsStateChannel)}");
+            await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistStarted : AppStatus.SyncWithoutPlaylistStarted,
+                                              $"Start sync: {_entries.Count(x => !x.IsNew) - 1}");
 
-            var task = _syncService.Sync(MassSync, SyncPls, _entries, SetLog);
+            var task = _syncService.Sync(MassSync, syncPls, _entries.Where(x => !x.IsNew).ToList(), SetLog);
 
             await Task.WhenAll(task).ContinueWith(done =>
             {
@@ -967,30 +1034,41 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Status == TaskStatus.Faulted)
             {
-                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                var str = task.Exception == null ? "Faulted" : $"{task.Exception.Message}";
+                await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, str);
+                _setTitle?.Invoke(str);
                 return;
             }
 
             _setTitle?.Invoke(MakeTitle(task.Result.NewItems.Count, sw));
 
-            if (task.Result.NoUnlistedAgain.Count > 0)
+            UpdateChannels(task.Result);
+
+            await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
+                                              $"Finished sync: {sw.Elapsed.Duration()}");
+            //SetErroSyncChannels(diff.ErrorSyncChannels);
+        }
+
+        private void UpdateChannels(SyncDiff diff)
+        {
+            if (diff.NoUnlistedAgain.Count > 0)
             {
                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-                unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
-                unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
+                unlistedpl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
+                unlistedpl.Count -= diff.NoUnlistedAgain.Count;
                 foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
                 {
-                    MarkUnlisted(channel, task.Result.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
+                    MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
                 }
             }
 
             All.AddOrUpdate(_entries.Where(x => !x.IsNew));
-            if (task.Result.NewItems.Count > 0)
+            if (diff.NewItems.Count > 0)
             {
                 var expmodel = GetCachedExplorerModel(null);
                 if (expmodel != null)
                 {
-                    expmodel.All.AddOrUpdate(task.Result.NewItems);
+                    expmodel.All.AddOrUpdate(diff.NewItems);
                     expmodel.EnableLog = expmodel.All.Items.Any();
                     _setPageIndex?.Invoke(0);
                 }
@@ -1000,9 +1078,6 @@ namespace v00v.ViewModel.Catalog
             {
                 SelectedEntry = _baseChannel;
             }
-
-            //await _appLogRepository.SetStatus(AppStatus.SyncWithoutPlaylistFinished, $"Finished simple sync: {sw.Elapsed.Duration()}")
-            //SetErroSyncChannels(diff.ErrorSyncChannels);
         }
 
         private void UpdateList(Channel channel)

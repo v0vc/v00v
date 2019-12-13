@@ -90,7 +90,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var channel = await context.Channels.AsTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
                         if (channel == null)
                         {
                             transaction.Rollback();
@@ -127,17 +127,16 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, HashSet<string> ids)
+        public async Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, string channelId)
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                if (ids.Count == 2)
+                if (channelId != null)
                 {
                     // one channel
                     var channel = syncPls
-                        ? await context.Channels.AsNoTracking().Include(x => x.Playlists).AsNoTracking().Include(x => x.Items)
-                            .AsNoTracking().FirstAsync(x => x.Id == ids.Last())
-                        : await context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().FirstAsync(x => x.Id == ids.Last());
+                        ? await context.Channels.Include(x => x.Playlists).Include(x => x.Items).FirstAsync(x => x.Id == channelId)
+                        : await context.Channels.Include(x => x.Items).FirstAsync(x => x.Id == channelId);
 
                     return new List<ChannelStruct>
                     {
@@ -146,16 +145,15 @@ namespace v00v.Services.Persistence.Repositories
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
                             Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems =
-                                channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
+                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         }
                     };
                 }
 
                 var channels = syncPls
-                    ? context.Channels.AsNoTracking().Include(x => x.Playlists).AsNoTracking().Include(x => x.Items).AsNoTracking()
-                    : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking();
+                    ? context.Channels.Include(x => x.Playlists).Include(x => x.Items)
+                    : context.Channels.Include(x => x.Items);
 
                 return await channels.Select(channel => new ChannelStruct
                 {
@@ -163,25 +161,22 @@ namespace v00v.Services.Persistence.Repositories
                     ChannelTitle = channel.Title,
                     Items = channel.Items.Select(y => y.Id),
                     UnlistedItems =
-                        channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id)
-                            .ToHashSet(),
+                        channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                     Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                 }).ToListAsync();
             }
         }
 
-        public IEnumerable<ChannelStruct> GetChannelsStructYield(bool syncPls, HashSet<string> ids)
+        public IEnumerable<ChannelStruct> GetChannelsStructYield(bool syncPls, string channelId)
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                if (ids.Count == 2)
+                if (channelId != null)
                 {
                     // one channel
-                    var id = ids.Last();
                     var channel = syncPls
-                        ? context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists).AsNoTracking()
-                            .FirstOrDefault(x => x.Id == id)
-                        : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().FirstOrDefault(x => x.Id == id);
+                        ? context.Channels.Include(x => x.Playlists).Include(x => x.Items).FirstOrDefault(x => x.Id == channelId)
+                        : context.Channels.Include(x => x.Items).FirstOrDefault(x => x.Id == channelId);
 
                     if (channel != null)
                     {
@@ -190,8 +185,7 @@ namespace v00v.Services.Persistence.Repositories
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
                             Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems =
-                                channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
+                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         };
                     }
@@ -199,8 +193,8 @@ namespace v00v.Services.Persistence.Repositories
                 else
                 {
                     var channels = syncPls
-                        ? context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking().Include(x => x.Playlists).AsNoTracking()
-                        : context.Channels.AsNoTracking().Include(x => x.Items).AsNoTracking();
+                        ? context.Channels.Include(x => x.Playlists).Include(x => x.Items)
+                        : context.Channels.Include(x => x.Items);
 
                     foreach (var channel in channels)
                     {
@@ -209,8 +203,7 @@ namespace v00v.Services.Persistence.Repositories
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
                             Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems =
-                                channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id).ToHashSet(),
+                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         };
                     }
@@ -302,15 +295,15 @@ namespace v00v.Services.Persistence.Repositories
                             // playlists
                             if (fdiff.DeletedPlaylists.Count > 0)
                             {
-                                context.Playlists.RemoveRange(context.Playlists.AsNoTracking()
-                                                                  .Where(x => fdiff.DeletedPlaylists.Contains(x.Id)));
+                                context.Playlists.RemoveRange(context.Playlists.Where(x => fdiff.DeletedPlaylists.Contains(x.Id)));
                             }
 
                             if (fdiff.NewPlaylists.Count > 0)
                             {
-                                var dbPls = fdiff.NewPlaylists.Select(x => _mapper.Map<Playlist>(x)).ToList();
-                                await context.Playlists.AddRangeAsync(dbPls);
-                                await context.ItemPlaylists.AddRangeAsync(dbPls.SelectMany(x => x.Items));
+                                var dbPls = fdiff.NewPlaylists.Select(x => _mapper.Map<Playlist>(x)).ToHashSet();
+                                var ptask = context.Playlists.AddRangeAsync(dbPls);
+                                var iptask = context.ItemPlaylists.AddRangeAsync(dbPls.SelectMany(x => x.Items));
+                                await Task.WhenAny(ptask, iptask);
                             }
 
                             // playlist-items
@@ -319,14 +312,11 @@ namespace v00v.Services.Persistence.Repositories
                                 var current = new List<ItemPlaylist>();
                                 foreach ((string key, var value) in fdiff.ExistPlaylists)
                                 {
-                                    foreach (var item in value)
-                                    {
-                                        current.Add(new ItemPlaylist { ItemId = item.Id, PlaylistId = key });
-                                    }
+                                    current.AddRange(value.Select(item => new ItemPlaylist { ItemId = item.Id, PlaylistId = key }));
                                 }
 
-                                var exist = context.ItemPlaylists.AsNoTracking()
-                                    .Where(x => current.Select(y => y.PlaylistId).Contains(x.PlaylistId)).ToList();
+                                var exist = context.ItemPlaylists.Where(x => current.Select(y => y.PlaylistId).Contains(x.PlaylistId))
+                                    .ToList();
 
                                 var deleted = exist.Except(current, ItemPlaylist.ItemIdPlaylistIdComparer).ToList();
 
@@ -335,7 +325,7 @@ namespace v00v.Services.Persistence.Repositories
                                     context.ItemPlaylists.RemoveRange(deleted);
                                     foreach (var playlist in deleted.GroupBy(x => x.PlaylistId))
                                     {
-                                        var pl = await context.Playlists.AsTracking().FirstOrDefaultAsync(x => x.Id == playlist.Key);
+                                        var pl = await context.Playlists.FirstOrDefaultAsync(x => x.Id == playlist.Key);
                                         if (pl == null)
                                         {
                                             continue;
@@ -346,7 +336,7 @@ namespace v00v.Services.Persistence.Repositories
                                     }
                                 }
 
-                                var added = current.Except(exist, ItemPlaylist.ItemIdPlaylistIdComparer).ToList();
+                                var added = current.Except(exist, ItemPlaylist.ItemIdPlaylistIdComparer).ToHashSet();
                                 if (added.Count > 0)
                                 {
                                     await context.ItemPlaylists.AddRangeAsync(added);
@@ -372,9 +362,9 @@ namespace v00v.Services.Persistence.Repositories
                         }
 
                         //become visible
-                        foreach (string s in fdiff.NoUnlistedAgain)
+                        foreach (var s in fdiff.NoUnlistedAgain)
                         {
-                            var item = await context.Items.AsTracking().FirstOrDefaultAsync(x => x.Id == s);
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
                             if (item != null && (item.SyncState == 2 || item.SyncState == 3))
                             {
                                 item.SyncState = 0;
@@ -385,7 +375,7 @@ namespace v00v.Services.Persistence.Repositories
                         // channels
                         if (fdiff.Channels.Count > 0)
                         {
-                            var chs = context.Channels.AsNoTracking().Where(x => fdiff.Channels.ContainsKey(x.Id)).ToList();
+                            var chs = context.Channels.AsEnumerable().Where(x => fdiff.Channels.ContainsKey(x.Id)).ToHashSet();
                             foreach ((string s, var value) in fdiff.Channels)
                             {
                                 var ch = chs.First(x => x.Id == s);
@@ -402,7 +392,7 @@ namespace v00v.Services.Persistence.Repositories
                                     ch.Count += (int)value.ItemsCount;
                                 }
 
-                                if (value.Timestamp != DateTimeOffset.MinValue)
+                                if (value.Timestamp != DateTime.MinValue)
                                 {
                                     ch.Timestamp = value.Timestamp;
                                 }
@@ -419,7 +409,6 @@ namespace v00v.Services.Persistence.Repositories
 
                         var res = await context.SaveChangesAsync();
                         transaction.Commit();
-
                         return res;
                     }
                     catch (Exception exception)

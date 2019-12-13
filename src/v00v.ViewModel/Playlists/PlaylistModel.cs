@@ -267,28 +267,28 @@ namespace v00v.ViewModel.Playlists
             });
         }
 
-        private async Task FillPlaylistItems(Playlist playlist)
+        private void FillPlaylistItems(Playlist playlist)
         {
-            List<Item> newItems = null;
+            IEnumerable<Item> newItems = null;
             switch (playlist.Id)
             {
                 case "-2":
-                    newItems = await _playlistRepository.GetUnlistedPlaylistsItems();
+                    newItems = _playlistRepository.GetUnlistedPlaylistsItems();
                     break;
                 case "-1":
-                    newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Planned);
+                    newItems = _playlistRepository.GetPlaylistsItems(WatchState.Planned);
                     break;
                 case "0":
-                    newItems = await _playlistRepository.GetPlaylistsItems(WatchState.Watched);
+                    newItems = _playlistRepository.GetPlaylistsItems(WatchState.Watched);
                     break;
             }
 
-            playlist.StateItems = newItems;
+            playlist.StateItems = newItems?.ToList();
         }
 
         private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)
         {
-            this.WhenValueChanged(x => x.SelectedEntry).Subscribe(async entry =>
+            this.WhenValueChanged(x => x.SelectedEntry).Subscribe(entry =>
             {
                 if (entry != null)
                 {
@@ -329,7 +329,7 @@ namespace v00v.ViewModel.Playlists
 
                         if (entry.StateItems == null)
                         {
-                            await FillPlaylistItems(entry);
+                            FillPlaylistItems(entry);
                         }
 
                         if (entry.StateItems == null || entry.StateItems.Count == 0)

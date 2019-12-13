@@ -30,61 +30,77 @@ namespace v00v.Services.Synchronization
 
         #region Methods
 
-        public async Task<SyncDiff> Sync(bool parallel, bool syncPls, IReadOnlyCollection<Channel> channels, Action<string> setLog)
+        public async Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog)
         {
-            var channelStructs =
-                await _channelRepository.GetChannelsStruct(syncPls, channels.Where(x => !x.IsNew).Select(x => x.Id).ToHashSet());
+            setLog?.Invoke(channels.Count == 1
+                               ? $"Working: {channels.First().Title}.."
+                               : $"Working channels: {channels.Count - 1}, parallel: {parallel}");
 
-            //var channelStructs =
-            //    _channelRepository.GetChannelsStructYield(syncPls, channels.Where(x => !x.IsNew).Select(x => x.Id).ToHashSet());
+            //var channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channelId);
 
-            setLog?.Invoke(channelStructs.Count == 1
-                               ? $"Start sync: {channelStructs.First().ChannelTitle}"
-                               : $"Start sync channels: {channelStructs.Count}, parallel: {parallel}");
+            var unl = new List<string>();
+            var diffs = new List<ChannelDiff>();
+            IEnumerable<ChannelStruct> channelStructs = null;
 
-            var diffs = channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)).ToHashSet();
+            await Task.Run(() =>
+            {
+                channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
+                unl.AddRange(channelStructs.SelectMany(x => x.UnlistedItems));
+                //Parallel.ForEach(channelStructs,
+                //                 x =>
+                //                 {
+                //                     diffs.Add(_youtubeService.GetChannelDiffAsync(x, syncPls, setLog));
+                //                     unl.AddRange(x.UnlistedItems);
+                //                 });
+            });
 
             if (parallel)
             {
-                //IEnumerable<IEnumerable<Task<ChannelDiff>>> result = diffs.Split(99);
-                //foreach (IEnumerable<Task<ChannelDiff>> enumerable in result)
-                //{Task<ChannelDiff[]> tasks = Task.WhenAll(enumerable)};
-
-                var tasks = Task.WhenAll(diffs);
-
+                var pdiff = new List<Task<ChannelDiff>>();
+                pdiff.AddRange(channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)));
+                var tasks = Task.WhenAll(pdiff);
                 await tasks.ContinueWith(x =>
                 {
                     if (tasks.Exception != null)
                     {
                         setLog?.Invoke($"{tasks.Exception.Message}");
                     }
+                    else
+                    {
+                        diffs.AddRange(pdiff.Select(diff => diff.Result));
+                    }
                 });
             }
             else
             {
-                var err = new List<Task<ChannelDiff>>();
-                foreach (var diff in diffs)
+                var err = new List<ChannelStruct>();
+                var cur = 1;
+                foreach (var x in channelStructs)
                 {
                     try
                     {
-                        await diff;
-                        setLog?.Invoke($"{diff.Status}");
+                        var diff = await _youtubeService.GetChannelDiffAsync(x, syncPls, setLog);
+                        diffs.Add(diff);
+                        setLog?.Invoke($"{diff.ChannelId} ok, {cur} of {channels.Count - 1}");
+                        cur++;
                     }
                     catch (Exception e)
                     {
-                        err.Add(diff);
-                        setLog?.Invoke($"Add to second try: {diff.Result.ChannelId}, {e.Message}");
+                        err.Add(x);
+                        setLog?.Invoke($"Add to second try: {x.ChannelId}, {e.Message}");
                     }
                 }
 
                 if (err.Count > 0)
                 {
                     setLog?.Invoke($"Second try: {err.Count}");
-                    foreach (var diff in diffs)
+                    foreach (var cs in err)
                     {
                         try
                         {
-                            await diff;
+                            var diff = await _youtubeService.GetChannelDiffAsync(cs, syncPls, setLog);
+                            diffs.Add(diff);
+                            setLog?.Invoke($"{diff.ChannelId} ok");
                         }
                         catch (Exception e)
                         {
@@ -96,23 +112,21 @@ namespace v00v.Services.Synchronization
 
             var res = new SyncDiff(syncPls);
 
-            res.ErrorSyncChannels.AddRange(diffs.Where(x => x.Result.Faulted).Select(x => x.Result.ChannelId));
+            res.ErrorSyncChannels.AddRange(diffs.Where(x => x.Faulted).Select(x => x.ChannelId));
 
             if (res.ErrorSyncChannels.Count > 0)
             {
                 setLog?.Invoke($"Banned channel(s): {string.Join(", ", res.ErrorSyncChannels)}");
             }
 
-            res.Channels = diffs.Where(x => !x.IsFaulted).ToDictionary(x => x.Result.ChannelId,
-                                                                       y => new ChannelStats
-                                                                       {
-                                                                           ViewCount = y.Result.ViewCount,
-                                                                           SubsCount = y.Result.SubsCount,
-                                                                           Description = y.Result.Description
-                                                                       });
+            res.Channels = diffs.ToDictionary(x => x.ChannelId,
+                                              y => new ChannelStats
+                                              {
+                                                  ViewCount = y.ViewCount, SubsCount = y.SubsCount, Description = y.Description
+                                              });
 
-            foreach (((string item1, string item2), var value) in diffs.Where(x => x.Status == TaskStatus.RanToCompletion)
-                .ToDictionary(z => new Tuple<string, string>(z.Result.ChannelId, z.Result.ChannelTitle), z => z.Result.AddedItems))
+            foreach (((string item1, string item2), var value) in
+                diffs.ToDictionary(z => new Tuple<string, string>(z.ChannelId, z.ChannelTitle), z => z.AddedItems))
             {
                 foreach (var privacy in value)
                 {
@@ -120,8 +134,7 @@ namespace v00v.Services.Synchronization
                 }
             }
 
-            res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.Result.UploadedIds)
-                                             .Where(x => channelStructs.SelectMany(y => y.UnlistedItems).Contains(x)));
+            res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.UploadedIds).Where(x => unl.Contains(x)));
 
             if (res.Items.Count > 0)
             {
@@ -132,7 +145,7 @@ namespace v00v.Services.Synchronization
 
             if (syncPls)
             {
-                res.NewPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.AddedPls).Select(x => x.Key));
+                res.NewPlaylists.AddRange(diffs.SelectMany(x => x.AddedPls).Select(x => x.Key));
                 setLog?.Invoke(res.NewPlaylists.Count > 0
                                    ? $"New playlists: {res.NewPlaylists.Count} - {string.Join(", ", res.NewPlaylists.Select(x => x.Title))}"
                                    : $"New playlists: {res.NewPlaylists.Count}");
@@ -141,18 +154,17 @@ namespace v00v.Services.Synchronization
                     await _youtubeService.FillThumbs(res.NewPlaylists);
                     foreach (var playlist in res.NewPlaylists)
                     {
-                        playlist.Items.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.AddedPls)
-                                                    .First(x => x.Key.Id == playlist.Id).Value.Select(x => x.Id));
+                        playlist.Items.AddRange(diffs.SelectMany(x => x.AddedPls).First(x => x.Key.Id == playlist.Id).Value
+                                                    .Select(x => x.Id));
                     }
                 }
 
-                res.DeletedPlaylists.AddRange(diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.DeletedPls));
+                res.DeletedPlaylists.AddRange(diffs.SelectMany(x => x.DeletedPls));
                 setLog?.Invoke(res.DeletedPlaylists.Count > 0
                                    ? $"Deleted playlists: {res.DeletedPlaylists.Count} - {string.Join(", ", res.DeletedPlaylists)}"
                                    : $"Deleted playlists: {res.DeletedPlaylists.Count}");
 
-                res.ExistPlaylists = diffs.Where(x => !x.Result.Faulted).SelectMany(x => x.Result.ExistPls)
-                    .ToDictionary(x => x.Key, y => y.Value);
+                res.ExistPlaylists = diffs.SelectMany(x => x.ExistPls).ToDictionary(x => x.Key, y => y.Value);
                 setLog?.Invoke($"Existed playlists: {res.ExistPlaylists.Count}");
             }
 
@@ -188,7 +200,14 @@ namespace v00v.Services.Synchronization
             var rows = _channelRepository.StoreDiff(res);
             await rows.ContinueWith(x =>
             {
-                setLog?.Invoke($"Saved {rows.Result} rows!");
+                if (rows.IsCompletedSuccessfully)
+                {
+                    setLog?.Invoke($"Saved {rows.Result} rows!");
+                }
+                else
+                {
+                    setLog?.Invoke(rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
+                }
             });
 
             return res;

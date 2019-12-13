@@ -10,7 +10,7 @@ namespace v00v.Model.SyncEntities
         public string ChannelTitle { get; set; }
         public IEnumerable<string> Items { get; set; }
         public IEnumerable<string> Playlists { get; set; }
-        public HashSet<string> UnlistedItems { get; set; }
+        public IEnumerable<string> UnlistedItems { get; set; }
 
         #endregion
     }
