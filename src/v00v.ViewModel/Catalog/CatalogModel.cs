@@ -772,6 +772,42 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
+        private void MarkDeleted(Channel channel, ICollection<string> deletedIds)
+        {
+            var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
+            unlistedpl.StateItems?.AddRange(channel.Items.Where(x => deletedIds.Contains(x.Id)));
+            unlistedpl.Count += deletedIds.Count;
+
+            foreach (var item in channel.Items.Where(x => deletedIds.Contains(x.Id)))
+            {
+                if (item.SyncState != SyncState.Deleted)
+                {
+                    item.SyncState = SyncState.Deleted;
+                }
+            }
+
+            var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
+            if (unlistpl == null)
+            {
+                var unpl = UnlistedPlaylist.Instance;
+                unpl.IsStatePlaylist = false;
+                unpl.Id = channel.Id;
+                unpl.Order = channel.Playlists.Count;
+                unpl.Count = deletedIds.Count;
+                unpl.Items.AddRange(deletedIds);
+                channel.Playlists.Add(unpl);
+            }
+            else
+            {
+                var deldiff = deletedIds.Except(unlistpl.Items).ToHashSet();
+                if (deldiff.Count > 0)
+                {
+                    unlistpl.Items.AddRange(deldiff);
+                    unlistpl.Count += deldiff.Count;
+                }
+            }
+        }
+
         private void OnException(Exception exception)
         {
             _setTitle?.Invoke(exception.Message);
@@ -1011,6 +1047,11 @@ namespace v00v.ViewModel.Catalog
                 MarkUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
             }
 
+            if (task.Result.DeletedItems.Count > 0)
+            {
+                MarkDeleted(channel, task.Result.DeletedItems);
+            }
+
             All.AddOrUpdate(lst);
             SelectedEntry = channel;
             await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
@@ -1059,6 +1100,14 @@ namespace v00v.ViewModel.Catalog
                 foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
                 {
                     MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
+                }
+            }
+
+            if (diff.DeletedItems.Count > 0)
+            {
+                foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
+                {
+                    MarkDeleted(channel, diff.DeletedItems);
                 }
             }
 

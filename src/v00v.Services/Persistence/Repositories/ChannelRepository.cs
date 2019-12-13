@@ -372,6 +372,17 @@ namespace v00v.Services.Persistence.Repositories
                             }
                         }
 
+                        //become deleted
+                        foreach (var s in fdiff.DeletedItems)
+                        {
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
+                            if (item != null)
+                            {
+                                item.SyncState = 3;
+                                context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                            }
+                        }
+
                         // channels
                         if (fdiff.Channels.Count > 0)
                         {

@@ -550,7 +550,7 @@ namespace v00v.Services.ContentProvider
                 .Select(vid =>
                             GetJsonObjectAsync(new
                                                    Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
-                .ToList();
+                .ToHashSet();
 
             await Task.WhenAll(unlistedTasks);
 
@@ -565,18 +565,23 @@ namespace v00v.Services.ContentProvider
             diff.AddedItems.AddRange(unlisted.Except(diff.AddedItems.Select(x => x.Id))
                                          .Select(y => new ItemPrivacy { Id = y, Status = SyncState.Unlisted }));
 
+            var trueAdded = unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id));
             foreach (var pair in diff.AddedPls)
             {
-                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id)).Contains(y.Id));
+                pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
             }
 
             foreach (var pair in diff.ExistPls.Where(x => x.Key != upId))
             {
-                pair.Value.RemoveAll(y => !unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id)).Contains(y.Id));
+                pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
             }
 
-            diff.DeletedItems.RemoveAll(x => diff.ExistPls.SelectMany(y => y.Value).Select(y => y.Id)
-                                            .Union(diff.AddedPls.SelectMany(y => y.Value).Select(y => y.Id)).Contains(x));
+            if (diff.DeletedItems.Count > 0)
+            {
+                diff.DeletedItems.RemoveAll(x => diff.ExistPls.SelectMany(y => y.Value).Union(diff.AddedPls.SelectMany(y => y.Value))
+                                                .Where(z => z.Status == SyncState.Added || z.Status == SyncState.Unlisted)
+                                                .Select(y => y.Id).Contains(x));
+            }
 
             return diff;
         }

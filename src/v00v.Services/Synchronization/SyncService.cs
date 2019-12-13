@@ -136,6 +136,8 @@ namespace v00v.Services.Synchronization
 
             res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.UploadedIds).Where(x => unl.Contains(x)));
 
+            res.DeletedItems.AddRange(diffs.SelectMany(x => x.DeletedItems));
+
             if (res.Items.Count > 0)
             {
                 res.NewItems.AddRange(await _youtubeService.GetItems(res.Items));
