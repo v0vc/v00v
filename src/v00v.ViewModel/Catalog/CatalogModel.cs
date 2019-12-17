@@ -458,6 +458,7 @@ namespace v00v.ViewModel.Catalog
                                                           _setTitle,
                                                           UpdateList,
                                                           SetSelected,
+                                                          OnException,
                                                           UpdatePlaylist,
                                                           GetMinOrder));
         }
@@ -676,6 +677,7 @@ namespace v00v.ViewModel.Catalog
                                                           _setTitle,
                                                           UpdateList,
                                                           SetSelected,
+                                                          OnException,
                                                           UpdatePlaylist,
                                                           null,
                                                           ResortList));
@@ -810,7 +812,7 @@ namespace v00v.ViewModel.Catalog
 
         private void OnException(Exception exception)
         {
-            _setTitle?.Invoke(exception.Message);
+            _popupController.Hide();
             var exm = GetCachedExplorerModel(null);
             if (exm == null)
             {

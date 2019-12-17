@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -56,6 +57,7 @@ namespace v00v.ViewModel.Popup.Channel
             Action<string> setTitle,
             Action<Model.Entities.Channel> updateList,
             Action<string> setSelect,
+            Action<Exception> handleException,
             Action<Model.Entities.Channel> updatePlList = null,
             Func<int> getMinOrder = null,
             Action<int> resortList = null) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
@@ -112,6 +114,7 @@ namespace v00v.ViewModel.Popup.Channel
             CloseChannelCommand = channel == null
                 ? ReactiveCommand.CreateFromTask(AddChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.CreateFromTask(() => EditChannel(channel), null, RxApp.MainThreadScheduler);
+            CloseChannelCommand.ThrownExceptions.Subscribe(handleException);
         }
 
         private ChannelPopupContext(IPopupController popupController,
@@ -135,7 +138,7 @@ namespace v00v.ViewModel.Popup.Channel
         public SourceList<Tag> All { get; }
         public string ChannelId { get; set; }
         public string ChannelTitle { get; set; }
-        public ICommand CloseChannelCommand { get; set; }
+        public ReactiveCommand<Unit, Unit> CloseChannelCommand { get; set; }
 
         public string CloseText
         {
