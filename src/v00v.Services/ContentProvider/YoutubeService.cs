@@ -769,14 +769,30 @@ namespace v00v.Services.ContentProvider
             }
         }
 
-        public async Task<List<string>> GetVideoCommentsAsync(string itemlId)
+        public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId)
         {
-            var zap =
-                $"{Url}commentThreads?videoId={itemlId}&key={Key}&maxResults={ItemsPerPage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,authorChannelUrl,authorProfileImageUrl,publishedAt))))&{PrintType}";
+            //var zap =
+            //    $"{Url}commentThreads?videoId={itemlId}&key={Key}&maxResults={ItemsPerPage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&{PrintType}";
 
-            var res = await GetAll(zap);
-
-            throw new NotImplementedException();
+            return
+                (await
+                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&maxResults={ItemsPerPage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&{PrintType}")
+                ).SelectTokens("$..items.[*]").Select(x => new Comment
+                {
+                    Author =
+                        x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
+                            ?.Value<string>(),
+                    Text =
+                        x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
+                            ?.Value<string>(),
+                    CommentReplyCount =
+                        x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
+                    LikeCount =
+                        x.SelectToken("snippet.topLevelComment.snippet.likeCount")
+                            ?.Value<long>() ?? 0,
+                    Timestamp = x.SelectToken("snippet.topLevelComment.snippet.publishedAt",
+                                              false)?.Value<DateTime?>() ?? DateTime.MinValue,
+                });
         }
 
         public async Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null)
