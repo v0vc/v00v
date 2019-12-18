@@ -3,36 +3,91 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="clr-namespace:v00v.Views.Controls"
-    >
+    xmlns:item="clr-namespace:v00v.Views.Popup.Item">
+    <TabControl MaxWidth="480" MinWidth="480" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
+        <TabItem Header="Information">
+            <Grid RowDefinitions="auto,auto">
+                <Image Grid.Row="0" 
+                       Source="{Binding Thumb, Mode=OneTime}" 
+                       Stretch="Fill" 
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Left"
+                       Width="{Binding ImageWidth, Mode=OneTime}" Height="{Binding ImageHeight, Mode=OneTime}"
+                       />
 
-    <Grid MaxWidth="480" MinWidth="480" RowDefinitions="auto,auto">
+                <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
+                                          IsReadOnly="True"
+                                          IsVisible="True"
+                                          Watermark="Description"
+                                          Text="{Binding Description, Mode=OneTime}" 
+                                          TextWrapping="Wrap"
+                                          TextAlignment="Left"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                          />
+            </Grid>
+        </TabItem>
+        <TabItem Header="Comments">
+            <Grid RowDefinitions="*,auto" Height="503">
+                <ListBox Name="CommentList" BorderThickness="0" Grid.Row="0"
+                         Items="{Binding Comments, Mode=OneWay}"
+                         SelectedItem="{Binding SelectedComment, Mode=TwoWay}"
+                         VirtualizationMode="Simple"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         >
+                    <ListBox.DataTemplates>
+                        <DataTemplate>
+                            <item:CommentControl />
+                        </DataTemplate>
+                    </ListBox.DataTemplates>
+                </ListBox>
+                <StackPanel Orientation="Horizontal" Height="25" Grid.Row="1" HorizontalAlignment="Right" IsEnabled="{Binding !Working, Mode=OneWay}">
+                    <TextBlock Text="{Binding Comments.Count, Mode=OneWay}" VerticalAlignment="Center" Foreground="#92a3b3" Margin="10,0,380,0"/>
+                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By date" IsChecked="True"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="TimeStamp"
+                                 />
+                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By likes"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="LikeCount"
+                                 />
+                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By replies"
+                                 Command="{Binding SetSortCommand, Mode=OneTime}"
+                                 CommandParameter="ReplyCount"
+                                 />
+                </StackPanel>
+            </Grid>
+            
+        </TabItem>
+    </TabControl>
 
-        <Image Grid.Row="0" 
-               Source="{Binding Thumb, Mode=OneTime}" 
-               Stretch="Fill" 
-               VerticalAlignment="Center"
-               HorizontalAlignment="Left"
-               Width="{Binding ImageWidth}" Height="{Binding ImageHeight}"
-               />
-
-        <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
-                                  IsReadOnly="True"
-                                  IsVisible="True"
-                                  Watermark="Description"
-                                  Text="{Binding Description, Mode=OneTime}" 
-                                  TextWrapping="Wrap"
-                                  TextAlignment="Left"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                  />
-    </Grid>
-    
     <UserControl.Styles>
-
         <Style Selector="TextBox /template/ Border">
             <Setter Property="CornerRadius" Value="4" />
         </Style>
-        
+
+        <Style Selector="ListBox">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!--<Style Selector="ListBoxItem:selected Grid">
+            <Setter Property="Background" Value="#E6E6FA"/>
+        </Style>-->
+        <Style Selector="ListBoxItem:selected Grid">
+            <Setter Property="Background" Value="red"/>
+        </Style>
+
     </UserControl.Styles>
     
 </UserControl>

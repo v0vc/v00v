@@ -26,11 +26,13 @@ namespace v00v.Services.ContentProvider
 
         Task<List<Channel>> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannelsIds);
 
+        Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId);
+
         Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region);
 
         Task<byte[]> GetStreamFromUrl(string dataurl);
 
-        Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId);
+        Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId);
 
         Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null);
 

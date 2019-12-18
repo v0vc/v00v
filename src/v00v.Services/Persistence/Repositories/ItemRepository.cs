@@ -101,6 +101,37 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
+        public async Task<int> SetItemCommentsCount(string itemId, long comments)
+        {
+            using (var context = _contextFactory.CreateVideoContext())
+            {
+                using (var transaction = TransactionHelper.Get(context))
+                {
+                    try
+                    {
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        if (item == null)
+                        {
+                            transaction.Rollback();
+                            return -1;
+                        }
+
+                        item.Comments = comments;
+                        context.Entry(item).Property(x => x.Comments).IsModified = true;
+                        var res = await context.SaveChangesAsync();
+                        transaction.Commit();
+                        return res;
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
         public async Task<int> SetItemsWatchState(WatchState state, string itemId, string channelId = null)
         {
             using (var context = _contextFactory.CreateVideoContext())

@@ -171,8 +171,6 @@
             <Setter Property="Height" Value="51"/>
         </Style>
 
-        
-
     </UserControl.Styles>
 
 </UserControl>

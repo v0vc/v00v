@@ -8,6 +8,7 @@ namespace v00v.ViewModel.Popup
         #region Fields
 
         private bool _isWorking;
+        private string _title;
 
         #endregion
 
@@ -21,7 +22,11 @@ namespace v00v.ViewModel.Popup
             set => Update(ref _isWorking, value);
         }
 
-        public string Title { get; set; }
+        public string Title
+        {
+            get => _title;
+            set => Update(ref _title, value);
+        }
 
         #endregion
     }

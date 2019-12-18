@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using Avalonia.Media.Imaging;
 using v00v.Model.Enums;
+using v00v.Model.Extensions;
 
 namespace v00v.Model.Entities
 {
-    public class Channel : BaseEntity
+    public class Channel : ViewModelBase
     {
         #region Fields
 
@@ -60,7 +61,7 @@ namespace v00v.Model.Entities
 
         public SyncState Sync { get; set; }
 
-        public IBitmap Thumb => CreateThumb(Thumbnail);
+        public IBitmap Thumb => Thumbnail.CreateThumb();
 
         public byte[] Thumbnail { get; set; }
 

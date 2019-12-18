@@ -724,6 +724,29 @@ namespace v00v.Services.ContentProvider
             return new List<Channel>(rrr.Result);
         }
 
+        public async Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId)
+        {
+            return
+                (await
+                    GetAll($"{Url}comments?parentId={commentId}&key={Key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}")
+                ).SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
+                {
+                    CommentId = x.SelectToken("id")?.Value<string>(),
+                    Author =
+                        x.SelectToken("snippet.authorDisplayName")?.Value<string>()
+                            .RemoveSpecialCharacters(),
+                    AuthorChannelId =
+                        x.SelectToken("snippet.authorChannelId.value")?.Value<string>(),
+                    Text = x.SelectToken("snippet.textDisplay")?.Value<string>()
+                        .Replace("&quot;", @"""").Replace("<br />", " ")
+                        .RemoveSpecialCharacters(),
+                    LikeCount = x.SelectToken("snippet.likeCount")?.Value<long>() ?? 0,
+                    Timestamp = x.SelectToken("snippet.publishedAt", false)?.Value<DateTime?>()
+                                ?? DateTime.MinValue,
+                    IsReply = true
+                }).Reverse().ToHashSet();
+        }
+
         public async Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region)
         {
             var zap =
@@ -769,29 +792,45 @@ namespace v00v.Services.ContentProvider
             }
         }
 
-        public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId)
+        public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId)
         {
-            //var zap =
-            //    $"{Url}commentThreads?videoId={itemlId}&key={Key}&maxResults={ItemsPerPage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&{PrintType}";
-
             return
                 (await
-                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&maxResults={ItemsPerPage}&part=snippet&fields=nextPageToken,items(snippet(topLevelComment(snippet(authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&{PrintType}")
-                ).SelectTokens("$..items.[*]").Select(x => new Comment
+                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}")
+                ).SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
                 {
+                    CommentId = x.SelectToken("id")?.Value<string>(),
                     Author =
                         x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
+                            ?.Value<string>().RemoveSpecialCharacters(),
+                    AuthorChannelId =
+                        x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
                             ?.Value<string>(),
                     Text =
                         x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
-                            ?.Value<string>(),
+                            ?.Value<string>().Replace("&quot;", @"""").Replace("<br />", " ")
+                            .RemoveSpecialCharacters(),
                     CommentReplyCount =
                         x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
                     LikeCount =
                         x.SelectToken("snippet.topLevelComment.snippet.likeCount")
                             ?.Value<long>() ?? 0,
-                    Timestamp = x.SelectToken("snippet.topLevelComment.snippet.publishedAt",
-                                              false)?.Value<DateTime?>() ?? DateTime.MinValue,
+                    Timestamp =
+                        x.SelectToken("snippet.topLevelComment.snippet.publishedAt", false)
+                            ?.Value<DateTime?>() ?? DateTime.MinValue,
+                    IsReply = false,
+                    ExpandDown =
+                        (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0) > 0
+                            ? Convert
+                                .FromBase64String("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAoElEQVRYhe2WoQ6EQAwFZy8oFOZ+dQW/jGA9lwOBQVCyXQo1fclTm3QmK5om9JmATnj7Ad+GmaoswCp00Q77mKo1JARCIARCwF3gLJl9pUqV1vBxHUvNtRJjBUjbUfsTlhJquKVEM9xC4jb8joQZvEXCHK6ReAxeI/E4/EriNfiZxOvwo4QbPGKSBPT43QX/BMzA4CRQ3C8id4EOKI78sgGr+p2V3rS57wAAAABJRU5ErkJggg==")
+                                .CreateThumb()
+                            : null,
+                    ExpandUp =
+                        (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0) > 0
+                            ? Convert
+                                .FromBase64String("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAwUlEQVRYR+3VvQrCMBSG4bdSFycXb7WDzjp4k15AB90VkUCFDGnOTwpZTtZAv6dfwskAPIAjfdZrAJ4B6N3AAdj1uQJ80x3ougLQ2sB5Ob+b9xxbACn8ugRfABfCC8jD/z/vQngApXA3wgqohbsQFoAm3IzQAizhJoQG4AlXIyRAS7gKUQNsES4i1gBbhlcRJcCUTbjShB2Fsfup7Kdhdc/3pTtQ+tYbWEOk8L3lXQhANBANRAPRgKeBWRjFJ8so/gFrRzjXxWFROwAAAABJRU5ErkJggg==")
+                                .CreateThumb()
+                            : null
                 });
         }
 

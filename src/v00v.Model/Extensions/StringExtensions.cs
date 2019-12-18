@@ -14,11 +14,6 @@ namespace v00v.Model.Extensions
 
         #region Static Methods
 
-        public static string ArrangeToUi(this string text)
-        {
-            return text.PadRight(40 - text.Length, ' ');
-        }
-
         public static string FilterWhiteSpaces(this string input)
         {
             if (input == null)
@@ -62,7 +57,7 @@ namespace v00v.Model.Extensions
         public static string RemoveSpecialCharacters(this string str)
         {
             var sb = new StringBuilder(str.Length);
-            foreach (char c in str)
+            foreach (var c in str)
             {
                 if (c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= 'а' && c <= 'я' || c >= 'А' && c <= 'Я'
                     || c == '.' || c == '_' || c == '-' || c == '+' || c == '|' || c == ' ' || c == '"' || c == '|' || c == ','

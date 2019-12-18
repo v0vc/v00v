@@ -1,17 +1,18 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace v00v.Views.Explorer
+namespace v00v.Views.Popup.Item
 {
-    public class ItemControl : UserControl
+    public class CommentControl : UserControl
     {
         #region Constructors
 
-        public ItemControl()
+        public CommentControl()
         {
             AvaloniaXamlLoader.Load(this);
         }
 
         #endregion
+        
     }
 }

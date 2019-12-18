@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using Avalonia.Media.Imaging;
 using v00v.Model.Enums;
+using v00v.Model.Extensions;
 
 namespace v00v.Model.Entities
 {
-    public class Playlist : BaseEntity
+    public class Playlist : ViewModelBase
     {
         #region Fields
 
@@ -76,7 +77,7 @@ namespace v00v.Model.Entities
 
         public byte SyncState { get; set; }
 
-        public IBitmap Thumb => CreateThumb(Thumbnail);
+        public IBitmap Thumb => Thumbnail.CreateThumb();
 
         public byte[] Thumbnail { get; set; }
 

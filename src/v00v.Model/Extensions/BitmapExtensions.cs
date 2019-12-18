@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using Avalonia.Media.Imaging;
 
-namespace v00v.Model.Entities
+namespace v00v.Model.Extensions
 {
-    public abstract class BaseEntity : ViewModelBase
+    public static class BitmapExtensions
     {
         #region Static Methods
 
-        internal static Bitmap CreateThumb(byte[] thumbnail)
+        public static Bitmap CreateThumb(this byte[] thumbnail)
         {
             if (thumbnail == null || thumbnail.Length <= 0)
             {

@@ -19,6 +19,8 @@ namespace v00v.Services.Persistence
 
         Task<Dictionary<string, byte>> GetItemsState();
 
+        Task<int> SetItemCommentsCount(string itemId, long comments);
+
         Task<int> SetItemsWatchState(WatchState state, string itemId, string channelId = null);
 
         Task<int> UpdateItemFileName(string itemId, string filename);

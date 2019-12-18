@@ -11,7 +11,7 @@ using v00v.Model.Extensions;
 
 namespace v00v.Model.Entities
 {
-    public class Item : BaseEntity
+    public class Item : ViewModelBase
     {
         #region Constants
 
@@ -57,7 +57,7 @@ namespace v00v.Model.Entities
 
         public int Duration { get; set; }
 
-        public string DurationAgo => TimeAgo(Timestamp);
+        public string DurationAgo => Timestamp.TimeAgo();
 
         public string DurationString => IntTostrTime(Duration);
 
@@ -94,7 +94,7 @@ namespace v00v.Model.Entities
             set => Update(ref _syncState, value);
         }
 
-        public IBitmap Thumb => CreateThumb(Thumbnail);
+        public IBitmap Thumb => Thumbnail.CreateThumb();
         public string ThumbLink => $"http://img.youtube.com/vi/{Id}/0.jpg";
 
         public byte[] Thumbnail { get; set; }
@@ -139,42 +139,6 @@ namespace v00v.Model.Entities
             var t = TimeSpan.FromSeconds(duration);
             return t.Days > 0 ? $"{t.Days:D2}:{t.Hours:D2}:{t.Minutes:D2}:{t.Seconds:D2}" :
                 t.Hours > 0 ? $"{t.Hours:D2}:{t.Minutes:D2}:{t.Seconds:D2}" : $"{t.Minutes:D2}:{t.Seconds:D2}";
-        }
-
-        private static string TimeAgo(DateTimeOffset dt)
-        {
-            var span = DateTime.Now - dt;
-            if (span.Days > 365)
-            {
-                int years = span.Days / 365;
-                if (span.Days % 365 != 0)
-                    years += 1;
-
-                return $"about {years} {(years == 1 ? "year" : "years")} ago";
-            }
-
-            if (span.Days > 30)
-            {
-                int months = span.Days / 30;
-                if (span.Days % 31 != 0)
-                    months += 1;
-
-                return $"about {months} {(months == 1 ? "month" : "months")} ago";
-            }
-
-            if (span.Days > 0)
-                return $"about {span.Days} {(span.Days == 1 ? "day" : "days")} ago";
-
-            if (span.Hours > 0)
-                return $"about {span.Hours} {(span.Hours == 1 ? "hour" : "hours")} ago";
-
-            if (span.Minutes > 0)
-                return $"about {span.Minutes} {(span.Minutes == 1 ? "minute" : "minutes")} ago";
-
-            if (span.Seconds > 5)
-                return $"about {span.Seconds} seconds ago";
-
-            return span.Seconds <= 5 ? "just now" : string.Empty;
         }
 
         #endregion
