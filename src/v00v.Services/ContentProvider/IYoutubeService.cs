@@ -30,7 +30,7 @@ namespace v00v.Services.ContentProvider
 
         Task<byte[]> GetStreamFromUrl(string dataurl);
 
-        Task<List<string>> GetVideoCommentsAsync(string itemlId, int maxResult);
+        Task<List<string>> GetVideoCommentsAsync(string itemlId);
 
         Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null);
 

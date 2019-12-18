@@ -36,12 +36,10 @@ namespace v00v.Services.Synchronization
                                ? $"Working: {channels.First().Title}.."
                                : $"Working channels: {channels.Count - 1}, parallel: {parallel}");
 
-            //var channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channelId);
-
             var unl = new List<string>();
             var diffs = new List<ChannelDiff>();
             IEnumerable<ChannelStruct> channelStructs = null;
-
+            //channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channels.Count == 2 ? channels.Last().Id : null);
             await Task.Run(() =>
             {
                 channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
