@@ -4,8 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     >
     <Border BorderBrush="#242e44" BorderThickness="0.2">
-        <Grid RowDefinitions="auto,auto" ColumnDefinitions="*,auto" Background="{Binding BackgroundReply, Mode=OneWay}">
-            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+        <Grid RowDefinitions="auto,auto" ColumnDefinitions="*,auto">
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Background="{Binding BackgroundReply, Mode=OneWay}">
                 <Border BorderBrush="#FF000000" BorderThickness="0.3" CornerRadius="3" Margin="5,0,0,2" VerticalAlignment="Bottom" Background="{Binding BackgroundAuthor, Mode=OneWay}">
                     <TextBlock Text="{Binding Author, Mode=OneWay}" FontSize="12" Margin="5,0,5,0"/>
                 </Border>
@@ -15,13 +15,13 @@
                 <Image Width="12" Height="12" Source="{Binding ReplyThumb, Mode=OneWay}" Margin="6,5,0,3" Stretch="Fill" IsVisible="{Binding !IsReply, Mode=OneWay}"/>
                 <TextBlock Text="{Binding CommentReplyCount, Mode=OneWay}" FontSize="12" Margin="6,5,0,3" VerticalAlignment="Bottom" IsVisible="{Binding !IsReply, Mode=OneWay}"/>
             </StackPanel>
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Text, Mode=OneWay}" Margin="5,0,0,0" TextWrapping="Wrap" FontSize="13"/>
-
+            <StackPanel Grid.Row="1" Grid.Column="0" Background="{Binding BackgroundReply, Mode=OneWay}">
+                <TextBlock Text="{Binding Text, Mode=OneWay}" Margin="5,0,0,0" TextWrapping="Wrap" FontSize="13"/>
+            </StackPanel>
             <Button Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="15" IsVisible="{Binding HasReply, Mode=OneWay}"
                     Background="Transparent" BorderThickness="0" BorderBrush="Transparent"
                     Command="{Binding $parent[ListBox].DataContext.LoadRepliesCommand, Mode=OneWay}" CommandParameter="{Binding}"
                     >
-                <!--<Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp"/>-->
                 <Image Source="{Binding ExpandThumb, Mode=OneWay}"/>
             </Button>
         </Grid>

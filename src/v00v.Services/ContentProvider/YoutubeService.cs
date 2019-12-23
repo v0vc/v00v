@@ -22,16 +22,17 @@ namespace v00v.Services.ContentProvider
     {
         #region Constants
 
+        private const string HrefRegex = @"<a\s+(?:[^>]*?\s+)?href=([""'])(.*?)\1>";
         private const int ItemsPerPage = 50;
-
         private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
-
         //private const string Key = "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc";
         private const string PrintType = "prettyPrint=false";
         private const string Url = "https://www.googleapis.com/youtube/v3/";
         private const string YouChannel = "channel";
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
+        //private string Key => _keys[new Random().Next(0, _keys.Length)];
+        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
 
         #endregion
 
@@ -726,6 +727,7 @@ namespace v00v.Services.ContentProvider
 
         public async Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId)
         {
+            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
             return
                 (await
                     GetAll($"{Url}comments?parentId={commentId}&key={Key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}")
@@ -737,9 +739,16 @@ namespace v00v.Services.ContentProvider
                             .RemoveSpecialCharacters(),
                     AuthorChannelId =
                         x.SelectToken("snippet.authorChannelId.value")?.Value<string>(),
-                    Text = x.SelectToken("snippet.textDisplay")?.Value<string>()
-                        .Replace("&quot;", @"""").Replace("<br />", " ")
-                        .RemoveSpecialCharacters(),
+                    Text =
+                        hrefRegex.Replace(x.SelectToken("snippet.textDisplay")?.Value<string>()
+                                              .Replace("&quot;", @"""").Replace("<br />", " ")
+                                              .Replace("</a>", " ").RemoveSpecialCharacters()
+                                          ?? string.Empty,
+                                          string.Empty),
+                    TextUrl = hrefRegex
+                        .Match(x.SelectToken("snippet.textDisplay")?.Value<string>()
+                               ?? string.Empty).Value.Replace("<a href=", string.Empty)
+                        .Replace(">", string.Empty).Trim('"'),
                     LikeCount = x.SelectToken("snippet.likeCount")?.Value<long>() ?? 0,
                     Timestamp = x.SelectToken("snippet.publishedAt", false)?.Value<DateTime?>()
                                 ?? DateTime.MinValue,
@@ -794,6 +803,8 @@ namespace v00v.Services.ContentProvider
 
         public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId)
         {
+            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
+
             return
                 (await
                     GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}")
@@ -807,9 +818,17 @@ namespace v00v.Services.ContentProvider
                         x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
                             ?.Value<string>(),
                     Text =
-                        x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
-                            ?.Value<string>().Replace("&quot;", @"""").Replace("<br />", " ")
-                            .RemoveSpecialCharacters(),
+                        hrefRegex
+                            .Replace(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
+                                         ?.Value<string>().Replace("&quot;", @"""")
+                                         .Replace("<br />", " ").Replace("</a>", " ")
+                                         .RemoveSpecialCharacters() ?? string.Empty,
+                                     string.Empty),
+                    TextUrl =
+                        hrefRegex
+                            .Match(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
+                                       ?.Value<string>() ?? string.Empty).Value
+                            .Replace("<a href=", string.Empty).Replace(">", string.Empty).Trim('"'),
                     CommentReplyCount =
                         x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
                     LikeCount =
@@ -914,8 +933,5 @@ namespace v00v.Services.ContentProvider
         }
 
         #endregion
-
-        //private string Key => _keys[new Random().Next(0, _keys.Length)];
-        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
     }
 }

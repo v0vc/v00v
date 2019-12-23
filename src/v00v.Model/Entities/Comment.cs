@@ -57,13 +57,12 @@ namespace v00v.Model.Entities
                 : new SolidColorBrush(Colors.PaleTurquoise);
 
         public SolidColorBrush BackgroundReply =>
-            IsReply ? new SolidColorBrush(Colors.Lavender) : new SolidColorBrush(Colors.Transparent);
+            IsReply ? new SolidColorBrush(Colors.AliceBlue) : new SolidColorBrush(Colors.Transparent);
 
         public string CommentId { get; set; }
         public long CommentReplyCount { get; set; }
-
+        public bool CopyTextUrlEnabled => !string.IsNullOrEmpty(TextUrl);
         public Bitmap ExpandDown { get; set; }
-
         public Bitmap ExpandThumb
         {
             get => _expandThumb;
@@ -86,10 +85,12 @@ namespace v00v.Model.Entities
         public bool IsReply { get; set; }
         public long LikeCount { get; set; }
         public Bitmap LikeThumb => LikeThumbnail.CreateThumb();
+        public string Link => $"https://www.youtube.com/channel/{AuthorChannelId}";
         public int Order { get; set; }
         public HashSet<Comment> Replies { get; set; }
         public Bitmap ReplyThumb => ReplyThumbnail.CreateThumb();
         public string Text { get; set; }
+        public string TextUrl { get; set; }
         public DateTime Timestamp { get; set; }
         public string TimestampAgo => Timestamp.TimeAgo();
 

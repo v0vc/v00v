@@ -5,8 +5,7 @@
     xmlns:channeltag="clr-namespace:v00v.Views.Popup.Channel"
     xmlns:controls="clr-namespace:v00v.Views.Controls">
 
-    <Grid
-        RowDefinitions="auto,auto,auto,auto,auto,auto">
+    <Grid RowDefinitions="auto,auto,auto,auto,auto,auto" MaxWidth="380">
 
         <controls:ExtendedTextBox
             ToolTip.Tip="{Binding SubTitle, Mode=OneWay}"

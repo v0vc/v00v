@@ -75,6 +75,7 @@ namespace v00v.ViewModel.Popup.Item
             LoadCommentsCommand = ReactiveCommand.CreateFromTask((byte tab) => LoadComments(tab), null, RxApp.MainThreadScheduler);
             LoadRepliesCommand = ReactiveCommand.CreateFromTask((Comment c) => LoadReplies(c), null, RxApp.MainThreadScheduler);
             SetSortCommand = ReactiveCommand.Create((string par) => SetSort(par), null, RxApp.MainThreadScheduler);
+            CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
         }
 
         #endregion
@@ -89,6 +90,8 @@ namespace v00v.ViewModel.Popup.Item
             get => _commentSort;
             set => Update(ref _commentSort, value);
         }
+
+        public ICommand CopyItemCommand { get; }
 
         public int DescrHeight { get; }
         public string Description { get; }
@@ -122,6 +125,31 @@ namespace v00v.ViewModel.Popup.Item
         #endregion
 
         #region Methods
+
+        private async Task CopyItem(string par)
+        {
+            if (SelectedComment != null)
+            {
+                string res = null;
+                switch (par)
+                {
+                    case "link":
+                        res = SelectedComment.Link;
+                        break;
+                    case "text":
+                        res = SelectedComment.Text;
+                        break;
+                    case "url":
+                        res = SelectedComment.TextUrl;
+                        break;
+                }
+
+                if (!string.IsNullOrEmpty(res))
+                {
+                    await Application.Current.Clipboard.SetTextAsync(res);
+                }
+            }
+        }
 
         private IObservable<SortExpressionComparer<Comment>> GetCommentSorter()
         {
