@@ -395,7 +395,7 @@ namespace v00v.ViewModel.Catalog
             if (unlistpl.Count == noUnlisted.Count)
             {
                 channel.Playlists.Remove(unlistpl);
-                plmodel?.All.Remove(unlistpl);
+                plmodel?.All.RemoveKey(unlistpl.Id);
             }
             else
             {
@@ -591,18 +591,18 @@ namespace v00v.ViewModel.Catalog
             ViewModelCache.Remove(ch.PlCache);
             if (ch.IsNew)
             {
-                _explorerModel.All.Remove(ch.Items);
-                All.Remove(ch);
+                _explorerModel.All.RemoveKeys(ch.Items.Select(x => x.Id));
+                All.RemoveKey(ch.Id);
                 SelectedEntry = _baseChannel;
                 return;
             }
 
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            All.Remove(ch);
+            All.RemoveKey(ch.Id);
             _baseChannel.Count -= count;
             _baseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
-            GetCachedExplorerModel(null)?.All.Remove(ch.Items);
+            GetCachedExplorerModel(null)?.All.RemoveKeys(ch.Items.Select(x => x.Id));
             if (ch.Items.Any(x => x.WatchStateSet)
                 || ch.Items.Any(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted))
             {
@@ -1025,7 +1025,7 @@ namespace v00v.ViewModel.Catalog
             {
                 channel.Playlists.RemoveAll(x => task.Result.DeletedPlaylists.Contains(x.Id));
                 var deletedpl = task.Result.DeletedPlaylists;
-                plmodel?.All.Remove(plmodel.All.Items.Where(x => deletedpl.Contains(x.Id)));
+                plmodel?.All.RemoveKeys(deletedpl);
             }
 
             foreach ((string key, var value) in task.Result.ExistPlaylists)

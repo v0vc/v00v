@@ -233,7 +233,7 @@ namespace v00v.ViewModel.Popup.Item
 
         private void SetSort(string par)
         {
-            All.Remove(_comments.Where(x => x.IsReply));
+            All.RemoveKeys(_comments.Where(x => x.IsReply).Select(x => x.CommentId));
             foreach (var comment in _comments.Where(x => x.IsExpanded))
             {
                 comment.IsExpanded = false;

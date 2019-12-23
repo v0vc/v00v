@@ -364,7 +364,8 @@ namespace v00v.ViewModel.Playlists
                         PopularPl.IsPopularPlaylist = false;
                         if (_explorerModel.All.Count > 0)
                         {
-                            _explorerModel.All.Remove(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added));
+                            _explorerModel.All.RemoveKeys(_explorerModel.All.Items.Where(x => x.SyncState != SyncState.Added)
+                                                              .Select(x => x.Id));
                         }
                     }
                 }
