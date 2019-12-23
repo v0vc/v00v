@@ -5,6 +5,7 @@
         TimeStamp,
         LikeCount,
         ReplyCount,
+        Author,
         Order
     }
 }

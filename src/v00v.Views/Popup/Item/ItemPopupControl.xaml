@@ -28,7 +28,7 @@
             </Grid>
         </TabItem>
         <TabItem Header="Comments">
-            <Grid RowDefinitions="*,auto" Height="503">
+            <Grid RowDefinitions="*,33" Height="503">
                 <ListBox Name="CommentList" BorderThickness="0" Grid.Row="0"
                          Items="{Binding Comments, Mode=OneWay}"
                          SelectedItem="{Binding SelectedComment, Mode=TwoWay}"
@@ -61,21 +61,36 @@
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
-                <StackPanel Orientation="Horizontal" Height="25" Grid.Row="1" HorizontalAlignment="Right" IsEnabled="{Binding !Working, Mode=OneWay}">
-                    <TextBlock Text="{Binding Comments.Count, Mode=OneWay}" VerticalAlignment="Center" Foreground="#92a3b3" Margin="10,0,380,0"/>
-                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By date" IsChecked="True"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="TimeStamp"
+
+                <Border Grid.Row="1" Margin="2,2,0,2" BorderBrush="#242e44" BorderThickness="0.2" Background="AliceBlue">
+                    <Grid ColumnDefinitions="*,auto,auto" IsEnabled="{Binding !Working, Mode=OneWay}">
+                        <TextBox Grid.Column="0" Text="{Binding SearchText, Mode=TwoWay}" Watermark="{Binding Watermark, Mode=OneWay}" 
+                                 HorizontalAlignment="Left" VerticalAlignment="Center" Width="235"
+                                 Margin="2" ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                  />
-                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By likes"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="LikeCount"
-                                 />
-                    <RadioButton GroupName="CommentSort" ToolTip.Tip="By replies"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="ReplyCount"
-                                 />
-                </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="15,0,0,0">
+                            <RadioButton GroupName="CommentSort" ToolTip.Tip="By date" IsChecked="True" Margin="0,0,5,0"
+                                         Command="{Binding SetSortCommand, Mode=OneTime}"
+                                         CommandParameter="TimeStamp"
+                                         />
+                            <RadioButton GroupName="CommentSort" ToolTip.Tip="By likes" Margin="0,0,5,0"
+                                         Command="{Binding SetSortCommand, Mode=OneTime}"
+                                         CommandParameter="LikeCount"
+                                         />
+                            <RadioButton GroupName="CommentSort" ToolTip.Tip="By replies" Margin="0,0,5,0"
+                                         Command="{Binding SetSortCommand, Mode=OneTime}"
+                                         CommandParameter="ReplyCount"
+                                         />
+                            <RadioButton GroupName="CommentSort" ToolTip.Tip="By author"
+                                         Command="{Binding SetSortCommand, Mode=OneTime}"
+                                         CommandParameter="Author"
+                                         />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding Comments.Count, Mode=OneWay}" Foreground="#92a3b3"
+                                   VerticalAlignment="Center" Margin="0,0,15,0"
+                                   />
+                    </Grid>
+                </Border>
             </Grid>
             
         </TabItem>
@@ -84,6 +99,8 @@
     <UserControl.Styles>
         <Style Selector="TextBox /template/ Border">
             <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
         </Style>
 
         <Style Selector="ListBox">

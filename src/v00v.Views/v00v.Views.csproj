@@ -8,18 +8,9 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <IsPackable>False</IsPackable>
   </PropertyGroup>
-
  
   <Import Project="..\..\build\Avalonia.props" />
-  <ItemGroup>
-    <Compile Update="**\*.xaml.cs">
-      <DependentUpon>%(Filename)</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <AvaloniaResource Include="**\*.xaml">
-      <SubType>Designer</SubType>
-    </AvaloniaResource>
-  </ItemGroup>
+  <Import Project="..\..\build\EmbedXaml.props" />
   
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />

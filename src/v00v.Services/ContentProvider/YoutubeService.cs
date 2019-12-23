@@ -31,8 +31,6 @@ namespace v00v.Services.ContentProvider
         private const string YouChannel = "channel";
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
-        //private string Key => _keys[new Random().Next(0, _keys.Length)];
-        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
 
         #endregion
 
@@ -742,7 +740,10 @@ namespace v00v.Services.ContentProvider
                     Text =
                         hrefRegex.Replace(x.SelectToken("snippet.textDisplay")?.Value<string>()
                                               .Replace("&quot;", @"""").Replace("<br />", " ")
-                                              .Replace("</a>", " ").RemoveSpecialCharacters()
+                                              .Replace("</a>", " ").Replace("<b>", string.Empty)
+                                              .Replace("</b>", string.Empty)
+                                              .Replace("&gt;", ">").Replace("&lt;", "<")
+                                              .Replace("&#39;", "'").RemoveSpecialCharacters()
                                           ?? string.Empty,
                                           string.Empty),
                     TextUrl = hrefRegex
@@ -812,8 +813,14 @@ namespace v00v.Services.ContentProvider
                 {
                     CommentId = x.SelectToken("id")?.Value<string>(),
                     Author =
-                        x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
-                            ?.Value<string>().RemoveSpecialCharacters(),
+                        channelId
+                            .Equals(x
+                                        .SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
+                                        ?.Value<string>(),
+                                    StringComparison.InvariantCultureIgnoreCase)
+                            ? $" {x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")?.Value<string>().RemoveSpecialCharacters()}"
+                            : x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
+                                ?.Value<string>().RemoveSpecialCharacters().Trim(),
                     AuthorChannelId =
                         x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
                             ?.Value<string>(),
@@ -822,13 +829,17 @@ namespace v00v.Services.ContentProvider
                             .Replace(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
                                          ?.Value<string>().Replace("&quot;", @"""")
                                          .Replace("<br />", " ").Replace("</a>", " ")
+                                         .Replace("<b>", string.Empty)
+                                         .Replace("</b>", string.Empty).Replace("&gt;", ">")
+                                         .Replace("&lt;", "<").Replace("&#39;", "'")
                                          .RemoveSpecialCharacters() ?? string.Empty,
                                      string.Empty),
                     TextUrl =
                         hrefRegex
                             .Match(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
                                        ?.Value<string>() ?? string.Empty).Value
-                            .Replace("<a href=", string.Empty).Replace(">", string.Empty).Trim('"'),
+                            .Replace("<a href=", string.Empty).Replace(">", string.Empty)
+                            .Trim('"'),
                     CommentReplyCount =
                         x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
                     LikeCount =
@@ -933,5 +944,8 @@ namespace v00v.Services.ContentProvider
         }
 
         #endregion
+
+        //private string Key => _keys[new Random().Next(0, _keys.Length)];
+        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
     }
 }

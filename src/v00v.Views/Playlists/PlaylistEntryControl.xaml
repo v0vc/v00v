@@ -8,13 +8,14 @@
         <Border Grid.ColumnSpan="3" />
 
         <Image Grid.Row="0" Grid.Column="0"
-               Width="{Binding ThumbSize}" Height="{Binding ThumbSize}"
-               Source="{Binding Thumb, Mode=OneWay}" 
+               Width="{Binding ThumbSize, Mode=OneTime}" Height="{Binding ThumbSize, Mode=OneTime}"
+               Source="{Binding Thumb, Mode=OneTime}" 
                Stretch="Fill" 
                />
 
-        <TextBox Grid.Column="1" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" Margin="60,0,0,0" 
-                 FontSize="12" Height="29"
+        <TextBox Grid.Column="1" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" 
+                 Margin="60,0,0,0" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                 FontSize="12" Height="26"
                  VerticalAlignment="Center"
                  HorizontalAlignment="Stretch"
                  Watermark=". . ."
@@ -30,7 +31,7 @@
         <ComboBox Grid.Column="2" IsVisible="{Binding IsPopularPlaylist, Mode=OneWay}" Margin="0,0,8,0"
                   VerticalAlignment="Center"
                   Height="24" Width="45"
-                  Items="{Binding Countries}"
+                  Items="{Binding Countries, Mode=OneTime}"
                   SelectedItem="{Binding SelectedCountry, Mode=TwoWay}"
                   ToolTip.Tip="Country">
             <ComboBox.ItemTemplate>

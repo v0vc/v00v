@@ -11,9 +11,7 @@
 
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
 
-        <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9"
-                 Text="{Binding SearchText, Mode=TwoWay}" 
-                 />
+        <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9" Text="{Binding SearchText, Mode=TwoWay}" />
 
         <ListBox Grid.Row="1" Grid.ColumnSpan="2" BorderThickness="0"
             Items="{Binding Entries}"
@@ -131,15 +129,19 @@
                     
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
-                                     IsChecked="{Binding !MassSync, Mode=TwoWay}" />
+                                     IsChecked="{Binding !MassSync, Mode=TwoWay}"
+                                     />
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
-                                     IsChecked="{Binding MassSync, Mode=TwoWay}" />
+                                     IsChecked="{Binding MassSync, Mode=TwoWay}"
+                                     />
                     </StackPanel>
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: on" Classes="dot"
-                                     IsChecked="{Binding SyncPls, Mode=TwoWay}" />
+                                     IsChecked="{Binding SyncPls, Mode=TwoWay}" 
+                                     />
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: off" Classes="dot"
-                                     IsChecked="{Binding !SyncPls, Mode=TwoWay}"/>
+                                     IsChecked="{Binding !SyncPls, Mode=TwoWay}"
+                                     />
                     </StackPanel>
                 </StackPanel>
             </Expander.Header>
@@ -170,19 +172,19 @@
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By watched" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Watched"
-                    />
+                                 />
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By planned" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="Planned"
-                    />
+                                 />
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs diff" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="SubsDiff"
-                    />
+                                 />
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views diff" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
                                  CommandParameter="ViewDiff"
-                    />
+                                 />
                 </StackPanel>
             </Border>
         </Expander>

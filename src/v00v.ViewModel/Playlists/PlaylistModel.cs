@@ -353,6 +353,7 @@ namespace v00v.ViewModel.Playlists
 
                     setPageIndex.Invoke(index);
                     _explorerModel.SelectedPlaylistId = entry.Id;
+                    _explorerModel.EnableLog = _explorerModel.All.Items.Any();
                 }
                 else
                 {

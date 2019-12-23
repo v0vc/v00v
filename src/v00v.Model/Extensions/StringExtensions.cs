@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace v00v.Model.Extensions
@@ -43,12 +44,9 @@ namespace v00v.Model.Extensions
         {
             var sb = new StringBuilder(str.Length);
 
-            foreach (char i in str)
+            foreach (var i in str.Where(i => i != '\n' && i != '\r' && i != '\t'))
             {
-                if (i != '\n' && i != '\r' && i != '\t')
-                {
-                    sb.Append(i);
-                }
+                sb.Append(i);
             }
 
             return sb.ToString();
@@ -57,16 +55,14 @@ namespace v00v.Model.Extensions
         public static string RemoveSpecialCharacters(this string str)
         {
             var sb = new StringBuilder(str.Length);
-            foreach (var c in str)
+            foreach (var c in str.Where(c => c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= 'а' && c <= 'я'
+                                             || c >= 'А' && c <= 'Я' || c == '.' || c == '_' || c == '-' || c == '+' || c == '|'
+                                             || c == ' ' || c == '"' || c == '|' || c == ',' || c == '!' || c == '?' || c == '('
+                                             || c == ')' || c == '<' || c == '>' || c == '%' || c == '#' || c == '@' || c == '&'
+                                             || c == '*' || c == ':' || c == ';' || c == '^' || c == '=' || c == 'Ё' || c == 'ё'
+                                             || c == '–' || c == '/'))
             {
-                if (c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= 'а' && c <= 'я' || c >= 'А' && c <= 'Я'
-                    || c == '.' || c == '_' || c == '-' || c == '+' || c == '|' || c == ' ' || c == '"' || c == '|' || c == ','
-                    || c == '!' || c == '?' || c == '(' || c == ')' || c == '<' || c == '>' || c == '%' || c == '#' || c == '@'
-                    || c == '&' || c == '*' || c == ':' || c == ';' || c == '^' || c == '=' || c == 'Ё' || c == 'ё' || c == '–'
-                    || c == '/')
-                {
-                    sb.Append(c);
-                }
+                sb.Append(c);
             }
 
             return string.Join(" ", sb.ToString().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
@@ -91,7 +87,7 @@ namespace v00v.Model.Extensions
             // Parse each line of text
             for (pos = 0; pos < theString.Length; pos = next)
             {
-                int eol = theString.IndexOf(Newline, pos, StringComparison.Ordinal);
+                var eol = theString.IndexOf(Newline, pos, StringComparison.Ordinal);
 
                 next = eol == -1 ? eol = theString.Length : eol + Newline.Length;
 
@@ -99,7 +95,7 @@ namespace v00v.Model.Extensions
                 {
                     do
                     {
-                        int len = eol - pos;
+                        var len = eol - pos;
 
                         if (len > width)
                         {
@@ -127,7 +123,7 @@ namespace v00v.Model.Extensions
         private static int BreakLine(string text, int pos, int max)
         {
             // Find last whitespace in line
-            int i = max - 1;
+            var i = max - 1;
             while (i >= 0 && !char.IsWhiteSpace(text[pos + i]))
             {
                 i--;

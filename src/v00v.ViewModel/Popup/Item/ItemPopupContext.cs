@@ -32,8 +32,10 @@ namespace v00v.ViewModel.Popup.Item
         #region Fields
 
         private CommentSort _commentSort;
+        private string _searchText;
         private Comment _selectedComment;
         private byte _selectedTab;
+        private string _watermark = " Search..";
         private bool _working;
 
         #endregion
@@ -63,7 +65,8 @@ namespace v00v.ViewModel.Popup.Item
             Title = item.ChannelTitle;
 
             All = new SourceCache<Comment, string>(x => x.CommentId);
-            All.Connect().Sort(GetCommentSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
+            All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
+                .Sort(GetCommentSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _comments).DisposeMany().Subscribe();
             this.WhenValueChanged(x => x.SelectedTab).Where(x => x == 1).InvokeCommand(LoadCommentsCommand);
         }
@@ -100,6 +103,12 @@ namespace v00v.ViewModel.Popup.Item
         public ICommand LoadCommentsCommand { get; }
         public ICommand LoadRepliesCommand { get; }
 
+        public string SearchText
+        {
+            get => _searchText;
+            set => Update(ref _searchText, value);
+        }
+
         public Comment SelectedComment
         {
             get => _selectedComment;
@@ -116,10 +125,31 @@ namespace v00v.ViewModel.Popup.Item
 
         public IBitmap Thumb { get; }
 
+        public string Watermark
+        {
+            get => _watermark;
+            set => Update(ref _watermark, value);
+        }
+
         public bool Working
         {
             get => _working;
             set => Update(ref _working, value);
+        }
+
+        #endregion
+
+        #region Static Methods
+
+        private static Func<Comment, bool> BuildFilter(string searchText)
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                return x => true;
+            }
+
+            return x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                        || x.Author.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -163,6 +193,8 @@ namespace v00v.ViewModel.Popup.Item
                         return SortExpressionComparer<Comment>.Descending(t => t.LikeCount);
                     case CommentSort.TimeStamp:
                         return SortExpressionComparer<Comment>.Descending(t => t.Timestamp);
+                    case CommentSort.Author:
+                        return SortExpressionComparer<Comment>.Ascending(t => t.Author);
                     case CommentSort.Order:
                         return SortExpressionComparer<Comment>.Ascending(t => t.Order);
                     default:
@@ -201,8 +233,14 @@ namespace v00v.ViewModel.Popup.Item
             var oldTitle = Title;
             Title += ", loading comments..";
             All.AddOrUpdate(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
-            SetOrder();
             Title = oldTitle;
+            if (!_comments.Any())
+            {
+                Watermark = " No comments...";
+                return;
+            }
+
+            SetOrder();
 
             if (_item.Comments != _comments.Count)
             {
@@ -262,6 +300,7 @@ namespace v00v.ViewModel.Popup.Item
         private void SetSort(string par)
         {
             All.RemoveKeys(_comments.Where(x => x.IsReply).Select(x => x.CommentId));
+            SearchText = null;
             foreach (var comment in _comments.Where(x => x.IsExpanded))
             {
                 comment.IsExpanded = false;

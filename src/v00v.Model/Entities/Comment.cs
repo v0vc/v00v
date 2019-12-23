@@ -68,10 +68,8 @@ namespace v00v.Model.Entities
             get => _expandThumb;
             set => Update(ref _expandThumb, value);
         }
-
         public Bitmap ExpandUp { get; set; }
         public bool HasReply => CommentReplyCount > 0;
-
         public bool IsExpanded
         {
             get => _isExpanded;
@@ -81,7 +79,6 @@ namespace v00v.Model.Entities
                 ExpandThumb = _isExpanded ? ExpandUp : ExpandDown;
             }
         }
-
         public bool IsReply { get; set; }
         public long LikeCount { get; set; }
         public Bitmap LikeThumb => LikeThumbnail.CreateThumb();
