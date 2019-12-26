@@ -369,13 +369,6 @@ namespace v00v.ViewModel.Catalog
             return x => x.IsStateChannel || x.Tags.Select(y => y.Id).Contains(tag.Id);
         }
 
-        private static string MakeTitle(int count, Stopwatch sw)
-        {
-            var items = count == 1 ? "item" : "items";
-            return
-                $"Done {count} {items}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
-        }
-
         private static void MarkUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
         {
             foreach (var item in channel.Items.Where(x => noUnlisted.Contains(x.Id)))
@@ -492,7 +485,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result, sw));
         }
 
         private async Task ClearAdded()
@@ -571,7 +564,7 @@ namespace v00v.ViewModel.Catalog
 
             if (task1.Status != TaskStatus.Faulted && task2.Status != TaskStatus.Faulted)
             {
-                _setTitle.Invoke(MakeTitle(count, sw));
+                _setTitle.Invoke(string.Empty.MakeTitle(count, sw));
             }
         }
 
@@ -649,7 +642,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result, sw));
 
             GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
             await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel: {deletedId} - {title}");
@@ -762,14 +755,14 @@ namespace v00v.ViewModel.Catalog
 
             if (task.Result != null)
             {
-                _setTitle?.Invoke(MakeTitle(task.Result.Count, sw));
+                _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.Count, sw));
                 task.Result.ForEach(x => AddChannelToList(x, false));
                 All.AddOrUpdate(task.Result);
                 SetSelected(_baseChannel.Id);
             }
             else
             {
-                _setTitle?.Invoke(MakeTitle(0, sw));
+                _setTitle?.Invoke(string.Empty.MakeTitle(0, sw));
                 SetSelected(oldId);
             }
         }
@@ -854,18 +847,23 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(ch.Items.Count, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(ch.Items.Count, sw));
 
             if (task.Result.Count > 0)
             {
-                ch.Items.ForEach(x =>
-                {
-                    x.ViewDiff = task.Result.TryGetValue(x.Id, out var vdiff) ? vdiff : 0;
-                });
+                Parallel.ForEach(ch.Items,
+                                 x =>
+                                 {
+                                     x.ViewDiff = task.Result.TryGetValue(x.Id, out var vdiff) ? vdiff : 0;
+                                 });
             }
             else
             {
-                ch.Items.ForEach(x => x.ViewDiff = 0);
+                Parallel.ForEach(ch.Items,
+                                 x =>
+                                 {
+                                     x.ViewDiff = 0;
+                                 });
             }
 
             GetCachedExplorerModel(chId)?.All.AddOrUpdate(ch.Items);
@@ -908,7 +906,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result.ChannelsCount, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.ChannelsCount, sw));
 
             var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
             pl.Count += task.Result.PlannedCount;
@@ -945,7 +943,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result, sw));
 
             channel.IsNew = false;
             ResortList(task.Result);
@@ -1012,7 +1010,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result.NewItems.Count, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.NewItems.Count, sw));
 
             var plmodel = GetCachedPlaylistModel(channel.Id);
             if (task.Result.NewPlaylists.Count > 0)
@@ -1083,7 +1081,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            _setTitle?.Invoke(MakeTitle(task.Result.NewItems.Count, sw));
+            _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.NewItems.Count, sw));
 
             UpdateChannels(task.Result);
 

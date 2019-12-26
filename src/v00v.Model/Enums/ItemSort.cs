@@ -7,6 +7,7 @@
         Like,
         Dislike,
         Comment,
+        Channel,
         Duration,
         Title,
         Diff,

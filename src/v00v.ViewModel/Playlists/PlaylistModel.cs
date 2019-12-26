@@ -15,6 +15,7 @@ using v00v.Model;
 using v00v.Model.Entities;
 using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
+using v00v.Model.Extensions;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 using v00v.ViewModel.Explorer;
@@ -25,10 +26,13 @@ namespace v00v.ViewModel.Playlists
     {
         #region Static and Readonly Fields
 
+        private readonly Channel _channel;
+
         private readonly ReadOnlyObservableCollection<Playlist> _entries;
         private readonly ExplorerModel _explorerModel;
         private readonly IItemRepository _itemRepository;
         private readonly IPlaylistRepository _playlistRepository;
+        private readonly Action<string> _setTitle;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -51,7 +55,9 @@ namespace v00v.ViewModel.Playlists
                                                                 AvaloniaLocator.Current.GetService<IItemRepository>(),
                                                                 AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
+            _channel = channel;
             _explorerModel = exModel;
+            _setTitle = setTitle;
 
             All = new SourceCache<Playlist, string>(m => m.Id);
 
@@ -152,6 +158,7 @@ namespace v00v.ViewModel.Playlists
 
             CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
             DeleteCommand = ReactiveCommand.CreateFromObservable(DeleteFiles, null, RxApp.MainThreadScheduler);
+            ReloadCommand = ReactiveCommand.CreateFromTask(ReloadStatistics, null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
                 ReactiveCommand.CreateFromObservable((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
         }
@@ -172,6 +179,8 @@ namespace v00v.ViewModel.Playlists
         public ICommand DeleteCommand { get; }
         public ICommand DownloadItemCommand { get; }
         public IEnumerable<Playlist> Entries => _entries;
+
+        public ICommand ReloadCommand { get; }
 
         public string SearchText
         {
@@ -284,6 +293,51 @@ namespace v00v.ViewModel.Playlists
             }
 
             playlist.StateItems = newItems?.ToList();
+        }
+
+        private async Task ReloadStatistics()
+        {
+            if (SelectedEntry == null)
+            {
+                return;
+            }
+
+            var statePl = SelectedEntry.IsStatePlaylist;
+            var stPl = statePl ? SelectedEntry.StateItems : _explorerModel.Items.ToList();
+            _setTitle.Invoke($"Update statistics for {SelectedEntry.Title}..");
+            var sw = Stopwatch.StartNew();
+            await _youtubeService.SetItemsStatistic(stPl);
+            var task = _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id);
+
+            await Task.WhenAll(task).ContinueWith(done =>
+            {
+                _setTitle?.Invoke(string.Empty.MakeTitle(stPl.Count, sw));
+            });
+
+            if (task.Status == TaskStatus.Faulted)
+            {
+                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
+                return;
+            }
+
+            if (task.Result.Count > 0)
+            {
+                Parallel.ForEach(stPl,
+                                 x =>
+                                 {
+                                     x.ViewDiff = task.Result.TryGetValue(x.Id, out var vdiff) ? vdiff : 0;
+                                 });
+            }
+            else
+            {
+                Parallel.ForEach(stPl,
+                                 x =>
+                                 {
+                                     x.ViewDiff = 0;
+                                 });
+            }
+
+            _explorerModel?.All.AddOrUpdate(stPl);
         }
 
         private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)

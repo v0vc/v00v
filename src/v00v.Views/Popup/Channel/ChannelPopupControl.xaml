@@ -6,84 +6,39 @@
     xmlns:controls="clr-namespace:v00v.Views.Controls">
 
     <Grid RowDefinitions="auto,auto,auto,auto,auto,auto" MaxWidth="380">
+        <controls:ExtendedTextBox Grid.Row="0" ToolTip.Tip="{Binding SubTitle, Mode=OneWay}" Watermark="Id (required)"
+            IsReadOnly="{Binding !IsChannelEnabled, Mode=OneWay}" Text="{Binding ChannelId, Mode=TwoWay}"
+            />
 
-        <controls:ExtendedTextBox
-            ToolTip.Tip="{Binding SubTitle, Mode=OneWay}"
-            IsReadOnly="{Binding !IsChannelEnabled, Mode=OneWay}"
-            IsVisible="True"
-            Watermark="Id (required)"
-            Text="{Binding ChannelId, Mode=TwoWay}"
-            Grid.Row="0" />
+        <controls:ExtendedTextBox Grid.Row="1" Watermark="Title (optional)" Text="{Binding ChannelTitle, Mode=TwoWay}"/>
 
-        <controls:ExtendedTextBox
-            IsEnabled="True"
-            IsVisible="True"
-            Watermark="Title (optional)"
-            Text="{Binding ChannelTitle, Mode=TwoWay}"
-            Grid.Row="1" />
-
-        <Grid
-            ColumnDefinitions="auto,auto,*" Margin="0,15,0,0"
-            Grid.Row="2">
-
-            <Button
-                Classes="Link"
-                Command="{Binding AddTagCommand, Mode=OneWay}"
-                Grid.Column="0">
-                <TextBlock Text="Add" />
+        <Grid Grid.Row="2" ColumnDefinitions="auto,auto,*" Margin="0,15,0,0">
+            <Button Grid.Column="0" Classes="Link" Command="{Binding AddTagCommand, Mode=OneWay}">
+                <TextBlock Text="Add"/>
             </Button>
-
-            <Button
-                Classes="Link"
-                Command="{Binding SaveTagCommand, Mode=OneWay}"
-                CommandParameter="{Binding SelectedTag}"
-                Grid.Column="1">
+            <Button Grid.Column="1" Classes="Link" Command="{Binding SaveTagCommand, Mode=OneWay}" CommandParameter="{Binding SelectedTag}">
                 <TextBlock Text="Save" />
             </Button>
-
         </Grid>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal">
-            <TextBox 
-                Width="185"
-                IsEnabled="{Binding SelectedTag.IsEditable, Mode=OneWay}" Margin="0,0,0,10"
-                IsVisible="True"
-                Watermark="Tag"
-                Text="{Binding SelectedTag.Text, Mode=TwoWay}">
-            </TextBox>
-            <TextBox
-                Width="185"
-                Margin="10,0,0,10"
-                IsVisible="True"
-                Watermark="Search"
-                Text="{Binding FilterTag, Mode=TwoWay}">
-            </TextBox>
+            <TextBox Width="185" IsEnabled="{Binding SelectedTag.IsEditable, Mode=OneWay}" Margin="0,0,0,10" Watermark="Tag" Text="{Binding SelectedTag.Text, Mode=TwoWay}"/>
+            <TextBox Width="185" Margin="10,0,0,10" Watermark="Search" Text="{Binding FilterTag, Mode=TwoWay}"/>
         </StackPanel>
 
-        <ListBox
-            Items="{Binding Entries}"
-            SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
-            Grid.Row="4">
-            
+        <ListBox Grid.Row="4" Items="{Binding Entries}" SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <channeltag:TagItemControl />
                 </DataTemplate>
             </ListBox.ItemTemplate>
-            
         </ListBox>
 
-        <Grid
-            Grid.Row="5">
-
-            <Button IsEnabled="{Binding !IsWorking, Mode=OneWay}"
-                Classes="Link"
-                Command="{Binding CloseChannelCommand, Mode=OneWay}">
-                <TextBlock Text="{Binding CloseText, Mode=OneWay}" />
+        <Grid Grid.Row="5">
+            <Button IsEnabled="{Binding !IsWorking, Mode=OneWay}" Classes="Link" Command="{Binding CloseChannelCommand, Mode=OneWay}">
+                <TextBlock Text="{Binding CloseText, Mode=OneWay}"/>
             </Button>
-
         </Grid>
-
     </Grid>
     
     <UserControl.Styles>

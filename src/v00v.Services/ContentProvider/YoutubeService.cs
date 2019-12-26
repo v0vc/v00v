@@ -878,56 +878,50 @@ namespace v00v.Services.ContentProvider
 
             await Task.WhenAll(uploadTasks);
 
-            var uploadDetails = new List<JToken>();
-            foreach (var task in uploadTasks)
-            {
-                uploadDetails.AddRange(task.Result.SelectTokens("items.[*]"));
-            }
+            Parallel.ForEach(uploadTasks.AsParallel().SelectMany(x => x.Result.SelectTokens("items.[*]")),
+                             rec =>
+                             {
+                                 var item = channel.Items.FirstOrDefault(x => x.Id == rec.SelectToken("id")?.Value<string>());
+                                 if (item != null)
+                                 {
+                                     item.ViewCount = rec.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0;
+                                     item.Comments = rec.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0;
+                                     item.LikeCount = rec.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0;
+                                     item.DislikeCount = rec.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0;
+                                     item.Description = rec.SelectToken("snippet.description")?.Value<string>();
+                                     if (isDur)
+                                     {
+                                         var dur = rec.SelectToken("contentDetails.duration");
+                                         item.Duration = dur != null ? (int)XmlConvert.ToTimeSpan(dur.Value<string>()).TotalSeconds : 0;
+                                     }
+                                 }
+                             });
+        }
 
-            foreach (var rec in uploadDetails)
-            {
-                var item = channel.Items.FirstOrDefault(x => x.Id == rec.SelectToken("id")?.Value<string>());
-                if (item == null)
-                {
-                    continue;
-                }
+        public async Task SetItemsStatistic(List<Item> items)
+        {
 
-                var vc = rec.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0;
-                if (vc > 0)
-                {
-                    item.ViewCount = vc;
-                }
+            var uploadTasks = items.Select(x => x.Id).ToList().Split()
+                .Select(s =>
+                            GetJsonObjectAsync(new
+                                                   Uri($"{Url}videos?id={string.Join(",", s)}&key={Key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                .ToHashSet();
 
-                var comm = rec.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0;
-                if (comm > 0)
-                {
-                    item.Comments = comm;
-                }
+            await Task.WhenAll(uploadTasks);
 
-                var like = rec.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0;
-                if (like > 0)
-                {
-                    item.LikeCount = like;
-                }
-
-                var dlike = rec.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0;
-                if (dlike > 0)
-                {
-                    item.DislikeCount = dlike;
-                }
-
-                var descr = rec.SelectToken("snippet.description")?.Value<string>();
-                if (descr != null)
-                {
-                    item.Description = descr;
-                }
-
-                if (isDur)
-                {
-                    var dur = rec.SelectToken("contentDetails.duration");
-                    item.Duration = dur != null ? (int)XmlConvert.ToTimeSpan(dur.Value<string>()).TotalSeconds : 0;
-                }
-            }
+            Parallel.ForEach(uploadTasks.AsParallel().SelectMany(x => x.Result.SelectTokens("items.[*]")),
+                             rec =>
+                             {
+                                 var item = items.FirstOrDefault(x => x.Id == rec.SelectToken("id")?.Value<string>());
+                                 if (item != null)
+                                 {
+                                     item.ViewCount = rec.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0;
+                                     item.Comments = rec.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0;
+                                     item.LikeCount = rec.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0;
+                                     item.DislikeCount = rec.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0;
+                                     item.Description = rec.SelectToken("snippet.description")?.Value<string>();
+                                 }
+                             });
         }
 
         private async Task FillThumbs(IReadOnlyCollection<Item> items)

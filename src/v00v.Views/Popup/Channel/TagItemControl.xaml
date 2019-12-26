@@ -1,38 +1,21 @@
 ﻿<UserControl
     x:Class="v00v.Views.Popup.Channel.TagItemControl"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns="https://github.com/avaloniaui">
+    xmlns="https://github.com/avaloniaui"
+    >
     
     <Grid ColumnDefinitions="auto,auto,*,auto,auto">
-        
-        <CheckBox
-            IsVisible="{Binding !IsSaved, Mode=OneWay}"
-            IsEnabled="False"
-            IsChecked="False"
-            Grid.Column="0" />
 
-        <CheckBox
-            IsVisible="{Binding IsSaved}"
-            IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-            Grid.Column="0" />
-        
-        <TextBlock
-            Text="{Binding Text, Mode=TwoWay}"
-            Grid.Column="1" />
-        
-        <TextBlock
-            IsVisible="{Binding !IsSaved, Mode=OneWay}"
-            Text=" * "
-            Grid.Column="2" />
+        <CheckBox Grid.Column="0" IsVisible="{Binding !IsSaved, Mode=OneWay}" IsChecked="False" IsEnabled="False"/>
 
-        <Button
-            Grid.Column="4"
-            IsVisible="{Binding IsRemovable, Mode=OneWay}"
-            Command="{Binding RemoveCommand, Mode=OneWay}"
-            CommandParameter="{Binding}"
-            BorderThickness="0">
-            <Image
-                Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp" />
+        <CheckBox Grid.Column="0" IsVisible="{Binding IsSaved, Mode=OneWay}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
+
+        <TextBlock Grid.Column="1" Text="{Binding Text, Mode=TwoWay}"/>
+
+        <TextBlock Grid.Column="2" IsVisible="{Binding !IsSaved, Mode=OneWay}" Text=" * "/>
+
+        <Button Grid.Column="4" IsVisible="{Binding IsRemovable, Mode=OneWay}" Command="{Binding RemoveCommand, Mode=OneWay}" CommandParameter="{Binding}" BorderThickness="0">
+            <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>
         </Button>
         
     </Grid>

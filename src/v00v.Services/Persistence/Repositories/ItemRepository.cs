@@ -256,18 +256,30 @@ namespace v00v.Services.Persistence.Repositories
                     {
                         var itemsdb = items.Select(x => _mapper.Map<Database.Models.Item>(x)).ToHashSet();
                         context.Items.UpdateRange(itemsdb);
+                        Parallel.ForEach(itemsdb,
+                                         item =>
+                                         {
+                                             context.Entry(item).Property(x => x.ViewDiff).IsModified = false;
+                                             context.Entry(item).Property(x => x.Thumbnail).IsModified = false;
+                                             context.Entry(item).Property(x => x.SyncState).IsModified = false;
+                                             context.Entry(item).Property(x => x.WatchState).IsModified = false;
+                                             context.Entry(item).Property(x => x.Title).IsModified = false;
+                                             context.Entry(item).Property(x => x.Duration).IsModified = false;
+                                             context.Entry(item).Property(x => x.Id).IsModified = false;
+                                             context.Entry(item).Property(x => x.FileName).IsModified = false;
+                                         });
 
-                        foreach (var item in itemsdb)
-                        {
-                            context.Entry(item).Property(x => x.ViewDiff).IsModified = false;
-                            context.Entry(item).Property(x => x.Thumbnail).IsModified = false;
-                            context.Entry(item).Property(x => x.SyncState).IsModified = false;
-                            context.Entry(item).Property(x => x.WatchState).IsModified = false;
-                            context.Entry(item).Property(x => x.Title).IsModified = false;
-                            context.Entry(item).Property(x => x.Duration).IsModified = false;
-                            context.Entry(item).Property(x => x.Id).IsModified = false;
-                            context.Entry(item).Property(x => x.FileName).IsModified = false;
-                        }
+                        //foreach (var item in itemsdb)
+                        //{
+                        //    context.Entry(item).Property(x => x.ViewDiff).IsModified = false;
+                        //    context.Entry(item).Property(x => x.Thumbnail).IsModified = false;
+                        //    context.Entry(item).Property(x => x.SyncState).IsModified = false;
+                        //    context.Entry(item).Property(x => x.WatchState).IsModified = false;
+                        //    context.Entry(item).Property(x => x.Title).IsModified = false;
+                        //    context.Entry(item).Property(x => x.Duration).IsModified = false;
+                        //    context.Entry(item).Property(x => x.Id).IsModified = false;
+                        //    context.Entry(item).Property(x => x.FileName).IsModified = false;
+                        //}
 
                         await context.SaveChangesAsync();
                         transaction.Commit();

@@ -36,6 +36,8 @@ namespace v00v.Services.ContentProvider
 
         Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null);
 
+        Task SetItemsStatistic(List<Item> items);
+
         #endregion
     }
 }

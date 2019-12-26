@@ -8,8 +8,8 @@
         <Border Grid.ColumnSpan="3" />
 
         <Image Grid.Row="0" Grid.Column="0"
-               Width="{Binding ThumbSize, Mode=OneTime}" Height="{Binding ThumbSize, Mode=OneTime}"
-               Source="{Binding Thumb, Mode=OneTime}" 
+               Width="{Binding ThumbSize, Mode=OneWay}" Height="{Binding ThumbSize, Mode=OneWay}"
+               Source="{Binding Thumb, Mode=OneWay}" 
                Stretch="Fill" 
                />
 

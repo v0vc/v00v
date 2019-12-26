@@ -359,6 +359,8 @@ namespace v00v.ViewModel.Explorer
                         return SortExpressionComparer<Item>.Descending(t => t.DislikeCount);
                     case ItemSort.Comment:
                         return SortExpressionComparer<Item>.Descending(t => t.Comments);
+                    case ItemSort.Channel:
+                        return SortExpressionComparer<Item>.Descending(t => t.ChannelId);
                     case ItemSort.Duration:
                         return SortExpressionComparer<Item>.Ascending(t => t.Duration);
                     case ItemSort.Diff:

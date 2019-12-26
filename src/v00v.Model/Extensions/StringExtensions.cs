@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,13 @@ namespace v00v.Model.Extensions
             }
 
             return stringBuilder.ToString();
+        }
+
+        public static string MakeTitle(this string str, int count, Stopwatch sw)
+        {
+            var res = count == 1 ? "item" : "items";
+            return
+                $"Done {count} {res}{str}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms";
         }
 
         public static string RemoveInvalidChars(this string filename)
