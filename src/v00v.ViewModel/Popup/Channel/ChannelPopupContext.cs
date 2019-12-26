@@ -79,19 +79,22 @@ namespace v00v.ViewModel.Popup.Channel
             All = new SourceList<Tag>();
             if (channel?.Tags.Count > 0)
             {
-                foreach (var tag in alltags)
-                {
-                    tag.IsEnabled = channel.Tags.Select(x => x.Id).Contains(tag.Id);
-                    tag.IsRemovable = false;
-                }
+                var ids = channel.Tags.Select(x => x.Id);
+                Parallel.ForEach(alltags,
+                                 tag =>
+                                 {
+                                     tag.IsEnabled = ids.Contains(tag.Id);
+                                     tag.IsRemovable = false;
+                                 });
             }
             else
             {
-                foreach (var tag in alltags.Where(x => x.IsEnabled || x.IsRemovable))
-                {
-                    tag.IsEnabled = false;
-                    tag.IsRemovable = false;
-                }
+                Parallel.ForEach(alltags.Where(x => x.IsEnabled || x.IsRemovable),
+                                 tag =>
+                                 {
+                                     tag.IsEnabled = false;
+                                     tag.IsRemovable = false;
+                                 });
             }
 
             All.AddRange(alltags);
@@ -110,7 +113,7 @@ namespace v00v.ViewModel.Popup.Channel
 
             SubTitle = channel?.SubTitle;
             AddTagCommand = ReactiveCommand.Create(AddTag, null, RxApp.MainThreadScheduler);
-            SaveTagCommand = ReactiveCommand.CreateFromTask(SaveTag, null, RxApp.MainThreadScheduler);
+            SaveTagCommand = ReactiveCommand.Create(SaveTag, null, RxApp.MainThreadScheduler);
             CloseChannelCommand = channel == null
                 ? ReactiveCommand.CreateFromTask(AddChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.CreateFromTask(() => EditChannel(channel), null, RxApp.MainThreadScheduler);
@@ -305,17 +308,18 @@ namespace v00v.ViewModel.Popup.Channel
             }
         }
 
-        private async Task SaveTag()
+        private void SaveTag()
         {
-            foreach (var tag in All.Items.Where(x => !x.IsSaved))
-            {
-                if (All.Items.Count(x => x.Text == tag.Text) == 1)
-                {
-                    tag.IsSaved = true;
-                    tag.Id = await _tagRepository.Add(tag.Text);
-                    _addNewTag?.Invoke(tag);
-                }
-            }
+            Parallel.ForEach(All.Items.Where(x => !x.IsSaved),
+                             async tag =>
+                             {
+                                 if (All.Items.Count(x => x.Text == tag.Text) == 1)
+                                 {
+                                     tag.IsSaved = true;
+                                     tag.Id = await _tagRepository.Add(tag.Text);
+                                     _addNewTag?.Invoke(tag);
+                                 }
+                             });
         }
 
         private bool SetExisted(string channelId)

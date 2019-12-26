@@ -301,11 +301,11 @@ namespace v00v.ViewModel.Popup.Item
         {
             All.RemoveKeys(_comments.Where(x => x.IsReply).Select(x => x.CommentId));
             SearchText = null;
-            foreach (var comment in _comments.Where(x => x.IsExpanded))
-            {
-                comment.IsExpanded = false;
-            }
-
+            Parallel.ForEach(_comments.Where(x => x.IsExpanded),
+                             comment =>
+                             {
+                                 comment.IsExpanded = false;
+                             });
             CommentSort = (CommentSort)Enum.Parse(typeof(CommentSort), par);
             SetOrder();
         }

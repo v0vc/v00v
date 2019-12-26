@@ -87,9 +87,7 @@ namespace v00v.ViewModel.Catalog
         {
             _setTitle = setTitle;
             _setPageIndex = setPageIndex;
-
             All = new SourceCache<Channel, string>(m => m.Id);
-
             _baseChannel = StateChannel.Instance;
             _baseChannel.Count = _channelRepository.GetItemsCount(SyncState.Added);
             _baseExplorerModel = new ExplorerModel(_baseChannel, this, setPageIndex, setTitle);
@@ -404,20 +402,24 @@ namespace v00v.ViewModel.Catalog
 
         public void AddChannelToList(Channel channel, bool updateList)
         {
-            if (_entries.Select(x => x.Id).Contains(channel.Id))
+            var lockMe = new object();
+            lock (lockMe)
             {
-                return;
-            }
+                if (_entries.Select(x => x.Id).Contains(channel.Id))
+                {
+                    return;
+                }
 
-            channel.IsNew = true;
-            channel.Order = GetMinOrder() - 1;
-            if (!updateList)
-            {
-                return;
-            }
+                channel.IsNew = true;
+                channel.Order = GetMinOrder() - 1;
+                if (!updateList)
+                {
+                    return;
+                }
 
-            UpdateList(channel);
-            SetSelected(channel.Id);
+                UpdateList(channel);
+                SetSelected(channel.Id);
+            }
         }
 
         public ExplorerModel GetCachedExplorerModel(string channelId)
@@ -511,45 +513,42 @@ namespace v00v.ViewModel.Catalog
 
                 _baseChannel.Items.Clear();
 
-                foreach (var channel in _entries.Where(x => x.Count > 0))
-                {
-                    channel.Count = 0;
-                    if (channel.IsStateChannel)
-                    {
-                        ExplorerModel.All.Clear();
-                        ExplorerModel.EnableLog = false;
-                    }
-                    else
-                    {
-                        if (channel.Items.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        var cmodel = GetCachedExplorerModel(channel.Id);
-                        if (cmodel == null)
-                        {
-                            continue;
-                        }
-
-                        foreach (var item in cmodel.All.Items.Where(x => x.SyncState == SyncState.Added))
-                        {
-                            item.SyncState = SyncState.Notset;
-                        }
-                    }
-                }
-
+                Parallel.ForEach(_entries.Where(x => x.Count > 0),
+                                 channel =>
+                                 {
+                                     channel.Count = 0;
+                                     if (channel.IsStateChannel)
+                                     {
+                                         ExplorerModel.All.Clear();
+                                         ExplorerModel.EnableLog = false;
+                                     }
+                                     else
+                                     {
+                                         if (channel.Items.Count > 0)
+                                         {
+                                             var cmodel = GetCachedExplorerModel(channel.Id);
+                                             if (cmodel != null)
+                                             {
+                                                 Parallel.ForEach(cmodel.All.Items.Where(x => x.SyncState == SyncState.Added),
+                                                                  item =>
+                                                                  {
+                                                                      item.SyncState = SyncState.Notset;
+                                                                  });
+                                             }
+                                         }
+                                     }
+                                 });
                 _setPageIndex.Invoke(1);
             }
             else
             {
                 var channel = _entries.First(x => x.Id == chId);
-                var ids = channel.Items.Where(x => x.SyncState == SyncState.Added).Select(x => x.Id).ToList();
-                foreach (var item in channel.Items.Where(x => ids.Contains(x.Id)))
-                {
-                    item.SyncState = SyncState.Notset;
-                }
-
+                var ids = channel.Items.Where(x => x.SyncState == SyncState.Added).Select(x => x.Id).ToHashSet();
+                Parallel.ForEach(channel.Items.Where(x => ids.Contains(x.Id)),
+                                 item =>
+                                 {
+                                     item.SyncState = SyncState.Notset;
+                                 });
                 _baseChannel.Items.RemoveAll(x => ids.Contains(x.Id));
                 channel.Count -= ids.Count;
                 _baseChannel.Count -= ids.Count;
@@ -762,7 +761,6 @@ namespace v00v.ViewModel.Catalog
                                  {
                                      AddChannelToList(x, false);
                                  });
-                //task.Result.ForEach(x => AddChannelToList(x, false));
                 All.AddOrUpdate(task.Result);
                 SetSelected(_baseChannel.Id);
             }
@@ -779,13 +777,14 @@ namespace v00v.ViewModel.Catalog
             unlistedpl.StateItems?.AddRange(channel.Items.Where(x => deletedIds.Contains(x.Id)));
             unlistedpl.Count += deletedIds.Count;
 
-            foreach (var item in channel.Items.Where(x => deletedIds.Contains(x.Id)))
-            {
-                if (item.SyncState != SyncState.Deleted)
-                {
-                    item.SyncState = SyncState.Deleted;
-                }
-            }
+            Parallel.ForEach(channel.Items.Where(x => deletedIds.Contains(x.Id)),
+                             item =>
+                             {
+                                 if (item.SyncState != SyncState.Deleted)
+                                 {
+                                     item.SyncState = SyncState.Deleted;
+                                 }
+                             });
 
             var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
             if (unlistpl == null)
@@ -1043,7 +1042,6 @@ namespace v00v.ViewModel.Catalog
                                      pl.Items.Clear();
                                      pl.Items.AddRange(value.Select(x => x.Id));
                                  }
-                                 
                              });
 
             if (task.Result.NoUnlistedAgain.Count > 0)
@@ -1064,10 +1062,12 @@ namespace v00v.ViewModel.Catalog
             {
                 GetCachedExplorerModel(channel.Id)?.All.AddOrUpdate(task.Result.NewItems);
             }
-            if (SelectedEntry != null && SelectedEntry.Id != channel.Id)
+
+            if (SelectedEntry == null || SelectedEntry.Id != oldId)
             {
-                SelectedEntry = channel;
+                SelectedEntry = _entries.First(x => x.Id == oldId);
             }
+
             await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
         }
 
@@ -1111,18 +1111,20 @@ namespace v00v.ViewModel.Catalog
                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
                 unlistedpl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
                 unlistedpl.Count -= diff.NoUnlistedAgain.Count;
-                foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
-                {
-                    MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
-                }
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
+                                 channel =>
+                                 {
+                                     MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
+                                 });
             }
 
             if (diff.DeletedItems.Count > 0)
             {
-                foreach (var channel in _entries.Where(x => !x.IsStateChannel && !x.IsNew))
-                {
-                    MarkDeleted(channel, diff.DeletedItems);
-                }
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
+                                 channel =>
+                                 {
+                                     MarkDeleted(channel, diff.DeletedItems);
+                                 });
             }
 
             All.AddOrUpdate(_entries.Where(x => !x.IsNew));
