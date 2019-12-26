@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using v00v.Model.Entities;
 
 namespace v00v.Model.SyncEntities
@@ -16,9 +17,9 @@ namespace v00v.Model.SyncEntities
             DeletedItems = new List<string>();
             if (syncPls)
             {
-                AddedPls = new Dictionary<Playlist, List<ItemPrivacy>>();
+                AddedPls = new ConcurrentDictionary<Playlist, List<ItemPrivacy>>();
                 DeletedPls = new List<string>();
-                ExistPls = new Dictionary<string, List<ItemPrivacy>>();
+                ExistPls = new ConcurrentDictionary<string, List<ItemPrivacy>>();
             }
         }
 
@@ -27,13 +28,13 @@ namespace v00v.Model.SyncEntities
         #region Properties
 
         public List<ItemPrivacy> AddedItems { get; }
-        public Dictionary<Playlist, List<ItemPrivacy>> AddedPls { get; }
+        public ConcurrentDictionary<Playlist, List<ItemPrivacy>> AddedPls { get; }
         public string ChannelId { get; }
         public string ChannelTitle { get; }
         public List<string> DeletedItems { get; }
         public List<string> DeletedPls { get; }
         public string Description { get; set; }
-        public Dictionary<string, List<ItemPrivacy>> ExistPls { get; }
+        public ConcurrentDictionary<string, List<ItemPrivacy>> ExistPls { get; }
         public bool Faulted { get; set; }
         public long SubsCount { get; set; }
         public List<string> UploadedIds { get; }

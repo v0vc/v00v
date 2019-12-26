@@ -37,21 +37,15 @@ namespace v00v.Services.Synchronization
                                : $"Working channels: {channels.Count - 1}, parallel: {parallel}");
 
             var unl = new List<string>();
-            var diffs = new List<ChannelDiff>();
             IEnumerable<ChannelStruct> channelStructs = null;
             //channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channels.Count == 2 ? channels.Last().Id : null);
             await Task.Run(() =>
             {
                 channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
                 unl.AddRange(channelStructs.SelectMany(x => x.UnlistedItems));
-                //Parallel.ForEach(channelStructs,
-                //                 x =>
-                //                 {
-                //                     diffs.Add(_youtubeService.GetChannelDiffAsync(x, syncPls, setLog));
-                //                     unl.AddRange(x.UnlistedItems);
-                //                 });
             });
 
+            var diffs = new List<ChannelDiff>();
             if (parallel)
             {
                 var pdiff = new List<Task<ChannelDiff>>();

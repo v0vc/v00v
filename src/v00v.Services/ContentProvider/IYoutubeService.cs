@@ -24,7 +24,7 @@ namespace v00v.Services.ContentProvider
 
         Task<List<Item>> GetPopularItems(string country, IEnumerable<string> existChannelsIds);
 
-        Task<List<Channel>> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannelsIds);
+        Task<Channel[]> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannelsIds);
 
         Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId);
 
