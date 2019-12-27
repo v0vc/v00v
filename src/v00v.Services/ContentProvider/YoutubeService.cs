@@ -732,15 +732,12 @@ namespace v00v.Services.ContentProvider
                 }
                 else
                 {
-                    var regex = new Regex(YouRegex);
-                    var match = regex.Match(inputChannelLink);
-                    if (!match.Success)
+                    if (!IsYoutubeLink(inputChannelLink, out var videoId))
                     {
                         return parsedChannelId;
                     }
 
-                    var zap =
-                        $"{Url}videos?&id={match.Groups[1].Value}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}";
+                    var zap = $"{Url}videos?&id={videoId}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}";
 
                     parsedChannelId = (await GetJsonObjectAsync(new Uri(zap))).SelectToken("items[0].snippet.channelId")?.Value<string>();
                 }
@@ -957,6 +954,15 @@ namespace v00v.Services.ContentProvider
                         ? Convert.FromBase64String(CommentUp).CreateThumb()
                         : null
                 });
+        }
+
+        public bool IsYoutubeLink(string link, out string videoId)
+        {
+            var regex = new Regex(YouRegex, RegexOptions.None);
+            var match = regex.Match(link);
+            var res = match.Success;
+            videoId = res ? match.Groups[0].Value : null;
+            return res;
         }
 
         public async Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null)

@@ -27,7 +27,6 @@ namespace v00v.ViewModel.Playlists
         #region Static and Readonly Fields
 
         private readonly Channel _channel;
-
         private readonly ReadOnlyObservableCollection<Playlist> _entries;
         private readonly ExplorerModel _explorerModel;
         private readonly IItemRepository _itemRepository;

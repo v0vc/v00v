@@ -5,7 +5,13 @@ namespace v00v.Model
 {
     public abstract class ViewModelBase : INotifyPropertyChanged
     {
+        #region Events
+
         public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
+
+        #region Methods
 
         public void Notify([CallerMemberName] string propertyName = null)
         {
@@ -14,13 +20,16 @@ namespace v00v.Model
 
         public bool Update<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
-            if (!Equals(field, value))
+            if (Equals(field, value))
             {
-                field = value;
-                Notify(propertyName);
-                return true;
+                return false;
             }
-            return false;
+
+            field = value;
+            Notify(propertyName);
+            return true;
         }
+
+        #endregion
     }
 }

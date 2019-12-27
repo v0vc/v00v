@@ -10,7 +10,6 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
-using Microsoft.Extensions.Configuration;
 using ReactiveUI;
 using v00v.Model;
 using v00v.Model.Entities;
@@ -22,6 +21,7 @@ using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Playlists;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Item;
+using v00v.ViewModel.Startup;
 
 namespace v00v.ViewModel.Explorer
 {
@@ -31,11 +31,11 @@ namespace v00v.ViewModel.Explorer
 
         private readonly CatalogModel _catalogModel;
         private readonly Channel _channel;
-        private readonly IConfiguration _configuration;
         private readonly IItemRepository _itemRepository;
         private readonly ReadOnlyObservableCollection<Item> _items;
         private readonly IPopupController _popupController;
         private readonly Action<byte> _setPageIndex;
+        private readonly IStartupModel _settings;
         private readonly Action<string> _setTitle;
         private readonly IYoutubeService _youtubeService;
 
@@ -59,7 +59,7 @@ namespace v00v.ViewModel.Explorer
             this(AvaloniaLocator.Current.GetService<IItemRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                 AvaloniaLocator.Current.GetService<IConfigurationRoot>())
+                 AvaloniaLocator.Current.GetService<IStartupModel>())
         {
             _channel = channel;
             _catalogModel = catalogModel;
@@ -103,12 +103,12 @@ namespace v00v.ViewModel.Explorer
         private ExplorerModel(IItemRepository itemRepository,
             IPopupController popupController,
             IYoutubeService youtubeService,
-            IConfiguration configuration)
+            IStartupModel settings)
         {
             _itemRepository = itemRepository;
             _popupController = popupController;
             _youtubeService = youtubeService;
-            _configuration = configuration;
+            _settings = settings;
         }
 
         #endregion
@@ -208,9 +208,7 @@ namespace v00v.ViewModel.Explorer
                     return;
                 }
 
-                var fn = new FileInfo(Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"),
-                                                   item.ChannelId,
-                                                   item.FileName));
+                var fn = new FileInfo(Path.Combine(_settings.BaseDir, item.ChannelId, item.FileName));
                 if (!fn.Exists)
                 {
                     return;
@@ -231,12 +229,8 @@ namespace v00v.ViewModel.Explorer
         public async Task Download(string par, Item item)
         {
             var skip = par == "subs";
-            item.SaveDir = $"{Path.Combine(_configuration.GetValue<string>("AppSettings:BaseDir"), item.ChannelId)}";
-            var task = item.Download(_configuration.GetValue<string>("AppSettings:YouParser"),
-                                     _configuration.GetValue<string>("AppSettings:YouParam"),
-                                     par,
-                                     skip,
-                                     SetLog);
+            item.SaveDir = $"{Path.Combine(_settings.BaseDir, item.ChannelId)}";
+            var task = item.Download(_settings.YouParser, _settings.YouParam, par, skip, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 if (task.Result && !skip)
@@ -494,8 +488,7 @@ namespace v00v.ViewModel.Explorer
 
         private async Task RunItem()
         {
-            SelectedEntry?.RunItem(_configuration.GetValue<string>("AppSettings:WatchApp"),
-                                   _configuration.GetValue<string>("AppSettings:BaseDir"));
+            SelectedEntry?.RunItem(_settings.WatchApp, _settings.BaseDir);
             await SetItemState(WatchState.Watched);
         }
 

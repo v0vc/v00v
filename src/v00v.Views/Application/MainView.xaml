@@ -11,37 +11,21 @@
     <Panel>
         <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,*,auto">
 
-            <catalog:CatalogControl
-                DataContext="{Binding CatalogModel}"
-                Grid.Column="0"
-                Grid.RowSpan="3"
-                />
+            <catalog:CatalogControl Grid.Column="0" Grid.RowSpan="3" DataContext="{Binding CatalogModel, Mode=OneWay}"/>
 
-            <Carousel Grid.Column="1" Grid.Row="1" SelectedIndex="{Binding PageIndex}">
+            <Carousel Grid.Column="1" Grid.Row="1" SelectedIndex="{Binding PageIndex, Mode=OneWay}">
 
-                <explorer:ExplorerControl
-                    DataContext="{Binding CatalogModel.ExplorerModel}" />
+                <explorer:ExplorerControl DataContext="{Binding CatalogModel.ExplorerModel, Mode=OneWay}" />
 
-                <startup:StartupControl />
+                <startup:StartupControl DataContext="{Binding StartupModel, Mode=OneWay}"/>
 
             </Carousel>
 
-            <playlist:PlaylistControl
-                DataContext="{Binding CatalogModel.PlaylistModel}"
-                Grid.Column="2" 
-                Grid.RowSpan="3"
-                />
+            <playlist:PlaylistControl Grid.Column="2" Grid.RowSpan="3" DataContext="{Binding CatalogModel.PlaylistModel, Mode=OneWay}"/>
 
-            <logView:LogViewControl
-                DataContext="{Binding CatalogModel.ExplorerModel}"
-                Grid.Column="1" 
-                Grid.Row="2"
-                />
+            <logView:LogViewControl Grid.Column="1" Grid.Row="2" DataContext="{Binding CatalogModel.ExplorerModel, Mode=OneWay}"/>
+
         </Grid>
-
-        <popup:PopupControl
-            DataContext="{Binding PopupModel}" 
-            IsVisible="{Binding IsVisible, Mode=OneWay}"/>
-
+        <popup:PopupControl DataContext="{Binding PopupModel, Mode=OneWay}"  IsVisible="{Binding IsVisible, Mode=OneWay}"/>
     </Panel>
 </UserControl>

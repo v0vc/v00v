@@ -16,6 +16,7 @@ using v00v.Services.Persistence.Mappers;
 using v00v.Services.Persistence.Repositories;
 using v00v.Services.Synchronization;
 using v00v.ViewModel.Popup;
+using v00v.ViewModel.Startup;
 
 namespace v00v
 {
@@ -116,6 +117,11 @@ namespace v00v
                                               AvaloniaLocator.Current.GetService<IYoutubeService>(),
                                               AvaloniaLocator.Current.GetService<IItemRepository>(),
                                               AvaloniaLocator.Current.GetService<IChannelRepository>()));
+
+            AvaloniaLocator.CurrentMutable.Bind<IStartupModel>()
+                .ToConstant(new StartupModel(AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
+                                             AvaloniaLocator.Current.GetService<IBackupService>(),
+                                             AvaloniaLocator.Current.GetService<IYoutubeService>()));
         }
 
         private static void Shutdown()

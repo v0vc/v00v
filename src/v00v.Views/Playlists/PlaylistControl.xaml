@@ -2,7 +2,8 @@
     x:Class="v00v.Views.Playlists.PlaylistControl"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns="https://github.com/avaloniaui"
-    xmlns:playlist="clr-namespace:v00v.Views.Playlists">
+    xmlns:playlist="clr-namespace:v00v.Views.Playlists"
+    >
 
     <Expander IsExpanded="False" ExpandDirection="Left">
         <Expander.Header>

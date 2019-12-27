@@ -79,6 +79,12 @@ namespace v00v.Services.Backup
             return bcp.Items.Count();
         }
 
+        public string GetSettingsName()
+        {
+            var prov = (FileConfigurationProvider)_configuration.Providers.First();
+            return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
+        }
+
         public async Task<RestoreResult> Restore(IEnumerable<string> existChannels,
             bool isFast,
             Action<string> setTitle,
@@ -95,8 +101,7 @@ namespace v00v.Services.Backup
             BackupAll backup;
             using (var r = new StreamReader(fileName))
             {
-                string json = r.ReadToEnd();
-                backup = JsonConvert.DeserializeObject<BackupAll>(json);
+                backup = JsonConvert.DeserializeObject<BackupAll>(r.ReadToEnd());
             }
 
             if (backup == null)

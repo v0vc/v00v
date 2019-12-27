@@ -34,6 +34,8 @@ namespace v00v.Services.ContentProvider
 
         Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId);
 
+        bool IsYoutubeLink(string link, out string videoId);
+
         Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null);
 
         Task SetItemsStatistic(List<Item> items);

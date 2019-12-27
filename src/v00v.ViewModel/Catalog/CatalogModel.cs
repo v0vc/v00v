@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -12,7 +11,6 @@ using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
 using LazyCache;
-using Microsoft.Extensions.Configuration;
 using ReactiveUI;
 using v00v.Model;
 using v00v.Model.Entities;
@@ -29,6 +27,7 @@ using v00v.ViewModel.Explorer;
 using v00v.ViewModel.Playlists;
 using v00v.ViewModel.Popup;
 using v00v.ViewModel.Popup.Channel;
+using v00v.ViewModel.Startup;
 
 namespace v00v.ViewModel.Catalog
 {
@@ -42,7 +41,6 @@ namespace v00v.ViewModel.Catalog
         private readonly ExplorerModel _baseExplorerModel;
         private readonly PlaylistModel _basePlaylistModel;
         private readonly IChannelRepository _channelRepository;
-        private readonly IConfiguration _configuration;
         private readonly ReadOnlyObservableCollection<Channel> _entries;
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
@@ -54,6 +52,7 @@ namespace v00v.ViewModel.Catalog
         private readonly List<Tag> _tags;
         private readonly ITaskDispatcher _taskDispatcher;
         private readonly IYoutubeService _youtubeService;
+        private readonly IStartupModel _settings;
 
         #endregion
 
@@ -82,8 +81,8 @@ namespace v00v.ViewModel.Catalog
                  AvaloniaLocator.Current.GetService<ISyncService>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
                  AvaloniaLocator.Current.GetService<IBackupService>(),
-                 AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
-                 AvaloniaLocator.Current.GetService<ITaskDispatcher>())
+                 AvaloniaLocator.Current.GetService<ITaskDispatcher>(),
+                 AvaloniaLocator.Current.GetService<IStartupModel>())
         {
             _setTitle = setTitle;
             _setPageIndex = setPageIndex;
@@ -194,38 +193,36 @@ namespace v00v.ViewModel.Catalog
             RestoreCommand.ThrownExceptions.Subscribe(OnException);
 
             // scheduler
-            var enabled = _configuration.GetValue<bool>("AppSettings:EnableSchedule");
-            if (!enabled)
+            if (_settings.EnableDailySchedule)
             {
-                return;
+                if (_settings.DailyParsed)
+                {
+                    _taskDispatcher.DailySync = _settings.DailySyncTime;
+                    var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
+                                                                                    _appLogRepository,
+                                                                                    _entries.Where(x => !x.IsNew).ToList(),
+                                                                                    true,
+                                                                                    SetLog,
+                                                                                    UpdateChannels),
+                                                     TaskCreationOptions.LongRunning);
+                    ExceptionHandling(task);
+                }
             }
 
-            var timeSchedule = _configuration.GetValue<string>("AppSettings:TimeSchedule(HH:mm)");
-            if (DateTime.TryParseExact(timeSchedule, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+            if (_settings.EnableRepeatSchedule)
             {
-                _taskDispatcher.DailySync = dt.TimeOfDay;
-                var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
-                                                                                _appLogRepository,
-                                                                                _entries.Where(x => !x.IsNew).ToList(),
-                                                                                true,
-                                                                                SetLog,
-                                                                                UpdateChannels),
-                                                 TaskCreationOptions.LongRunning);
-                ExceptionHandling(task);
-            }
-
-            var repeatSchedule = _configuration.GetValue<string>("AppSettings:RepeatSchedule(sec)");
-            if (int.TryParse(repeatSchedule, NumberStyles.None, CultureInfo.InvariantCulture, out var sec) && sec > 30)
-            {
-                _taskDispatcher.RepeatSync = sec;
-                var task = Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
-                                                                                 _appLogRepository,
-                                                                                 _entries.Where(x => !x.IsNew).ToList(),
-                                                                                 false,
-                                                                                 SetLog,
-                                                                                 UpdateChannels),
-                                                 TaskCreationOptions.LongRunning);
-                ExceptionHandling(task);
+                if (_settings.RepeatParsed)
+                {
+                    _taskDispatcher.RepeatSync = _settings.RepeatMin;
+                    var task = Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
+                                                                                     _appLogRepository,
+                                                                                     _entries.Where(x => !x.IsNew).ToList(),
+                                                                                     false,
+                                                                                     SetLog,
+                                                                                     UpdateChannels),
+                                                     TaskCreationOptions.LongRunning);
+                    ExceptionHandling(task);
+                }
             }
         }
 
@@ -237,8 +234,8 @@ namespace v00v.ViewModel.Catalog
             ISyncService syncService,
             IYoutubeService youtubeService,
             IBackupService backupService,
-            IConfiguration configuration,
-            ITaskDispatcher taskDispatcher)
+            ITaskDispatcher taskDispatcher,
+            IStartupModel settings)
         {
             _channelRepository = channelRepository;
             _tagRepository = tagRepository;
@@ -248,8 +245,8 @@ namespace v00v.ViewModel.Catalog
             _syncService = syncService;
             _youtubeService = youtubeService;
             _backupService = backupService;
-            _configuration = configuration;
             _taskDispatcher = taskDispatcher;
+            _settings = settings;
         }
 
         #endregion

@@ -121,7 +121,7 @@ namespace v00v.Services.Dispatcher
                                             updateList);
 
             var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicSync, BaseSync.PeriodicGroup).StartNow()
-                .WithSimpleSchedule(x => x.WithIntervalInSeconds(RepeatSync).RepeatForever()).ForJob(job).Build();
+                .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatSync).RepeatForever()).ForJob(job).Build();
 
             await Scheduler.ScheduleJob(job, trigger);
         }

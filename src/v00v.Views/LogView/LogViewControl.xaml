@@ -7,9 +7,8 @@
     >
     <Expander HorizontalAlignment="Stretch" ExpandDirection="Up" Background="#242e44">
         <Expander.Header >
-            <Grid ColumnDefinitions="*,auto,auto" 
-                  HorizontalAlignment="Stretch" 
-                  Width="{Binding $parent[Expander].Bounds.Width}"
+            <Grid ColumnDefinitions="*,auto,auto" HorizontalAlignment="Stretch"
+                  Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}"
                   IsEnabled="{Binding EnableLog, Mode=OneWay}"
                   >
                 <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
@@ -69,13 +68,9 @@
                 <TextBlock Grid.Column="2" Text="{Binding Items.Count}" Margin="0,0,40,0" VerticalAlignment="Center" Foreground="#92a3b3"/>
             </Grid>
         </Expander.Header>
-        <TextBox Width="{Binding $parent[Expander].Bounds.Width}" 
-                 Height="150" 
-                 Margin="3"
+        <TextBox Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}" Height="150" Margin="3"
                  Text="{Binding LogText, Mode=OneWay}" 
-                 TextWrapping="Wrap" 
-                 HorizontalAlignment="Stretch" 
-                 VerticalAlignment="Stretch"
+                 TextWrapping="Wrap" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                  />
     </Expander>
     

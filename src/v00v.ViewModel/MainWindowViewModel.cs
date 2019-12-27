@@ -3,6 +3,7 @@ using Avalonia;
 using v00v.Model;
 using v00v.ViewModel.Catalog;
 using v00v.ViewModel.Popup;
+using v00v.ViewModel.Startup;
 
 namespace v00v.ViewModel
 {
@@ -36,6 +37,8 @@ namespace v00v.ViewModel
             });
 
             CatalogModel = new CatalogModel(SetTitle, SetPageIndex);
+            StartupModel = AvaloniaLocator.Current.GetService<IStartupModel>() as StartupModel;
+
             WindowTitle = $"Channels: {CatalogModel.Entries.Count - 1}";
         }
 
@@ -61,6 +64,8 @@ namespace v00v.ViewModel
             get => _popupModel;
             set => Update(ref _popupModel, value);
         }
+
+        public StartupModel StartupModel { get; }
 
         public string WindowTitle
         {

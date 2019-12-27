@@ -16,6 +16,9 @@ namespace v00v.Model.Extensions
 
         #region Static Methods
 
+        public static bool CheckUrlValid(this string source) =>
+            Uri.TryCreate(source, UriKind.Absolute, out var uriResult) && uriResult.Scheme == Uri.UriSchemeHttps;
+
         public static string FilterWhiteSpaces(this string input)
         {
             if (input == null)

@@ -13,22 +13,11 @@ namespace v00v.Model.Entities
 {
     public class Item : ViewModelBase
     {
-        #region Constants
-
-        private const string DownloadText = "[download]";
-
-        #endregion
-
-        #region Static and Readonly Fields
-
-        private static readonly Regex NumRegex = new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
-
-        #endregion
-
         #region Fields
 
         private bool _downloaded;
         private bool _isWorking;
+        private Regex _numRegex;
         private double _percentage;
         private Process _proc;
         private Action<string> _setLog;
@@ -122,18 +111,6 @@ namespace v00v.Model.Entities
 
         #region Static Methods
 
-        private static double GetPercentFromYoudlOutput(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return 0;
-            }
-
-            var match = NumRegex.Match(input);
-            return !match.Success ? 0 :
-                double.TryParse(match.Value.TrimEnd('%'), NumberStyles.Any, CultureInfo.InvariantCulture, out var res) ? res : 0;
-        }
-
         private static string IntTostrTime(int duration)
         {
             var t = TimeSpan.FromSeconds(duration);
@@ -147,6 +124,11 @@ namespace v00v.Model.Entities
 
         public async Task<bool> Download(string youdl, string youparam, string par, bool skip, Action<string> setLog)
         {
+            if (_numRegex == null)
+            {
+                _numRegex = new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
+            }
+
             if (_setLog == null)
             {
                 _setLog = setLog;
@@ -198,7 +180,20 @@ namespace v00v.Model.Entities
             using (var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = false })
             {
                 proc.Start();
+                proc.Close();
             }
+        }
+
+        private double GetPercentFromYoudlOutput(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return 0;
+            }
+
+            var match = _numRegex.Match(input);
+            return !match.Success ? 0 :
+                double.TryParse(match.Value.TrimEnd('%'), NumberStyles.Any, CultureInfo.InvariantCulture, out var res) ? res : 0;
         }
 
         private void HandleDownload(bool skip)
@@ -281,7 +276,7 @@ namespace v00v.Model.Entities
 
             _setLog?.Invoke(e.Data);
 
-            if (e.Data.StartsWith(DownloadText))
+            if (e.Data.StartsWith("[download]"))
             {
                 Percentage = GetPercentFromYoudlOutput(e.Data);
             }
