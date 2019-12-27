@@ -128,6 +128,10 @@ namespace v00v
             {
                 context.Database.ExecuteSqlRaw("VACUUM");
             }
+            else
+            {
+                context.Database.ExecuteSqlRaw("PRAGMA optimize");
+            }
 
             context.Dispose();
             AvaloniaLocator.Current.GetService<IPopupController>().Trigger.Dispose();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using v00v.Model.Entities;
@@ -117,14 +118,22 @@ namespace v00v.Services.Synchronization
                                                   ViewCount = y.ViewCount, SubsCount = y.SubsCount, Description = y.Description
                                               });
 
-            foreach (((string item1, string item2), var value) in
-                diffs.ToDictionary(z => new Tuple<string, string>(z.ChannelId, z.ChannelTitle), z => z.AddedItems))
-            {
-                foreach (var privacy in value)
-                {
-                    res.Items.Add(privacy.Id, new SyncPrivacy { ChannelId = item1, ChannelTitle = item2, Status = privacy.Status });
-                }
-            }
+            Parallel.ForEach(diffs.ToImmutableDictionary(z => new Tuple<string, string>(z.ChannelId, z.ChannelTitle), z => z.AddedItems),
+                             pair =>
+                             {
+                                 var ((item1, item2), value) = pair;
+                                 Parallel.ForEach(value,
+                                                  privacy =>
+                                                  {
+                                                      res.Items.TryAdd(privacy.Id,
+                                                                       new SyncPrivacy
+                                                                       {
+                                                                           ChannelId = item1,
+                                                                           ChannelTitle = item2,
+                                                                           Status = privacy.Status
+                                                                       });
+                                                  });
+                             });
 
             res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.UploadedIds).Where(x => unl.Contains(x)));
 
@@ -132,7 +141,7 @@ namespace v00v.Services.Synchronization
 
             if (res.Items.Count > 0)
             {
-                res.NewItems.AddRange(await _youtubeService.GetItems(res.Items));
+                res.NewItems.AddRange(await _youtubeService.GetItems(res.Items.ToDictionary(entry => entry.Key, entry => entry.Value)));
             }
 
             setLog?.Invoke($"New items: {res.NewItems.Count}");
@@ -143,14 +152,16 @@ namespace v00v.Services.Synchronization
                 setLog?.Invoke(res.NewPlaylists.Count > 0
                                    ? $"New playlists: {res.NewPlaylists.Count} - {string.Join(", ", res.NewPlaylists.Select(x => x.Title))}"
                                    : $"New playlists: {res.NewPlaylists.Count}");
+
                 if (res.NewPlaylists.Count > 0)
                 {
                     await _youtubeService.FillThumbs(res.NewPlaylists);
-                    foreach (var playlist in res.NewPlaylists)
-                    {
-                        playlist.Items.AddRange(diffs.SelectMany(x => x.AddedPls).First(x => x.Key.Id == playlist.Id).Value
-                                                    .Select(x => x.Id));
-                    }
+                    Parallel.ForEach(res.NewPlaylists,
+                                     playlist =>
+                                     {
+                                         playlist.Items.AddRange(diffs.SelectMany(x => x.AddedPls).First(x => x.Key.Id == playlist.Id)
+                                                                     .Value.Select(x => x.Id));
+                                     });
                 }
 
                 res.DeletedPlaylists.AddRange(diffs.SelectMany(x => x.DeletedPls));
@@ -162,23 +173,22 @@ namespace v00v.Services.Synchronization
                 setLog?.Invoke($"Existed playlists: {res.ExistPlaylists.Count}");
             }
 
-            foreach (var pair in res.Items.GroupBy(x => x.Value.ChannelId))
-            {
-                var chitems = res.NewItems.Where(x => pair.Select(y => y.Key).Contains(x.Id)).ToHashSet();
-                res.Channels[pair.Key].ItemsCount = chitems.Count;
-                res.Channels[pair.Key].Timestamp = chitems.OrderByDescending(x => x.Timestamp).First().Timestamp;
-                var ch = channels.FirstOrDefault(x => x.Id == pair.Key);
-                if (ch == null)
-                {
-                    continue;
-                }
-
-                ch.Count += chitems.Count;
-                if (ch.Loaded)
-                {
-                    ch.Items.AddRange(chitems);
-                }
-            }
+            Parallel.ForEach(res.Items.GroupBy(x => x.Value.ChannelId),
+                             pair =>
+                             {
+                                 var chitems = res.NewItems.Where(x => pair.Select(y => y.Key).Contains(x.Id)).ToHashSet();
+                                 res.Channels[pair.Key].ItemsCount = chitems.Count;
+                                 res.Channels[pair.Key].Timestamp = chitems.OrderByDescending(x => x.Timestamp).First().Timestamp;
+                                 var ch = channels.FirstOrDefault(x => x.Id == pair.Key);
+                                 if (ch != null)
+                                 {
+                                     ch.Count += chitems.Count;
+                                     if (ch.Loaded)
+                                     {
+                                         ch.Items.AddRange(chitems);
+                                     }
+                                 }
+                             });
 
             if (res.NewItems.Count > 0)
             {

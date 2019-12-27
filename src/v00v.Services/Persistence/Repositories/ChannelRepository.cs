@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using v00v.Model.Enums;
+using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
 using v00v.Services.Database;
 using v00v.Services.Database.Models;
@@ -309,16 +311,21 @@ namespace v00v.Services.Persistence.Repositories
                             // playlist-items
                             if (fdiff.ExistPlaylists.Count > 0)
                             {
-                                var current = new List<ItemPlaylist>();
-                                foreach ((string key, var value) in fdiff.ExistPlaylists)
-                                {
-                                    current.AddRange(value.Select(item => new ItemPlaylist { ItemId = item.Id, PlaylistId = key }));
-                                }
+                                var current = new ConcurrentBag<ItemPlaylist>();
+                                Parallel.ForEach(fdiff.ExistPlaylists,
+                                                 pair =>
+                                                 {
+                                                     var (key, value) = pair;
+                                                     current.AddRange(value.Select(item => new ItemPlaylist
+                                                     {
+                                                         ItemId = item.Id, PlaylistId = key
+                                                     }));
+                                                 });
 
                                 var exist = context.ItemPlaylists.Where(x => current.Select(y => y.PlaylistId).Contains(x.PlaylistId))
-                                    .ToList();
+                                    .ToHashSet();
 
-                                var deleted = exist.Except(current, ItemPlaylist.ItemIdPlaylistIdComparer).ToList();
+                                var deleted = exist.Except(current, ItemPlaylist.ItemIdPlaylistIdComparer).ToHashSet();
 
                                 if (deleted.Count > 0)
                                 {
@@ -387,27 +394,29 @@ namespace v00v.Services.Persistence.Repositories
                         if (fdiff.Channels.Count > 0)
                         {
                             var chs = context.Channels.AsEnumerable().Where(x => fdiff.Channels.ContainsKey(x.Id)).ToHashSet();
-                            foreach ((string s, var value) in fdiff.Channels)
-                            {
-                                var ch = chs.First(x => x.Id == s);
-                                ch.ViewCount = value.ViewCount;
-                                ch.SubsCount = value.SubsCount;
-                                if (!string.IsNullOrEmpty(value.Description))
-                                {
-                                    ch.SubTitle = value.Description;
-                                }
+                            Parallel.ForEach(fdiff.Channels,
+                                             pair =>
+                                             {
+                                                 var (key, value) = pair;
+                                                 var ch = chs.First(x => x.Id == key);
+                                                 ch.ViewCount = value.ViewCount;
+                                                 ch.SubsCount = value.SubsCount;
+                                                 if (!string.IsNullOrEmpty(value.Description))
+                                                 {
+                                                     ch.SubTitle = value.Description;
+                                                 }
 
-                                if (value.ItemsCount > 0)
-                                {
-                                    ch.ItemsCount += value.ItemsCount;
-                                    ch.Count += (int)value.ItemsCount;
-                                }
+                                                 if (value.ItemsCount > 0)
+                                                 {
+                                                     ch.ItemsCount += value.ItemsCount;
+                                                     ch.Count += (int)value.ItemsCount;
+                                                 }
 
-                                if (value.Timestamp != DateTime.MinValue)
-                                {
-                                    ch.Timestamp = value.Timestamp;
-                                }
-                            }
+                                                 if (value.Timestamp != DateTime.MinValue)
+                                                 {
+                                                     ch.Timestamp = value.Timestamp;
+                                                 }
+                                             });
 
                             context.Channels.UpdateRange(chs);
 
