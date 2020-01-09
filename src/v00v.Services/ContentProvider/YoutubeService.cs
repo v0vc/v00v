@@ -48,20 +48,22 @@ namespace v00v.Services.ContentProvider
         private static async Task<JArray> GetAll(string zap)
         {
             var rawzap = zap;
-
             var res = new JArray();
-
             object pagetoken;
-
             do
             {
-                var record = await GetJsonObjectAsync(new Uri(zap)).ConfigureAwait(false);
+                var record = await GetJsonObjectAsync(new Uri(zap));
+                if (record == null)
+                {
+                    break;
+                }
 
                 res.Add(record);
-
                 pagetoken = record.SelectToken("nextPageToken");
-
-                zap = rawzap + $"&pageToken={pagetoken}";
+                if (pagetoken != null)
+                {
+                    zap = $"{rawzap}&pageToken={pagetoken}";
+                }
             }
             while (pagetoken != null);
 
@@ -74,14 +76,17 @@ namespace v00v.Services.ContentProvider
                     GetJsonObjectAsync(new
                                            Uri($"{Url}channels?&forUsername={username}&key={Key}&part=snippet&fields=items(id)&{PrintType}"))
                 )
-                .SelectToken("items[0].id")?.Value<string>();
+                ?.SelectToken("items[0].id")?.Value<string>();
         }
 
         private static async Task<JObject> GetJsonObjectAsync(Uri uri)
         {
             using (var client = new HttpClient())
             {
-                return JObject.Parse(await client.GetStringAsync(uri).ConfigureAwait(false));
+                using (var response = await client.GetAsync(uri))
+                {
+                    return !response.IsSuccessStatusCode ? null : JObject.Parse(await response.Content.ReadAsStringAsync());
+                }
             }
         }
 
@@ -306,7 +311,7 @@ namespace v00v.Services.ContentProvider
                                                               ? $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(title,description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"
                                                               : $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"));
 
-            if (!record.SelectToken("items").Any())
+            if (record == null || !record.SelectToken("items").Any())
             {
                 // banned channel
                 return null;
@@ -333,10 +338,10 @@ namespace v00v.Services.ContentProvider
 
             var plu = new Playlist
             {
-                Id = upload.SelectToken("items[0].id")?.Value<string>(),
+                Id = upload?.SelectToken("items[0].id")?.Value<string>(),
                 ChannelId = channel.Id,
-                Title = upload.SelectToken("items[0].snippet.title")?.Value<string>(),
-                ThumbnailLink = upload.SelectToken("items[0].snippet.thumbnails.default.url", false)?.Value<string>(),
+                Title = upload?.SelectToken("items[0].snippet.title")?.Value<string>(),
+                ThumbnailLink = upload?.SelectToken("items[0].snippet.thumbnails.default.url", false)?.Value<string>(),
             };
 
             channel.Items.AddRange((await
@@ -566,7 +571,7 @@ namespace v00v.Services.ContentProvider
                                                               ? $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description),statistics(viewCount,subscriberCount))&{PrintType}"
                                                               : $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,statistics&fields=items(contentDetails(relatedPlaylists),statistics(viewCount,subscriberCount))&{PrintType}"));
 
-            if (!record.SelectToken("items").Any())
+            if (record == null || !record.SelectToken("items").Any())
             {
                 setLog?.Invoke($"Sync fail: {cs.ChannelTitle}");
                 diff.Faulted = true;
@@ -739,7 +744,8 @@ namespace v00v.Services.ContentProvider
 
                     var zap = $"{Url}videos?&id={videoId}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}";
 
-                    parsedChannelId = (await GetJsonObjectAsync(new Uri(zap))).SelectToken("items[0].snippet.channelId")?.Value<string>();
+                    parsedChannelId = (await GetJsonObjectAsync(new Uri(zap)))?.SelectToken("items[0].snippet.channelId")
+                        ?.Value<string>();
                 }
             }
             else
@@ -791,7 +797,7 @@ namespace v00v.Services.ContentProvider
                 (await
                     GetJsonObjectAsync(new
                                            Uri($"{Url}videos?chart=mostPopular&key={Key}&maxResults={ItemsPerPage}&regionCode={country}&safeSearch=none&part=snippet&fields=items(id,snippet(channelId))&{PrintType}"))
-                ).SelectTokens("items.[*]").Where(x => x.SelectToken("id")?.Value<string>() != null)
+                )?.SelectTokens("items.[*]").Where(x => x.SelectToken("id")?.Value<string>() != null)
                 .ToDictionary(y => y.SelectToken("id")?.Value<string>(),
                               y => new SyncPrivacy
                               {
@@ -811,7 +817,7 @@ namespace v00v.Services.ContentProvider
                     GetJsonObjectAsync(new
                                            Uri($"{Url}channels?id={channelId}&key={Key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{PrintType}"));
 
-            if (!res.SelectToken("items").Any())
+            if (res == null || !res.SelectToken("items").Any())
             {
                 return null;
             }
@@ -822,36 +828,46 @@ namespace v00v.Services.ContentProvider
 
         public async Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId)
         {
+            var record =
+                await
+                    GetAll($"{Url}comments?parentId={commentId}&key={Key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}");
+
+            if (record.Count == 0)
+            {
+                // deleted video
+                return new HashSet<Comment>(0);
+            }
+
             var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
-            return
-                (await
-                    GetAll($"{Url}comments?parentId={commentId}&key={Key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}")
-                ).SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
-                {
-                    CommentId = x.SelectToken("id")?.Value<string>(),
-                    Author =
-                        x.SelectToken("snippet.authorDisplayName")?.Value<string>()
-                            .RemoveSpecialCharacters(),
-                    AuthorChannelId =
-                        x.SelectToken("snippet.authorChannelId.value")?.Value<string>(),
-                    Text =
-                        hrefRegex.Replace(x.SelectToken("snippet.textDisplay")?.Value<string>()
-                                              .Replace("&quot;", @"""").Replace("<br />", " ")
-                                              .Replace("</a>", " ").Replace("<b>", string.Empty)
-                                              .Replace("</b>", string.Empty)
-                                              .Replace("&gt;", ">").Replace("&lt;", "<")
-                                              .Replace("&#39;", "'").RemoveSpecialCharacters()
-                                          ?? string.Empty,
-                                          string.Empty),
-                    TextUrl = hrefRegex
-                        .Match(x.SelectToken("snippet.textDisplay")?.Value<string>()
-                               ?? string.Empty).Value.Replace("<a href=", string.Empty)
-                        .Replace(">", string.Empty).Trim('"'),
-                    LikeCount = x.SelectToken("snippet.likeCount")?.Value<long>() ?? 0,
-                    Timestamp = x.SelectToken("snippet.publishedAt", false)?.Value<DateTime?>()
-                                ?? DateTime.MinValue,
-                    IsReply = true
-                }).Reverse().ToHashSet();
+            return record.SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
+            {
+                CommentId = x.SelectToken("id")?.Value<string>(),
+                Author =
+                    x.SelectToken("snippet.authorDisplayName")?.Value<string>()
+                        .RemoveSpecialCharacters(),
+                AuthorChannelId =
+                    x.SelectToken("snippet.authorChannelId.value")?.Value<string>(),
+                Text =
+                    hrefRegex.Replace(x.SelectToken("snippet.textDisplay")
+                                          ?.Value<string>().Replace("&quot;", @"""")
+                                          .Replace("<br />", " ")
+                                          .Replace("</a>", " ")
+                                          .Replace("<b>", string.Empty)
+                                          .Replace("</b>", string.Empty)
+                                          .Replace("&gt;", ">").Replace("&lt;", "<")
+                                          .Replace("&#39;", "'")
+                                          .RemoveSpecialCharacters()
+                                      ?? string.Empty,
+                                      string.Empty),
+                TextUrl = hrefRegex
+                    .Match(x.SelectToken("snippet.textDisplay")?.Value<string>()
+                           ?? string.Empty).Value.Replace("<a href=", string.Empty)
+                    .Replace(">", string.Empty).Trim('"'),
+                LikeCount = x.SelectToken("snippet.likeCount")?.Value<long>() ?? 0,
+                Timestamp = x.SelectToken("snippet.publishedAt", false)
+                                ?.Value<DateTime?>() ?? DateTime.MinValue,
+                IsReply = true
+            }).Reverse().ToHashSet();
         }
 
         public async Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region)
@@ -860,7 +876,7 @@ namespace v00v.Services.ContentProvider
                 (await
                     GetJsonObjectAsync(new
                                            Uri($"{Url}search?&q={searchText}&key={Key}&maxResults={ItemsPerPage}&regionCode={region}&safeSearch=none&part=snippet&fields=items(id(videoId),snippet(channelId))&{PrintType}"))
-                        .ConfigureAwait(false)).SelectTokens("items.[*]").Where(x => x.SelectToken("id.videoId")?.Value<string>() != null)
+                )?.SelectTokens("items.[*]").Where(x => x.SelectToken("id.videoId")?.Value<string>() != null)
                 .ToDictionary(y => y.SelectToken("id.videoId")?.Value<string>(),
                               y => new SyncPrivacy
                               {
@@ -900,60 +916,70 @@ namespace v00v.Services.ContentProvider
 
         public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId)
         {
-            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
+            var record =
+                await
+                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}");
 
-            return
-                (await
-                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}")
-                ).SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
-                {
-                    CommentId = x.SelectToken("id")?.Value<string>(),
-                    Author =
-                        channelId
-                            .Equals(x
-                                        .SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
-                                        ?.Value<string>(),
-                                    StringComparison.InvariantCultureIgnoreCase)
-                            ? $" {x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")?.Value<string>().RemoveSpecialCharacters()}"
-                            : x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
-                                ?.Value<string>().RemoveSpecialCharacters().Trim(),
-                    AuthorChannelId =
-                        x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
-                            ?.Value<string>(),
-                    Text =
-                        hrefRegex
-                            .Replace(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
-                                         ?.Value<string>().Replace("&quot;", @"""")
-                                         .Replace("<br />", " ").Replace("</a>", " ")
-                                         .Replace("<b>", string.Empty)
-                                         .Replace("</b>", string.Empty).Replace("&gt;", ">")
-                                         .Replace("&lt;", "<").Replace("&#39;", "'")
-                                         .RemoveSpecialCharacters() ?? string.Empty,
-                                     string.Empty),
-                    TextUrl =
-                        hrefRegex
-                            .Match(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
-                                       ?.Value<string>() ?? string.Empty).Value
-                            .Replace("<a href=", string.Empty).Replace(">", string.Empty)
-                            .Trim('"'),
-                    CommentReplyCount =
-                        x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
-                    LikeCount =
-                        x.SelectToken("snippet.topLevelComment.snippet.likeCount")
-                            ?.Value<long>() ?? 0,
-                    Timestamp =
-                        x.SelectToken("snippet.topLevelComment.snippet.publishedAt", false)
-                            ?.Value<DateTime?>() ?? DateTime.MinValue,
-                    IsReply = false,
-                    ExpandDown =
-                        (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0) > 0
-                            ? Convert.FromBase64String(CommentDown).CreateThumb()
-                            : null,
-                    ExpandUp = (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0)
-                               > 0
+            if (record.Count == 0)
+            {
+                // deleted video
+                return new Comment[0];
+            }
+
+            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
+            return record.SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
+            {
+                CommentId = x.SelectToken("id")?.Value<string>(),
+                Author =
+                    channelId
+                        .Equals(x
+                                    .SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
+                                    ?.Value<string>(),
+                                StringComparison.InvariantCultureIgnoreCase)
+                        ? $" {x.SelectToken("snippet.topLevelComment.snippet.authorDisplayName")?.Value<string>().RemoveSpecialCharacters()}"
+                        : x
+                            .SelectToken("snippet.topLevelComment.snippet.authorDisplayName")
+                            ?.Value<string>().RemoveSpecialCharacters().Trim(),
+                AuthorChannelId =
+                    x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
+                        ?.Value<string>(),
+                Text =
+                    hrefRegex
+                        .Replace(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
+                                     ?.Value<string>().Replace("&quot;", @"""")
+                                     .Replace("<br />", " ").Replace("</a>", " ")
+                                     .Replace("<b>", string.Empty)
+                                     .Replace("</b>", string.Empty)
+                                     .Replace("&gt;", ">").Replace("&lt;", "<")
+                                     .Replace("&#39;", "'")
+                                     .RemoveSpecialCharacters() ?? string.Empty,
+                                 string.Empty),
+                TextUrl =
+                    hrefRegex
+                        .Match(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
+                                   ?.Value<string>() ?? string.Empty).Value
+                        .Replace("<a href=", string.Empty)
+                        .Replace(">", string.Empty).Trim('"'),
+                CommentReplyCount =
+                    x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0,
+                LikeCount =
+                    x.SelectToken("snippet.topLevelComment.snippet.likeCount")
+                        ?.Value<long>() ?? 0,
+                Timestamp =
+                    x.SelectToken("snippet.topLevelComment.snippet.publishedAt",
+                                  false)?.Value<DateTime?>() ?? DateTime.MinValue,
+                IsReply = false,
+                ExpandDown =
+                    (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0)
+                    > 0
+                        ? Convert.FromBase64String(CommentDown).CreateThumb()
+                        : null,
+                ExpandUp =
+                    (x.SelectToken("snippet.totalReplyCount")?.Value<long>() ?? 0)
+                    > 0
                         ? Convert.FromBase64String(CommentUp).CreateThumb()
                         : null
-                });
+            });
         }
 
         public bool IsYoutubeLink(string link, out string videoId)
