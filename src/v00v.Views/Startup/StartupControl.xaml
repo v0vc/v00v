@@ -71,7 +71,7 @@
 
                     <StackPanel Orientation="Horizontal" Grid.Row="11">
                         <TextBlock Text="Download:"/>
-                        <TextBox Width="346" Margin="10,0,0,0" Watermark="Link..." Text="{Binding DownloadUrl, Mode=TwoWay}"/>
+                        <controls:ExtendedTextBox Width="346" Margin="10,0,0,0" Watermark="Link..." Text="{Binding DownloadUrl, Mode=TwoWay}"/>
                         <Button Width="30" Content=">>" Margin="2,0,0,0" Command="{Binding DownloadCommand, Mode=OneTime}"/>
                     </StackPanel>
 

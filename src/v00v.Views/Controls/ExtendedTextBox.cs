@@ -1,17 +1,22 @@
 using System;
+using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using ReactiveUI;
 
 namespace v00v.Views.Controls
 {
-    public sealed class ExtendedTextBox : TextBox, IStyleable
+    public class ExtendedTextBox : TextBox, IStyleable
     {
         #region Static and Readonly Fields
 
@@ -26,7 +31,8 @@ namespace v00v.Views.Controls
 
         #region Fields
 
-        private MenuItem _pasteItem = null;
+        private MenuItem _pasteItem;
+        private TextPresenter _presenter;
 
         #endregion
 
@@ -34,9 +40,9 @@ namespace v00v.Views.Controls
 
         public ExtendedTextBox()
         {
-            CopyCommand = ReactiveCommand.CreateFromTask(CopyAsync, null, RxApp.MainThreadScheduler);
-            PasteCommand = ReactiveCommand.CreateFromTask(PasteAsync, null, RxApp.MainThreadScheduler);
-
+            Disposables = new CompositeDisposable();
+            CopyCommand = ReactiveCommand.CreateFromTask(CopyAsync);
+            PasteCommand = ReactiveCommand.CreateFromTask(PasteAsync);
             this.GetObservable(IsReadOnlyProperty).Subscribe(isReadOnly =>
             {
                 if (ContextMenu is null)
@@ -48,35 +54,36 @@ namespace v00v.Views.Controls
 
                 if (isReadOnly)
                 {
-                    if (items != null && items.Contains(_pasteItem))
+                    if (items == null || !items.Contains(_pasteItem))
                     {
-                        items.Remove(_pasteItem);
-                        _pasteItem = null;
+                        return;
                     }
+
+                    items.Remove(_pasteItem);
+                    _pasteItem = null;
                 }
                 else
                 {
-                    if (items != null && !items.Contains(_pasteItem))
+                    if (items == null || items.Contains(_pasteItem))
                     {
-                        CreatePasteItem();
-                        items.Add(_pasteItem);
+                        return;
                     }
+
+                    CreatePasteItem();
+                    items.Add(_pasteItem);
                 }
             });
         }
 
         #endregion
 
-        #region Static Properties
-
-        private static bool IsCopyEnabled => true;
-
-        #endregion
-
         #region Properties
 
-        private ICommand CopyCommand { get; }
-        private ICommand PasteCommand { get; }
+        protected virtual bool IsCopyEnabled => true;
+        private ReactiveCommand<Unit, Unit> CopyCommand { get; }
+        private CompositeDisposable Disposables { get; }
+        private ReactiveCommand<Unit, string> PasteCommand { get; }
+
         Type IStyleable.StyleKey => typeof(TextBox);
 
         #endregion
@@ -95,7 +102,7 @@ namespace v00v.Views.Controls
         {
             return new DrawingPresenter
             {
-                Drawing = new GeometryDrawing { Brush = Brush.Parse("#22B14C"), Geometry = PasteIcon }, Width = 16, Height = 16,
+                Drawing = new GeometryDrawing { Brush = Brush.Parse("#22B14C"), Geometry = PasteIcon }, Width = 16, Height = 16
             };
         }
 
@@ -103,26 +110,7 @@ namespace v00v.Views.Controls
 
         #region Methods
 
-        protected override void OnTemplateApplied(TemplateAppliedEventArgs e)
-        {
-            base.OnTemplateApplied(e);
-
-            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls() };
-
-            var menuItems = (Avalonia.Controls.Controls)ContextMenu.Items;
-            if (IsCopyEnabled)
-            {
-                menuItems.Add(new MenuItem { Header = "Copy", Command = CopyCommand, Icon = GetCopyPresenter() });
-            }
-
-            if (!IsReadOnly)
-            {
-                CreatePasteItem();
-                menuItems.Add(_pasteItem);
-            }
-        }
-
-        private async Task CopyAsync()
+        protected virtual async Task CopyAsync()
         {
             var selection = GetSelection();
 
@@ -137,6 +125,57 @@ namespace v00v.Views.Controls
             }
         }
 
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+
+            Disposables?.Dispose();
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ContextMenu != null && ContextMenu.IsOpen)
+                {
+                    _presenter?.HideCaret();
+                }
+                else
+                {
+                    base.OnLostFocus(e);
+                }
+            });
+        }
+
+        protected override void OnTemplateApplied(TemplateAppliedEventArgs e)
+        {
+            base.OnTemplateApplied(e);
+
+            _presenter = e.NameScope.Get<TextPresenter>("PART_TextPresenter");
+
+            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls() };
+
+            Observable.FromEventPattern(ContextMenu, nameof(ContextMenu.MenuClosed)).ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(_ => Focus()).DisposeWith(Disposables);
+
+            var menuItems = (ContextMenu.Items as Avalonia.Controls.Controls);
+            if (IsCopyEnabled)
+            {
+                menuItems?.Add(new MenuItem
+                {
+                    Header = "Copy",
+                    Command = CopyCommand,
+                    Icon = GetCopyPresenter()
+                });
+            }
+
+            if (!IsReadOnly)
+            {
+                CreatePasteItem();
+                menuItems?.Add(_pasteItem);
+            }
+        }
+
         private void CreatePasteItem()
         {
             if (_pasteItem != null)
@@ -144,7 +183,12 @@ namespace v00v.Views.Controls
                 return;
             }
 
-            _pasteItem = new MenuItem { Header = "Paste", Command = PasteCommand, Icon = GetPastePresenter() };
+            _pasteItem = new MenuItem
+            {
+                Header = "Paste",
+                Command = PasteCommand,
+                Icon = GetPastePresenter()
+            };
         }
 
         private string GetSelection()
@@ -153,7 +197,7 @@ namespace v00v.Views.Controls
 
             if (string.IsNullOrEmpty(text))
             {
-                return string.Empty;
+                return "";
             }
 
             var selectionStart = SelectionStart;
@@ -167,21 +211,26 @@ namespace v00v.Views.Controls
                 return string.Empty;
             }
 
-            return text.Substring(start, end - start);
+            return text[start..end];
         }
 
-        private async Task PasteAsync()
+        private async Task<string> PasteAsync()
         {
             var text = await Avalonia.Application.Current.Clipboard.GetTextAsync();
 
             if (text is null)
             {
-                return;
+                return null;
             }
 
             OnTextInput(new TextInputEventArgs { Text = text });
+            return text;
         }
 
         #endregion
+
+        //private static readonly byte[] CopyIcon =
+        //    Convert.FromBase64String(
+        //                             "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAC0ElEQVRYhbXWT4hURxAG8N8Owx5EFv+s6MGDhxiChyDiIYh6EUQvwXiUEGElGzyoIEpOHkRFFvEgJCCKLBFEQvAgegghCkbBwIYkSIgoCYYgIqK7Ciqyjrseut/Mm9nXO2/G8YPmvVevuurrruqu6tPAx9iDVZiLShxTmMR9jOBn7wFDeI3pNuMN9vXScR9W4yaqeI4fMY6asPqpqLsKa+P7YRzoFYkfhNU9w4pZ9OZq3qWRXhH4Nxr8roTuM80hOfauzqvCyuBxCf3J+Lwh7MCvvSBQje+1Evo1fCOcln58gQ1YEO1UcnrjOI2f2hl9Imzn0RIEzkcny3Bb+1MzjeOzGcyznppNMWJH1L+Ej6LsH/xv5g4O4BPsFcK8M+VjIjI9kpPNSQz4XGN1B9sQ/iOne0ZjsU3IQpARqEpv5yBG4/u9lMEcLrTMn0GinYEiZEn7SPuwTbZ8DwmJWfdbNRNT+DJh8HmLXjsU6QwJ+fJVRqBI6WUJ42XQugMZhvEKe4p2oIJziYmLOiQwig8wT1hsv5BHA9iNsSICZVEmBL9gXYusHxexCfuLCNSwMGHwaUJ+CWtKEFoshOVWJLCkKAeqwnEpwvaEfEC4jssi81lNhWBLQt6fkI/iSgeO64tOEbiakOev2/zO/Yn/EnMe4G7iX6UoBDWhwnWCE1if+HdSqAPFDHIE5nXotCeoCk3FVqHIfIu/u7CzXaNYtSJ1cuoERvCpkMljuCw0E0Xn/OuEnS1YXoLoroRdw8q15YNC7ziN67n510rMndZI+iPxeyITnMJvQqu1UuPqbK2Wefb5f+N4OOvam1FvgvLH8Hfpi6aIRH7uZx04byLQTT+QVbh3OTXZ3FfdELgTnx9iYxfzlwhJD3/1dWFgMJJYINT0s0J7lt2SRVleEUI2H9uwNMo3d+EfoZK9UC7zU+NQt84zrMD3QlM7UXI8EY5vvdi9BdjX3qxtlHCCAAAAAElFTkSuQmCC");
     }
 }
