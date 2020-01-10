@@ -16,6 +16,8 @@ namespace v00v.Services.Persistence
 
         IEnumerable<Tag> GetTags();
 
+        IEnumerable<KeyValuePair<int, string>> GetTagsByIds(IEnumerable<int> tagIds);
+
         #endregion
     }
 }

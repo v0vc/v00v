@@ -110,8 +110,8 @@
                     <ComboBox Height="25" Width="90" ToolTip.Tip="Tag"
                               VerticalAlignment="Bottom" 
                               VirtualizationMode="Simple" 
-                              Items="{Binding Tags}" 
-                              SelectedItem="{Binding SelectedTag}"
+                              Items="{Binding Tags, Mode=OneTime}" 
+                              SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
                               >
                         <ComboBox.ItemTemplate>
                             <DataTemplate>

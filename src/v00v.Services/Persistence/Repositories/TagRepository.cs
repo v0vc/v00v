@@ -119,6 +119,17 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
+        public IEnumerable<KeyValuePair<int, string>> GetTagsByIds(IEnumerable<int> tagIds)
+        {
+            using (var context = _contextFactory.CreateVideoContext())
+            {
+                foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text).Where(x => tagIds.Contains(x.Id)))
+                {
+                    yield return new KeyValuePair<int, string>(tag.Id, tag.Text);
+                }
+            }
+        }
+
         #endregion
     }
 }

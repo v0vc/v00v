@@ -45,6 +45,7 @@ namespace v00v.ViewModel.Catalog
         private readonly IItemRepository _itemRepository;
         private readonly IPopupController _popupController;
         private readonly Action<byte> _setPageIndex;
+        private readonly IStartupModel _settings;
         private readonly Action<string> _setTitle;
         private readonly ISyncService _syncService;
         private readonly List<int> _tagOrder;
@@ -52,7 +53,6 @@ namespace v00v.ViewModel.Catalog
         private readonly List<Tag> _tags;
         private readonly ITaskDispatcher _taskDispatcher;
         private readonly IYoutubeService _youtubeService;
-        private readonly IStartupModel _settings;
 
         #endregion
 
@@ -117,6 +117,11 @@ namespace v00v.ViewModel.Catalog
                             {
                                 _baseExplorerModel.All.AddOrUpdate(entry.Items);
                             }
+                        }
+
+                        if (_baseExplorerModel?.SelectedTag.Key != 0)
+                        {
+                            _baseExplorerModel.SelectedTag = _baseExplorerModel.Tags.FirstOrDefault();
                         }
                     }
                     else

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -82,6 +83,8 @@ namespace v00v.Model.Entities
             get => _syncState;
             set => Update(ref _syncState, value);
         }
+
+        public IEnumerable<int> Tags { get; set; }
 
         public IBitmap Thumb => Thumbnail.CreateThumb();
         public string ThumbLink => $"http://img.youtube.com/vi/{Id}/0.jpg";

@@ -67,7 +67,7 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                foreach (var item in context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state).Include(x => x.Channel)
+                foreach (var item in context.Items.AsNoTracking().Where(x => x.SyncState == (byte)state).Include(x => x.Channel.Tags)
                     .AsNoTracking())
                 {
                     yield return _mapper.Map<Item>(item);

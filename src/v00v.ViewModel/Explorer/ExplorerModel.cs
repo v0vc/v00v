@@ -37,6 +37,7 @@ namespace v00v.ViewModel.Explorer
         private readonly Action<byte> _setPageIndex;
         private readonly IStartupModel _settings;
         private readonly Action<string> _setTitle;
+        private readonly ITagRepository _tagRepository;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -44,12 +45,14 @@ namespace v00v.ViewModel.Explorer
         #region Fields
 
         private bool _enableLog;
+        private bool _enableTags;
         private string _gotoMenu;
         private ItemSort _itemSort;
         private string _logText;
         private string _searchText;
         private Item _selectedEntry;
         private string _selectedPlaylistId;
+        private KeyValuePair<int, string> _selectedTag;
 
         #endregion
 
@@ -57,6 +60,7 @@ namespace v00v.ViewModel.Explorer
 
         public ExplorerModel(Channel channel, CatalogModel catalogModel, Action<byte> setPageIndex, Action<string> setTitle) :
             this(AvaloniaLocator.Current.GetService<IItemRepository>(),
+                 AvaloniaLocator.Current.GetService<ITagRepository>(),
                  AvaloniaLocator.Current.GetService<IPopupController>(),
                  AvaloniaLocator.Current.GetService<IYoutubeService>(),
                  AvaloniaLocator.Current.GetService<IStartupModel>())
@@ -79,10 +83,21 @@ namespace v00v.ViewModel.Explorer
 
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Filter(this.WhenValueChanged(t => t.SelectedPlaylistId).Select(BuildPlFilter))
+                .Filter(this.WhenValueChanged(t => t.SelectedTag).Select(BuildTagFilter))
                 .Sort(GetSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _items).DisposeMany().Subscribe();
 
             IsParentState = channel.IsStateChannel;
+            if (IsParentState && All.Items.Any())
+            {
+                Tags = _tagRepository.GetTagsByIds(channel.Items.SelectMany(x => x.Tags).Distinct()).ToList();
+                if (Tags.Count > 0)
+                {
+                    Tags.Insert(0, new KeyValuePair<int, string>(0, " "));
+                    EnableTags = true;
+                }
+            }
+
             GoToParentCommand = IsParentState
                 ? ReactiveCommand.CreateFromTask(SelectChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.Create(SelectPlaylist, null, RxApp.MainThreadScheduler);
@@ -101,11 +116,13 @@ namespace v00v.ViewModel.Explorer
         }
 
         private ExplorerModel(IItemRepository itemRepository,
+            ITagRepository tagRepository,
             IPopupController popupController,
             IYoutubeService youtubeService,
             IStartupModel settings)
         {
             _itemRepository = itemRepository;
+            _tagRepository = tagRepository;
             _popupController = popupController;
             _youtubeService = youtubeService;
             _settings = settings;
@@ -125,6 +142,12 @@ namespace v00v.ViewModel.Explorer
         {
             get => _enableLog;
             set => Update(ref _enableLog, value);
+        }
+
+        public bool EnableTags
+        {
+            get => _enableTags;
+            set => Update(ref _enableTags, value);
         }
 
         public string GotoMenu
@@ -177,8 +200,16 @@ namespace v00v.ViewModel.Explorer
             set => Update(ref _selectedPlaylistId, value);
         }
 
+        public KeyValuePair<int, string> SelectedTag
+        {
+            get => _selectedTag;
+            set => Update(ref _selectedTag, value);
+        }
+
         public ICommand SetItemWatchStateCommand { get; }
         public ICommand SetSortCommand { get; }
+
+        public List<KeyValuePair<int, string>> Tags { get; }
 
         #endregion
 
@@ -300,6 +331,16 @@ namespace v00v.ViewModel.Explorer
             }
 
             return x => _catalogModel.PlaylistModel.Entries.First(y => y.Id == playlistId).Items.Contains(x.Id);
+        }
+
+        private Func<Item, bool> BuildTagFilter(KeyValuePair<int, string> tag)
+        {
+            if (SelectedTag.Key == 0)
+            {
+                return x => true;
+            }
+
+            return x => x.Tags.Contains(tag.Key);
         }
 
         private async Task CopyItem(string par)
