@@ -187,17 +187,20 @@ namespace v00v.Services.Synchronization
                                      {
                                          ch.Items.AddRange(chitems);
                                      }
+
+                                     Parallel.ForEach(chitems,
+                                                      x =>
+                                                      {
+                                                          x.Tags = ch.Tags.Select(y => y.Id);
+                                                      });
                                  }
                              });
 
             if (res.NewItems.Count > 0)
             {
                 var stateChannel = channels.First(x => x.IsStateChannel);
-                if (stateChannel != null)
-                {
-                    stateChannel.Items.AddRange(res.NewItems);
-                    stateChannel.Count += res.NewItems.Count;
-                }
+                stateChannel.Items.AddRange(res.NewItems);
+                stateChannel.Count += res.NewItems.Count;
             }
 
             setLog?.Invoke("Saving to db..");

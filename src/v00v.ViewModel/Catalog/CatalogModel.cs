@@ -113,10 +113,11 @@ namespace v00v.ViewModel.Catalog
                         if (!_baseExplorerModel.All.Items.Select(x => x.Id).All(entry.Items.Select(x => x.Id).Contains))
                         {
                             _baseExplorerModel.All.Clear();
-                            if (entry.Items.Count > 0)
-                            {
-                                _baseExplorerModel.All.AddOrUpdate(entry.Items);
-                            }
+                        }
+
+                        if (entry.Items.Count > 0 && entry.Items.Count != _baseExplorerModel.All.Items.Count())
+                        {
+                            _baseExplorerModel.All.AddOrUpdate(entry.Items);
                         }
 
                         if (_baseExplorerModel?.SelectedTag.Key != 0)
@@ -393,26 +394,36 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        public ExplorerModel GetCachedExplorerModel(string channelId)
+        public ExplorerModel GetCachedExplorerModel(string id, bool isChannelId = false)
         {
-            if (channelId == null)
+            if (id == null)
             {
                 return _baseExplorerModel;
             }
 
-            var exc = _entries.FirstOrDefault(x => x.Id == channelId)?.ExCache;
-            return exc != null ? ViewModelCache.Get<ExplorerModel>(exc) : null;
+            if (!isChannelId)
+            {
+                return ViewModelCache.Get<ExplorerModel>(id);
+            }
+
+            var exc = _entries.FirstOrDefault(x => x.Id == id);
+            return exc != null ? ViewModelCache.Get<ExplorerModel>(exc.ExCache) : null;
         }
 
-        public PlaylistModel GetCachedPlaylistModel(string channelId)
+        public PlaylistModel GetCachedPlaylistModel(string id, bool isChannelId = false)
         {
-            if (channelId == null)
+            if (id == null)
             {
                 return _basePlaylistModel;
             }
 
-            var plc = _entries.FirstOrDefault(x => x.Id == channelId)?.PlCache;
-            return plc != null ? ViewModelCache.Get<PlaylistModel>(plc) : null;
+            if (!isChannelId)
+            {
+                return ViewModelCache.Get<PlaylistModel>(id);
+            }
+
+            var plc = _entries.FirstOrDefault(x => x.Id == id);
+            return plc != null ? ViewModelCache.Get<PlaylistModel>(plc.PlCache) : null;
         }
 
         private void AddChannel()
@@ -497,7 +508,7 @@ namespace v00v.ViewModel.Catalog
                                      {
                                          if (channel.Items.Count > 0)
                                          {
-                                             var cmodel = GetCachedExplorerModel(channel.Id);
+                                             var cmodel = GetCachedExplorerModel(channel.ExCache);
                                              if (cmodel != null)
                                              {
                                                  Parallel.ForEach(cmodel.All.Items.Where(x => x.SyncState == SyncState.Added),
@@ -566,37 +577,33 @@ namespace v00v.ViewModel.Catalog
             All.RemoveKey(ch.Id);
             _baseChannel.Count -= count;
             _baseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
-            GetCachedExplorerModel(null)?.All.RemoveKeys(ch.Items.Select(x => x.Id));
+            _baseExplorerModel?.All.RemoveKeys(ch.Items.Select(x => x.Id));
             if (ch.Items.Any(x => x.WatchStateSet)
                 || ch.Items.Any(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted))
             {
-                var plmodel = GetCachedPlaylistModel(null);
-                if (plmodel != null)
+                var watched = ch.Items.Where(x => x.WatchState == WatchState.Watched).ToList();
+                if (watched.Any())
                 {
-                    var watched = ch.Items.Where(x => x.WatchState == WatchState.Watched).ToList();
-                    if (watched.Any())
-                    {
-                        var pl = plmodel.Entries.First(x => x.Id == "0");
-                        pl.Count -= watched.Count;
-                        pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Watched);
-                    }
+                    var pl = _basePlaylistModel.Entries.First(x => x.Id == "0");
+                    pl.Count -= watched.Count;
+                    pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Watched);
+                }
 
-                    var planned = ch.Items.Where(x => x.WatchState == WatchState.Planned).ToList();
-                    if (planned.Any())
-                    {
-                        var pl = plmodel.Entries.First(x => x.Id == "-1");
-                        pl.Count -= planned.Count;
-                        pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Planned);
-                    }
+                var planned = ch.Items.Where(x => x.WatchState == WatchState.Planned).ToList();
+                if (planned.Any())
+                {
+                    var pl = _basePlaylistModel.Entries.First(x => x.Id == "-1");
+                    pl.Count -= planned.Count;
+                    pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id && x.WatchState == WatchState.Planned);
+                }
 
-                    var unlisted = ch.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted).ToList();
-                    if (unlisted.Any())
-                    {
-                        var pl = plmodel.Entries.First(x => x.Id == "-2");
-                        pl.Count -= unlisted.Count;
-                        pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id
-                                                      && (x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted));
-                    }
+                var unlisted = ch.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted).ToList();
+                if (unlisted.Any())
+                {
+                    var pl = _basePlaylistModel.Entries.First(x => x.Id == "-2");
+                    pl.Count -= unlisted.Count;
+                    pl.StateItems?.RemoveAll(x => x.ChannelId == ch.Id
+                                                  && (x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted));
                 }
             }
 
@@ -615,7 +622,7 @@ namespace v00v.ViewModel.Catalog
 
             _setTitle?.Invoke(string.Empty.MakeTitle(task.Result, sw));
 
-            GetCachedExplorerModel(null)?.SetLog($"Deleted: {deletedId} - {title}");
+            _baseExplorerModel?.SetLog($"Deleted: {deletedId} - {title}");
             await _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel: {deletedId} - {title}");
         }
 
@@ -770,16 +777,10 @@ namespace v00v.ViewModel.Catalog
         private void OnException(Exception exception)
         {
             _popupController.Hide();
-            var exm = GetCachedExplorerModel(null);
-            if (exm == null)
-            {
-                return;
-            }
-
-            exm.SetLog(exception.Message);
+            _baseExplorerModel.SetLog(exception.Message);
             if (exception.InnerException != null && !string.IsNullOrEmpty(exception.InnerException.Message))
             {
-                exm.SetLog(exception.InnerException.Message);
+                _baseExplorerModel.SetLog(exception.InnerException.Message);
             }
         }
 
@@ -830,7 +831,7 @@ namespace v00v.ViewModel.Catalog
                                  });
             }
 
-            GetCachedExplorerModel(chId)?.All.AddOrUpdate(ch.Items);
+            (ch.IsStateChannel ? _baseExplorerModel : GetCachedExplorerModel(ch.ExCache))?.All.AddOrUpdate(ch.Items);
         }
 
         private void ResortList(int r)
@@ -845,7 +846,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             All.AddOrUpdate(channels);
-            GetCachedExplorerModel(null)?.SetLog($"Saved {r} rows");
+            _baseExplorerModel?.SetLog($"Saved {r} rows");
         }
 
         private async Task RestoreChannels()
@@ -876,7 +877,7 @@ namespace v00v.ViewModel.Catalog
             pl.Count += task.Result.PlannedCount;
             var wl = _baseChannel.Playlists.First(x => x.Id == "0");
             wl.Count += task.Result.WatchedCount;
-            GetCachedPlaylistModel(null)?.All.AddOrUpdate(new[] { pl, wl });
+            _basePlaylistModel?.All.AddOrUpdate(new[] { pl, wl });
         }
 
         private async Task SaveChannel()
@@ -921,11 +922,7 @@ namespace v00v.ViewModel.Catalog
                 return;
             }
 
-            var exmodel = GetCachedExplorerModel(null);
-            if (exmodel != null)
-            {
-                exmodel.LogText += log + Environment.NewLine;
-            }
+            _baseExplorerModel.LogText += log + Environment.NewLine;
         }
 
         private void SetSelected(string channelId)
@@ -954,13 +951,13 @@ namespace v00v.ViewModel.Catalog
             if (_settings.EnableDailySchedule && _settings.DailyParsed)
             {
                 _taskDispatcher.DailySync = _settings.DailySyncTime;
-                var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
-                                                                                _appLogRepository,
-                                                                                _entries.Where(x => !x.IsNew).ToList(),
-                                                                                true,
-                                                                                SetLog,
-                                                                                UpdateChannels),
-                                                 TaskCreationOptions.LongRunning).ContinueWith(t =>
+                Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
+                                                                     _appLogRepository,
+                                                                     _entries.Where(x => !x.IsNew).ToList(),
+                                                                     true,
+                                                                     SetLog,
+                                                                     UpdateChannels),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
                     SetLog(t.Exception?.Message);
                 });
@@ -1024,7 +1021,7 @@ namespace v00v.ViewModel.Catalog
 
             _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.NewItems.Count, sw));
 
-            var plmodel = GetCachedPlaylistModel(channel.Id);
+            var plmodel = GetCachedPlaylistModel(channel.PlCache);
             if (task.Result.NewPlaylists.Count > 0)
             {
                 channel.Playlists.AddRange(task.Result.NewPlaylists);
@@ -1067,7 +1064,8 @@ namespace v00v.ViewModel.Catalog
             All.AddOrUpdate(lst);
             if (task.Result.NewItems.Count > 0)
             {
-                GetCachedExplorerModel(channel.Id)?.All.AddOrUpdate(task.Result.NewItems);
+                GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(task.Result.NewItems);
+                UpdateTags(task.Result.NewItems.SelectMany(x => x.Tags).Distinct());
             }
 
             if (SelectedEntry == null || SelectedEntry.Id != oldId)
@@ -1121,7 +1119,7 @@ namespace v00v.ViewModel.Catalog
                 Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
                                  channel =>
                                  {
-                                     MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.Id));
+                                     MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.PlCache));
                                  });
             }
 
@@ -1137,16 +1135,13 @@ namespace v00v.ViewModel.Catalog
             All.AddOrUpdate(_entries.Where(x => !x.IsNew));
             if (diff.NewItems.Count > 0)
             {
-                var expmodel = GetCachedExplorerModel(null);
-                if (expmodel != null)
-                {
-                    expmodel.All.AddOrUpdate(diff.NewItems);
-                    expmodel.EnableLog = expmodel.All.Items.Any();
-                    _setPageIndex?.Invoke(0);
-                }
+                _baseExplorerModel.All.AddOrUpdate(diff.NewItems);
+                _baseExplorerModel.EnableLog = _baseExplorerModel.All.Items.Any();
+                _setPageIndex?.Invoke(0);
+                UpdateTags(diff.NewItems.SelectMany(x => x.Tags).Distinct());
             }
 
-            if (SelectedEntry != _baseChannel)
+            if (SelectedEntry != null && SelectedEntry.Id != _baseChannel.Id)
             {
                 SelectedEntry = _baseChannel;
             }
@@ -1164,7 +1159,19 @@ namespace v00v.ViewModel.Catalog
         {
             if (channel.Playlists.Count > 1)
             {
-                GetCachedPlaylistModel(channel.Id)?.All.AddOrUpdate(channel.Playlists);
+                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(channel.Playlists);
+            }
+        }
+
+        private void UpdateTags(IEnumerable<int> tags)
+        {
+            if (_baseExplorerModel.Tags == null)
+            {
+                _baseExplorerModel.CreateTags(tags);
+            }
+            else
+            {
+                _baseExplorerModel.Tags.AddRange(_tagRepository.GetTagsByIds(tags).Except(_baseExplorerModel.Tags));
             }
         }
 

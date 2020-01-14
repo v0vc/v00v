@@ -90,12 +90,7 @@ namespace v00v.ViewModel.Explorer
             IsParentState = channel.IsStateChannel;
             if (IsParentState && All.Items.Any())
             {
-                Tags = _tagRepository.GetTagsByIds(channel.Items.SelectMany(x => x.Tags).Distinct()).ToList();
-                if (Tags.Count > 0)
-                {
-                    Tags.Insert(0, new KeyValuePair<int, string>(0, " "));
-                    EnableTags = true;
-                }
+                CreateTags(channel.Items.SelectMany(x => x.Tags).Distinct());
             }
 
             GoToParentCommand = IsParentState
@@ -210,7 +205,7 @@ namespace v00v.ViewModel.Explorer
         public ICommand SetItemWatchStateCommand { get; }
         public ICommand SetSortCommand { get; }
 
-        public List<KeyValuePair<int, string>> Tags { get; }
+        public List<KeyValuePair<int, string>> Tags { get; set; }
 
         #endregion
 
@@ -229,6 +224,18 @@ namespace v00v.ViewModel.Explorer
         #endregion
 
         #region Methods
+
+        public void CreateTags(IEnumerable<int> ids)
+        {
+            Tags = _tagRepository.GetTagsByIds(ids).ToList();
+            if (Tags.Count <= 0)
+            {
+                return;
+            }
+
+            Tags.Insert(0, new KeyValuePair<int, string>(0, " "));
+            EnableTags = true;
+        }
 
         public async Task DeleteItem(Item item)
         {
@@ -606,15 +613,15 @@ namespace v00v.ViewModel.Explorer
                     bitem.WatchState = par;
                 }
 
-                var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null)?.All
-                    .Items.FirstOrDefault(x => x.Id == id);
+                var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null, true)
+                    ?.All.Items.FirstOrDefault(x => x.Id == id);
                 if (citem != null && citem.WatchState != par)
                 {
                     citem.WatchState = par;
                 }
 
                 PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
-                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id), par, oldState, item, false);
+                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
             });
 
             All.AddOrUpdate(item);
