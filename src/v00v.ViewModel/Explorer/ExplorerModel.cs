@@ -157,6 +157,7 @@ namespace v00v.ViewModel.Explorer
         }
 
         public ICommand GoToParentCommand { get; }
+
         public bool IsParentState { get; }
 
         public IEnumerable<Item> Items => _items;

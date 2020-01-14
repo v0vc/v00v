@@ -197,38 +197,7 @@ namespace v00v.ViewModel.Catalog
             SyncChannelsCommand.ThrownExceptions.Subscribe(OnException);
             RestoreCommand.ThrownExceptions.Subscribe(OnException);
 
-            // scheduler
-            if (_settings.EnableDailySchedule)
-            {
-                if (_settings.DailyParsed)
-                {
-                    _taskDispatcher.DailySync = _settings.DailySyncTime;
-                    var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
-                                                                                    _appLogRepository,
-                                                                                    _entries.Where(x => !x.IsNew).ToList(),
-                                                                                    true,
-                                                                                    SetLog,
-                                                                                    UpdateChannels),
-                                                     TaskCreationOptions.LongRunning);
-                    ExceptionHandling(task);
-                }
-            }
-
-            if (_settings.EnableRepeatSchedule)
-            {
-                if (_settings.RepeatParsed)
-                {
-                    _taskDispatcher.RepeatSync = _settings.RepeatMin;
-                    var task = Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
-                                                                                     _appLogRepository,
-                                                                                     _entries.Where(x => !x.IsNew).ToList(),
-                                                                                     false,
-                                                                                     SetLog,
-                                                                                     UpdateChannels),
-                                                     TaskCreationOptions.LongRunning);
-                    ExceptionHandling(task);
-                }
-            }
+            StartSchedulerTasks();
         }
 
         private CatalogModel(IChannelRepository channelRepository,
@@ -678,18 +647,6 @@ namespace v00v.ViewModel.Catalog
                                                           ResortList));
         }
 
-        private void ExceptionHandling(Task task)
-        {
-            task.ContinueWith(t =>
-            {
-                var exception = t.Exception;
-                if (exception != null)
-                {
-                    SetLog(exception.Message);
-                }
-            });
-        }
-
         private IObservable<SortExpressionComparer<Channel>> GetChannelSorter()
         {
             return this.WhenValueChanged(x => x.ChannelSort).Select(x =>
@@ -959,6 +916,11 @@ namespace v00v.ViewModel.Catalog
 
         private void SetLog(string log)
         {
+            if (string.IsNullOrEmpty(log))
+            {
+                return;
+            }
+
             var exmodel = GetCachedExplorerModel(null);
             if (exmodel != null)
             {
@@ -984,6 +946,49 @@ namespace v00v.ViewModel.Catalog
                 {
                     SelectedEntry = channel;
                 }
+            }
+        }
+
+        private void StartSchedulerTasks()
+        {
+            if (_settings.EnableDailySchedule && _settings.DailyParsed)
+            {
+                _taskDispatcher.DailySync = _settings.DailySyncTime;
+                var task = Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
+                                                                                _appLogRepository,
+                                                                                _entries.Where(x => !x.IsNew).ToList(),
+                                                                                true,
+                                                                                SetLog,
+                                                                                UpdateChannels),
+                                                 TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
+            }
+
+            if (_settings.EnableRepeatSchedule && _settings.RepeatParsed)
+            {
+                _taskDispatcher.RepeatSync = _settings.RepeatMin;
+                Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
+                                                                      _appLogRepository,
+                                                                      _entries.Where(x => !x.IsNew).ToList(),
+                                                                      false,
+                                                                      SetLog,
+                                                                      UpdateChannels),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
+            }
+
+            if (_settings.EnableParserUpdateSchedule && _settings.ParserUpdateParsed)
+            {
+                _taskDispatcher.ParserUpdate = _settings.DailyParserUpdateTime;
+                Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
             }
         }
 

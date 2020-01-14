@@ -13,14 +13,6 @@ namespace v00v.Services.Dispatcher
     [DisallowConcurrentExecution]
     internal class SyncDaily : IJob
     {
-        #region Static and Readonly Fields
-
-        private static readonly string StartLog = $"-=start {BaseSync.DailySync}=-";
-
-        private static readonly string StopLog = $"-=stop {BaseSync.DailySync}=-";
-
-        #endregion
-
         #region Methods
 
         public async Task Execute(IJobExecutionContext context)
@@ -29,7 +21,7 @@ namespace v00v.Services.Dispatcher
             var setLog = (Action<string>)context.JobDetail.JobDataMap[BaseSync.Log];
             var updateList = (Action<SyncDiff>)context.JobDetail.JobDataMap[BaseSync.UpdateList];
 
-            setLog?.Invoke(StartLog);
+            setLog?.Invoke($"-=start {BaseSync.DailySync}=-");
             var syncStatus = await appLog.GetAppSyncStatus(appLog.AppId);
             if (syncStatus != AppStatus.NoSync && syncStatus != AppStatus.DailySyncFinished
                                                && syncStatus != AppStatus.PeriodicSyncFinished
@@ -37,7 +29,7 @@ namespace v00v.Services.Dispatcher
                                                && syncStatus != AppStatus.SyncWithoutPlaylistFinished)
             {
                 setLog?.Invoke($"{syncStatus} in progress, bye");
-                setLog?.Invoke(StopLog);
+                setLog?.Invoke($"-=stop {BaseSync.DailySync}=-");
                 return;
             }
 
@@ -55,7 +47,7 @@ namespace v00v.Services.Dispatcher
 
             await appLog.SetStatus(AppStatus.DailySyncFinished, $"{BaseSync.DailySync} finished {end}");
 
-            setLog?.Invoke(StopLog);
+            setLog?.Invoke($"-=stop {BaseSync.DailySync}=-");
 
             updateList?.Invoke(res);
         }

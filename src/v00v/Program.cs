@@ -141,6 +141,7 @@ namespace v00v
 
             context.Dispose();
             AvaloniaLocator.Current.GetService<IPopupController>().Trigger.Dispose();
+            AvaloniaLocator.Current.GetService<ITaskDispatcher>().Stop();
         }
 
         #endregion

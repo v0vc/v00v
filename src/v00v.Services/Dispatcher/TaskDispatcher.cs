@@ -38,6 +38,7 @@ namespace v00v.Services.Dispatcher
         #region Properties
 
         public TimeSpan DailySync { private get; set; }
+        public TimeSpan ParserUpdate { private get; set; }
         public int RepeatSync { private get; set; }
 
         private IScheduler Scheduler
@@ -122,6 +123,20 @@ namespace v00v.Services.Dispatcher
 
             var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicSync, BaseSync.PeriodicGroup).StartNow()
                 .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatSync).RepeatForever()).ForJob(job).Build();
+
+            await Scheduler.ScheduleJob(job, trigger);
+        }
+
+        public async Task RunUpdateParser(Action<string> log, Action<int> runUpdate)
+        {
+            await CheckSchedulerStarted();
+
+            var job = JobBuilder.Create<UpdateDaily>().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).Build();
+            job.JobDataMap[BaseSync.Log] = log;
+            job.JobDataMap[BaseSync.UpdateParser] = runUpdate;
+
+            var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).StartNow()
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(ParserUpdate.Hours, ParserUpdate.Minutes)).ForJob(job).Build();
 
             await Scheduler.ScheduleJob(job, trigger);
         }

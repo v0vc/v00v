@@ -21,10 +21,12 @@ namespace v00v.ViewModel.Startup
 
         private const string AppSettings = "AppSettings";
         private const string KeyBaseDir = "BaseDir";
-        private const string KeyEnableDailySchedule = "EnableDailySchedule";
-        private const string KeyEnableRepeatSchedule = "EnableRepeatSchedule";
-        private const string KeyRepeatSchedule = "RepeatSchedule(min)";
-        private const string KeyTimeSchedule = "TimeSchedule(HH:mm)";
+        private const string KeyDailySyncSchedule = "DailySyncSchedule(HH:mm)";
+        private const string KeyEnableDailySchedule = "EnableDailySyncSchedule";
+        private const string KeyEnableParserUpdateSchedule = "EnableParserUpdateSchedule";
+        private const string KeyEnableRepeatSyncSchedule = "EnableRepeatSyncSchedule";
+        private const string KeyParserUpdateSchedule = "ParserUpdateSchedule(HH:mm)";
+        private const string KeyRepeatSyncSchedule = "RepeatSyncSchedule(min)";
         private const string KeyWatchApp = "WatchApp";
         private const string KeyYouParam = "YouParam";
         private const string KeyYouParser = "YouParser";
@@ -41,15 +43,19 @@ namespace v00v.ViewModel.Startup
         #region Fields
 
         private string _baseDir;
+        private TimeSpan _dailyParserUpdateTime;
         private TimeSpan _dailySyncTime;
         private string _downloadUrl;
         private bool _enableDailySchedule;
+        private bool _enableParserUpdateSchedule;
         private bool _enableRepeatSchedule;
         private bool _isYoutubeLink;
         private int _repeatMin;
         private string _selectedFormat;
         private string _selectedHour;
         private string _selectedMinute;
+        private string _selectedParserHour;
+        private string _selectedParserMinute;
         private bool _showSettings;
         private bool _subsEnabled;
         private string _watchApp;
@@ -84,10 +90,26 @@ namespace v00v.ViewModel.Startup
             YouParser = configuration.GetValue<string>($"{AppSettings}:{KeyYouParser}");
             YouParam = configuration.GetValue<string>($"{AppSettings}:{KeyYouParam}");
 
+            _enableParserUpdateSchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableParserUpdateSchedule}");
+            if (_enableParserUpdateSchedule)
+            {
+                ParserUpdateParsed = DateTime.TryParseExact(configuration.GetValue<string>($"{AppSettings}:{KeyParserUpdateSchedule}"),
+                                                            "HH:mm",
+                                                            CultureInfo.InvariantCulture,
+                                                            DateTimeStyles.None,
+                                                            out var dt);
+                if (ParserUpdateParsed)
+                {
+                    _dailyParserUpdateTime = dt.TimeOfDay;
+                    SelectedParserHour = $"{_dailyParserUpdateTime.Hours:D2}";
+                    SelectedParserMinute = $"{_dailyParserUpdateTime.Minutes:D2}";
+                }
+            }
+
             _enableDailySchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySchedule}");
             if (_enableDailySchedule)
             {
-                DailyParsed = DateTime.TryParseExact(configuration.GetValue<string>($"{AppSettings}:{KeyTimeSchedule}"),
+                DailyParsed = DateTime.TryParseExact(configuration.GetValue<string>($"{AppSettings}:{KeyDailySyncSchedule}"),
                                                      "HH:mm",
                                                      CultureInfo.InvariantCulture,
                                                      DateTimeStyles.None,
@@ -100,10 +122,10 @@ namespace v00v.ViewModel.Startup
                 }
             }
 
-            _enableRepeatSchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSchedule}");
+            _enableRepeatSchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSyncSchedule}");
             if (_enableRepeatSchedule)
             {
-                RepeatParsed = int.TryParse(configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSchedule}"),
+                RepeatParsed = int.TryParse(configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSyncSchedule}"),
                                             NumberStyles.None,
                                             CultureInfo.InvariantCulture,
                                             out var min);
@@ -118,7 +140,7 @@ namespace v00v.ViewModel.Startup
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyEnableRepeatSchedule, EnableRepeatSchedule.ToString());
+                    SaveChanges(KeyEnableRepeatSyncSchedule, EnableRepeatSchedule.ToString());
                 }
             });
             this.WhenValueChanged(x => EnableDailySchedule).Subscribe(x =>
@@ -128,25 +150,46 @@ namespace v00v.ViewModel.Startup
                     SaveChanges(KeyEnableDailySchedule, EnableDailySchedule.ToString());
                 }
             });
+            this.WhenValueChanged(x => EnableParserUpdateSchedule).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    SaveChanges(KeyEnableParserUpdateSchedule, EnableParserUpdateSchedule.ToString());
+                }
+            });
             this.WhenValueChanged(x => RepeatMin).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyRepeatSchedule, RepeatMin.ToString());
+                    SaveChanges(KeyRepeatSyncSchedule, RepeatMin.ToString());
                 }
             });
             this.WhenValueChanged(x => SelectedHour).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyTimeSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    SaveChanges(KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedMinute).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyTimeSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    SaveChanges(KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
+                }
+            });
+            this.WhenValueChanged(x => SelectedParserHour).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    SaveChanges(KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
+                }
+            });
+            this.WhenValueChanged(x => SelectedParserMinute).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    SaveChanges(KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
             this.WhenValueChanged(x => BaseDir).Subscribe(x =>
@@ -217,6 +260,12 @@ namespace v00v.ViewModel.Startup
 
         public bool DailyParsed { get; }
 
+        public TimeSpan DailyParserUpdateTime
+        {
+            get => _dailyParserUpdateTime;
+            set => Update(ref _dailyParserUpdateTime, value);
+        }
+
         public TimeSpan DailySyncTime
         {
             get => _dailySyncTime;
@@ -237,6 +286,12 @@ namespace v00v.ViewModel.Startup
             set => Update(ref _enableDailySchedule, value);
         }
 
+        public bool EnableParserUpdateSchedule
+        {
+            get => _enableParserUpdateSchedule;
+            set => Update(ref _enableParserUpdateSchedule, value);
+        }
+
         public bool EnableRepeatSchedule
         {
             get => _enableRepeatSchedule;
@@ -254,6 +309,8 @@ namespace v00v.ViewModel.Startup
         }
 
         public IEnumerable<string> Minutes { get; }
+
+        public bool ParserUpdateParsed { get; }
 
         public int RepeatMin
         {
@@ -279,6 +336,18 @@ namespace v00v.ViewModel.Startup
         {
             get => _selectedMinute;
             set => Update(ref _selectedMinute, value);
+        }
+
+        public string SelectedParserHour
+        {
+            get => _selectedParserHour;
+            set => Update(ref _selectedParserHour, value);
+        }
+
+        public string SelectedParserMinute
+        {
+            get => _selectedParserMinute;
+            set => Update(ref _selectedParserMinute, value);
         }
 
         public bool ShowSettings
@@ -312,6 +381,26 @@ namespace v00v.ViewModel.Startup
         #endregion
 
         #region Methods
+
+        public void UpdateParser(int i)
+        {
+            var pInfo = new ProcessStartInfo
+            {
+                FileName = "choco.exe",
+                Arguments = $"upgrade {YouParser}",
+                WindowStyle = ProcessWindowStyle.Hidden,
+                UseShellExecute = true,
+                Verb = "runas",
+                CreateNoWindow = true
+            };
+
+            using (var process = new Process { StartInfo = pInfo })
+            {
+                process.Start();
+                process.WaitForExit();
+                process.Close();
+            }
+        }
 
         private async Task DownloadItem()
         {

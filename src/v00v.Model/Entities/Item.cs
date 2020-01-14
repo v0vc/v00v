@@ -183,6 +183,7 @@ namespace v00v.Model.Entities
             using (var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = false })
             {
                 proc.Start();
+                proc.WaitForExit();
                 proc.Close();
             }
         }

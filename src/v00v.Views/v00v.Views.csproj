@@ -11,7 +11,7 @@
  
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\EmbedXaml.props" />
-  
+
   <ItemGroup>
     <Compile Include="**\*.cs" Exclude="obj\**" />
   </ItemGroup>

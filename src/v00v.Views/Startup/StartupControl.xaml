@@ -7,7 +7,7 @@
 
     <Border BorderThickness="1" BorderBrush="#bdacd1">
         <Panel>
-            <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="auto,auto,auto,*,25,25,25,25,25,25">
+            <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="30,25,35,*,25,25,25,25,10">
 
                 <StackPanel Grid.Column="1" Grid.Row ="0" Margin="0,10,0,0" Orientation="Horizontal">
                     <Panel>
@@ -30,7 +30,7 @@
                     <TextBlock Text="Show settings" Margin="12,0,0,0"/>
                 </StackPanel>
 
-                <Grid Grid.Column="1" Grid.Row ="3" RowDefinitions="40,25,2,25,20,25,2,25,2,25,40,25,2,25" IsVisible="{Binding ShowSettings, Mode=OneWay}">
+                <Grid Grid.Column="1" Grid.Row ="3" RowDefinitions="20,25,2,25,10,25,2,25,2,25,2,25,25,25,4,25" IsVisible="{Binding ShowSettings, Mode=OneWay}">
 
                     <StackPanel Orientation="Horizontal" Grid.Row="1">
                         <TextBlock Text="Directory:"/>
@@ -47,17 +47,18 @@
                     <StackPanel Orientation="Horizontal" Grid.Row="5">
                         <TextBlock Text="Schedulers:"/>
                     </StackPanel>
+
                     <StackPanel Orientation="Horizontal" Grid.Row="7">
-                        <CheckBox Margin="0,0,4,0" IsChecked="{Binding EnableRepeatSchedule, Mode=TwoWay}"/>
-                        <TextBlock Text="Repeat sync every (min):"/>
+                        <CheckBox Margin="0,0,5,0" IsChecked="{Binding EnableRepeatSchedule, Mode=TwoWay}"/>
+                        <TextBlock Text="Synchronize every (min):"/>
                         <TextBox Width="40" Margin="7,0,0,0" IsEnabled="{Binding EnableRepeatSchedule, Mode=OneWay}"
                                  Text="{Binding RepeatMin, Mode=TwoWay}"
                                  />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="9">
-                        <CheckBox Margin="0,0,4,0" IsChecked="{Binding EnableDailySchedule, Mode=TwoWay}"/>
-                        <TextBlock Text="Repeat sync at (hh:mm):"/>
+                        <CheckBox Margin="0,0,5,0" IsChecked="{Binding EnableDailySchedule, Mode=TwoWay}"/>
+                        <TextBlock Text="Synchronize at (hh:mm):"/>
                         <ComboBox Margin="8,0,3,0" Width="40" IsEnabled="{Binding EnableDailySchedule, Mode=OneWay}"
                                   Items="{Binding Hours, Mode=OneTime}"
                                   SelectedItem="{Binding SelectedHour, Mode=TwoWay}"
@@ -70,12 +71,26 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="11">
+                        <CheckBox Margin="0,0,8,0" IsChecked="{Binding EnableParserUpdateSchedule, Mode=TwoWay}"/>
+                        <TextBlock Text="Update parser (hh:mm):"/>
+                        <ComboBox Margin="8,0,3,0" Width="40" IsEnabled="{Binding EnableParserUpdateSchedule, Mode=OneWay}"
+                                  Items="{Binding Hours, Mode=OneTime}"
+                                  SelectedItem="{Binding SelectedParserHour, Mode=TwoWay}"
+                                  />
+                        <TextBlock Text=":"/>
+                        <ComboBox Margin="2,0,0,0" Width="40" IsEnabled="{Binding EnableParserUpdateSchedule, Mode=OneWay}"
+                                  Items="{Binding Minutes, Mode=OneTime}"
+                                  SelectedItem="{Binding SelectedParserMinute, Mode=TwoWay}"
+                                  />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Grid.Row="13">
                         <TextBlock Text="Download:"/>
                         <controls:ExtendedTextBox Width="346" Margin="10,0,0,0" Watermark="Link..." Text="{Binding DownloadUrl, Mode=TwoWay}"/>
                         <Button Width="30" Content=">>" Margin="2,0,0,0" Command="{Binding DownloadCommand, Mode=OneTime}"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="13" IsVisible="{Binding IsYoutubeLink, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Grid.Row="15" IsVisible="{Binding IsYoutubeLink, Mode=OneWay}">
                         <TextBlock Text="Options:"/>
                         <ComboBox Margin="23,0,0,0" Width="90" Items="{Binding Formats, Mode=OneTime}"
                                   SelectedItem="{Binding SelectedFormat, Mode=TwoWay}"
@@ -87,23 +102,19 @@
 
                 </Grid>
 
-                <TextBlock Grid.Column="1" Grid.Row ="4" Text="* To download video you need to install ffmpeg and youtube-dl. Easy way to do it:" VerticalAlignment="Top"/>
+                <!--<TextBlock Text="* To download video you need to install ffmpeg and youtube-dl. Easy way to do it:" />-->
 
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="5" IsReadOnly="True" Text="https://chocolatey.org/docs/installation"/>
+                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="4" Width="450" IsReadOnly="True" Text="https://chocolatey.org/docs/installation"/>
+                <TextBlock Grid.Column="2" Grid.Row="4" Text="Install chocolatey" Margin="10,0,0,0"/>
 
-                <TextBlock Grid.Column="2" Grid.Row ="5" Text="Install chocolatey" Margin="10,0,0,0"/>
+                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="5" Width="450" IsReadOnly="True" Text="choco install ffmpeg" />
+                <TextBlock Grid.Column="2" Grid.Row="5" Text="Install ffmpeg" Margin="10,0,0,0"/>
 
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="6" IsReadOnly="True" Text="choco install ffmpeg" />
+                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="6" Width="450" IsReadOnly="True" Text="choco install youtube-dl" />
+                <TextBlock Grid.Column="2" Grid.Row="6" Text="Install youtube-dl" Margin="10,0,0,0"/>
 
-                <TextBlock Grid.Column="2" Grid.Row ="6" Text="Install ffmpeg" Margin="10,0,0,0"/>
-
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="7" IsReadOnly="True" Text="choco install youtube-dl" />
-
-                <TextBlock Grid.Column="2" Grid.Row ="7" Text="Install youtube-dl" Margin="10,0,0,0"/>
-
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="8" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" />
-
-                <TextBlock Grid.Column="2" Grid.Row ="8" Text="Install mpc-be" Margin="10,0,0,0"/>
+                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="7" Width="450" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" />
+                <TextBlock Grid.Column="2" Grid.Row="7" Text="Install mpc-be" Margin="10,0,0,0"/>
 
             </Grid>
         </Panel>
@@ -111,26 +122,6 @@
     
 
     <UserControl.Styles>
-
-        <!--<Style Selector="Panel:pointerover">
-            <Style.Animations>
-                <Animation Duration="0:0:2.5"
-                           RepeatCount="4"
-                           FillMode="None"
-                           PlaybackDirection="AlternateReverse"
-                           Easing="SineEaseInOut">
-                    <KeyFrame Cue="20%">
-                        <Setter Property="RotateTransform.Angle" Value="45"/>
-                    </KeyFrame>
-                    <KeyFrame Cue="50%">
-                        <Setter Property="ScaleTransform.ScaleX" Value="1.5"/>
-                    </KeyFrame>
-                    <KeyFrame Cue="80%">
-                        <Setter Property="RotateTransform.Angle" Value="120"/>
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>-->
 
         <Style Selector="Panel /template/ Border">
             <Setter Property="CornerRadius" Value="3" />
