@@ -65,7 +65,6 @@ namespace v00v.Model.Entities
 
         public long LikeCount { get; set; }
 
-        public string Link => $"https://www.youtube.com/watch?v={Id}";
         public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
 
         public double Percentage
@@ -87,7 +86,6 @@ namespace v00v.Model.Entities
         public IEnumerable<int> Tags { get; set; }
 
         public IBitmap Thumb => Thumbnail.CreateThumb();
-        public string ThumbLink => $"http://img.youtube.com/vi/{Id}/0.jpg";
 
         public byte[] Thumbnail { get; set; }
 
@@ -125,7 +123,7 @@ namespace v00v.Model.Entities
 
         #region Methods
 
-        public async Task<bool> Download(string youdl, string youparam, string par, bool skip, Action<string> setLog)
+        public async Task<bool> Download(string youdl, string youparam, string par, string link, bool skip, Action<string> setLog)
         {
             if (_numRegex == null)
             {
@@ -138,7 +136,7 @@ namespace v00v.Model.Entities
             }
 
             IsWorking = true;
-            var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam))
+            var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam, link))
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 UseShellExecute = false,
@@ -161,14 +159,15 @@ namespace v00v.Model.Entities
                 _proc.BeginOutputReadLine();
                 _proc.BeginErrorReadLine();
                 _proc.WaitForExit();
+                _proc.Close();
             }).ContinueWith(x => HandleDownload(skip));
 
             return Downloaded;
         }
 
-        public void RunItem(string mpcpath, string basedir)
+        public void RunItem(string mpcpath, string basedir, string link)
         {
-            var param = Downloaded && FileName != null ? $"\"{Path.Combine(basedir, ChannelId, FileName)}\" /play" : $"{Link} /play";
+            var param = Downloaded && FileName != null ? $"\"{Path.Combine(basedir, ChannelId, FileName)}\" /play" : $"{link} /play";
             var startInfo = new ProcessStartInfo(mpcpath, param)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -183,7 +182,6 @@ namespace v00v.Model.Entities
             using (var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = false })
             {
                 proc.Start();
-                proc.WaitForExit();
                 proc.Close();
             }
         }
@@ -241,10 +239,10 @@ namespace v00v.Model.Entities
             _proc.Dispose();
         }
 
-        private string MakeParam(string par, string youParam)
+        private string MakeParam(string par, string youParam, string link)
         {
             var param = string.Empty;
-            var basePar = $"{SaveDir}\\{Id}.%(ext)s\" \"{Link}\" {youParam}";
+            var basePar = $"{SaveDir}\\{Id}.%(ext)s\" \"{link}\" {youParam}";
             switch (par)
             {
                 case "simple":

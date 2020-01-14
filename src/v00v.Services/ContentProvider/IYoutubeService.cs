@@ -8,6 +8,14 @@ namespace v00v.Services.ContentProvider
 {
     public interface IYoutubeService
     {
+        #region Properties
+
+        string ChannelLink { get; }
+        string ItemLink { get; }
+        string PlaylistLink { get; }
+
+        #endregion
+
         #region Methods
 
         Task AddPlaylists(Channel channel);
@@ -23,6 +31,8 @@ namespace v00v.Services.ContentProvider
         Task<List<Item>> GetItems(Dictionary<string, SyncPrivacy> privacyItems);
 
         Task<List<Item>> GetPopularItems(string country, IEnumerable<string> existChannelsIds);
+
+        string GetPreviewThumbLink(string itemId);
 
         Task<Channel[]> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannelsIds);
 

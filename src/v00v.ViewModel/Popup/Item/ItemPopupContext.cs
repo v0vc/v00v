@@ -164,7 +164,7 @@ namespace v00v.ViewModel.Popup.Item
                 switch (par)
                 {
                     case "link":
-                        res = SelectedComment.Link;
+                        res = $"{_youtubeService.ChannelLink}{SelectedComment.AuthorChannelId}";
                         break;
                     case "text":
                         res = SelectedComment.Text;

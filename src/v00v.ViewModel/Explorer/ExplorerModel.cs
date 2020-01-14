@@ -262,7 +262,7 @@ namespace v00v.ViewModel.Explorer
         {
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.BaseDir, item.ChannelId)}";
-            var task = item.Download(_settings.YouParser, _settings.YouParam, par, skip, SetLog);
+            var task = item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 if (task.Result && !skip)
@@ -352,7 +352,7 @@ namespace v00v.ViewModel.Explorer
                 switch (par)
                 {
                     case "link":
-                        res = SelectedEntry.Link;
+                        res = $"{_youtubeService.ItemLink}{SelectedEntry.Id}";
                         break;
                     case "title":
                         res = SelectedEntry.Title;
@@ -423,7 +423,7 @@ namespace v00v.ViewModel.Explorer
                 byte[] th;
                 try
                 {
-                    th = await _youtubeService.GetStreamFromUrl(item.ThumbLink);
+                    th = await _youtubeService.GetStreamFromUrl(_youtubeService.GetPreviewThumbLink(item.Id));
                 }
                 catch
                 {
@@ -530,7 +530,7 @@ namespace v00v.ViewModel.Explorer
 
         private async Task RunItem()
         {
-            SelectedEntry?.RunItem(_settings.WatchApp, _settings.BaseDir);
+            SelectedEntry?.RunItem(_settings.WatchApp, _settings.BaseDir, $"{_youtubeService.ItemLink}{SelectedEntry.Id}");
             await SetItemState(WatchState.Watched);
         }
 

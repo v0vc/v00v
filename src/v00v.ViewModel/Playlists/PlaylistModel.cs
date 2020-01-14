@@ -226,7 +226,7 @@ namespace v00v.ViewModel.Playlists
             switch (par)
             {
                 case "link":
-                    res = SelectedEntry.Link;
+                    res = $"{_youtubeService.PlaylistLink}{SelectedEntry.Id}";
                     break;
                 case "title":
                     res = SelectedEntry.Title;

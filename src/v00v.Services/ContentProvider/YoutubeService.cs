@@ -43,6 +43,14 @@ namespace v00v.Services.ContentProvider
 
         #endregion
 
+        #region Properties
+
+        public string ChannelLink => "https://www.youtube.com/channel/";
+        public string ItemLink => "https://www.youtube.com/watch?v=";
+        public string PlaylistLink => "https://www.youtube.com/playlist?list=";
+
+        #endregion
+
         #region Static Methods
 
         private static async Task<JArray> GetAll(string zap)
@@ -808,6 +816,11 @@ namespace v00v.Services.ContentProvider
                               });
 
             return await GetItems(ids);
+        }
+
+        public string GetPreviewThumbLink(string itemId)
+        {
+            return $"http://img.youtube.com/vi/{itemId}/0.jpg";
         }
 
         public async Task<Channel[]> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannels)

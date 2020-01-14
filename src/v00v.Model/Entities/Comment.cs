@@ -63,13 +63,16 @@ namespace v00v.Model.Entities
         public long CommentReplyCount { get; set; }
         public bool CopyTextUrlEnabled => !string.IsNullOrEmpty(TextUrl);
         public Bitmap ExpandDown { get; set; }
+
         public Bitmap ExpandThumb
         {
             get => _expandThumb;
             set => Update(ref _expandThumb, value);
         }
+
         public Bitmap ExpandUp { get; set; }
         public bool HasReply => CommentReplyCount > 0;
+
         public bool IsExpanded
         {
             get => _isExpanded;
@@ -79,10 +82,10 @@ namespace v00v.Model.Entities
                 ExpandThumb = _isExpanded ? ExpandUp : ExpandDown;
             }
         }
+
         public bool IsReply { get; set; }
         public long LikeCount { get; set; }
         public Bitmap LikeThumb => LikeThumbnail.CreateThumb();
-        public string Link => $"https://www.youtube.com/channel/{AuthorChannelId}";
         public int Order { get; set; }
         public HashSet<Comment> Replies { get; set; }
         public Bitmap ReplyThumb => ReplyThumbnail.CreateThumb();

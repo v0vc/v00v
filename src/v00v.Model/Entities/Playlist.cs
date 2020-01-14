@@ -53,8 +53,6 @@ namespace v00v.Model.Entities
 
         public bool IsStatePlaylist { get; set; }
 
-        public string Link => $"https://www.youtube.com/playlist?list={Id}";
-
         public int Order { get; set; }
 
         public string SearchText
