@@ -205,7 +205,7 @@ namespace v00v.ViewModel.Explorer
         public ICommand SetItemWatchStateCommand { get; }
         public ICommand SetSortCommand { get; }
 
-        public List<KeyValuePair<int, string>> Tags { get; set; }
+        public List<KeyValuePair<int, string>> Tags { get; private set; }
 
         #endregion
 

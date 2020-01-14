@@ -122,8 +122,44 @@ namespace v00v.Services.ContentProvider
                 return;
             }
 
-            var cId = channel.Id;
             var plu = channel.Playlists.First();
+
+            var itemms =
+                await
+                    GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
+
+            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => new Item
+            {
+                Id =
+                    x.SelectToken("snippet.resourceId.videoId")
+                        ?.Value<string>(),
+                ChannelTitle = channel.Title,
+                Description =
+                    x.SelectToken("snippet.description")
+                        ?.Value<string>(),
+                ChannelId =
+                    x.SelectToken("snippet.channelId")
+                        ?.Value<string>(),
+                Title =
+                    x.SelectToken("snippet.title")?.Value<string>()
+                        .RemoveNewLine().RemoveSpecialCharacters(),
+                Timestamp =
+                    x.SelectToken("contentDetails.videoPublishedAt",
+                                  false)?.Value<DateTime?>()
+                    ?? DateTime.MinValue,
+                ThumbnailLink =
+                    x.SelectToken("snippet.thumbnails.default.url",
+                                  false).Value<string>()
+            }).Skip(ItemsPerPage));
+
+            plu.Items.Clear();
+
+            plu.Items.AddRange(channel.Items.Select(x => x.Id));
+
+            await SetItemsStatistic(channel, true, plu.Items);
+
+            var cId = channel.Id;
+            
             var playlists =
                 (await
                     GetAll($"{Url}playlists?&channelId={channel.Id}&key={Key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
@@ -352,30 +388,39 @@ namespace v00v.Services.ContentProvider
                 ThumbnailLink = upload?.SelectToken("items[0].snippet.thumbnails.default.url", false)?.Value<string>(),
             };
 
-            channel.Items.AddRange((await
-                                       GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}")
-                                   ).SelectTokens("$..items.[*]").Select(x => new Item
-                                   {
-                                       Id =
-                                           x.SelectToken("snippet.resourceId.videoId")
-                                               ?.Value<string>(),
-                                       ChannelTitle = channel.Title,
-                                       Description =
-                                           x.SelectToken("snippet.description")
-                                               ?.Value<string>(),
-                                       ChannelId =
-                                           x.SelectToken("snippet.channelId")?.Value<string>(),
-                                       Title =
-                                           x.SelectToken("snippet.title")?.Value<string>()
-                                               .RemoveNewLine().RemoveSpecialCharacters(),
-                                       Timestamp =
-                                           x.SelectToken("contentDetails.videoPublishedAt",
-                                                         false)?.Value<DateTime?>()
-                                           ?? DateTime.MinValue,
-                                       ThumbnailLink =
-                                           x.SelectToken("snippet.thumbnails.default.url",
-                                                         false).Value<string>()
-                                   }));
+            var itemms = withoutPl
+                ? new JArray
+                {
+                    await
+                        GetJsonObjectAsync(new
+                                               Uri($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}"))
+                }
+                : await
+                    GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
+
+            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => new Item
+            {
+                Id =
+                    x.SelectToken("snippet.resourceId.videoId")
+                        ?.Value<string>(),
+                ChannelTitle = channel.Title,
+                Description =
+                    x.SelectToken("snippet.description")
+                        ?.Value<string>(),
+                ChannelId =
+                    x.SelectToken("snippet.channelId")
+                        ?.Value<string>(),
+                Title =
+                    x.SelectToken("snippet.title")?.Value<string>()
+                        .RemoveNewLine().RemoveSpecialCharacters(),
+                Timestamp =
+                    x.SelectToken("contentDetails.videoPublishedAt",
+                                  false)?.Value<DateTime?>()
+                    ?? DateTime.MinValue,
+                ThumbnailLink =
+                    x.SelectToken("snippet.thumbnails.default.url",
+                                  false).Value<string>()
+            }));
 
             plu.Items.AddRange(channel.Items.Select(x => x.Id));
 
@@ -835,8 +880,9 @@ namespace v00v.Services.ContentProvider
                 return null;
             }
 
-            return Task.WhenAll(res.SelectToken("items[0].brandingSettings.channel.featuredChannelsUrls").Select(x => x.Value<string>())
-                                    .Where(x => !existChannels.Contains(x)).Select(item => GetChannelAsync(item, true))).Result;
+            return await Task.WhenAll(res.SelectToken("items[0].brandingSettings.channel.featuredChannelsUrls")
+                                          .Select(x => x.Value<string>()).Where(x => !existChannels.Contains(x))
+                                          .Select(chId => GetChannelAsync(chId, true)));
         }
 
         public async Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId)

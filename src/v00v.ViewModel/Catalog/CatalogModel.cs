@@ -274,7 +274,7 @@ namespace v00v.ViewModel.Catalog
         public ICommand ReloadCommand { get; }
         public ReactiveCommand<Unit, Unit> RestoreCommand { get; }
 
-        public ICommand SaveChannelCommand { get; set; }
+        public ICommand SaveChannelCommand { get; }
 
         public string SearchText
         {
@@ -372,24 +372,18 @@ namespace v00v.ViewModel.Catalog
 
         #region Methods
 
-        public void AddChannelToList(Channel channel, bool updateList)
+        public void AddChannelToList(Channel channel, bool setSelect)
         {
-            var lockMe = new object();
-            lock (lockMe)
+            if (_entries.Select(x => x.Id).Contains(channel.Id))
             {
-                if (_entries.Select(x => x.Id).Contains(channel.Id))
-                {
-                    return;
-                }
+                return;
+            }
 
-                channel.IsNew = true;
-                channel.Order = GetMinOrder() - 1;
-                if (!updateList)
-                {
-                    return;
-                }
-
-                UpdateList(channel);
+            channel.IsNew = true;
+            channel.Order = GetMinOrder() - 1;
+            UpdateList(channel);
+            if (setSelect)
+            {
                 SetSelected(channel.Id);
             }
         }
@@ -568,7 +562,7 @@ namespace v00v.ViewModel.Catalog
             {
                 _explorerModel.All.RemoveKeys(ch.Items.Select(x => x.Id));
                 All.RemoveKey(ch.Id);
-                SelectedEntry = _baseChannel;
+                SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
                 return;
             }
 
@@ -722,11 +716,11 @@ namespace v00v.ViewModel.Catalog
             if (task.Result != null)
             {
                 _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.Length, sw));
-                Parallel.ForEach(task.Result,
-                                 x =>
-                                 {
-                                     AddChannelToList(x, false);
-                                 });
+                foreach (var ch in task.Result)
+                {
+                    AddChannelToList(ch, false);
+                }
+
                 All.AddOrUpdate(task.Result);
                 SetSelected(_baseChannel.Id);
             }
@@ -911,8 +905,11 @@ namespace v00v.ViewModel.Catalog
             _setTitle?.Invoke(string.Empty.MakeTitle(task.Result, sw));
 
             channel.IsNew = false;
-            ResortList(task.Result);
+            channel.FontStyle = "Normal";
+            GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(channel.Items);
+            UpdateList(channel);
             UpdatePlaylist(channel);
+            SetSelected(channel.Id);
         }
 
         private void SetLog(string log)

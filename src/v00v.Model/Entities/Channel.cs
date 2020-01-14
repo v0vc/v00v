@@ -12,6 +12,7 @@ namespace v00v.Model.Entities
 
         private int _count;
         private string _title;
+        private string _fontStyle;
 
         #endregion
 
@@ -33,7 +34,11 @@ namespace v00v.Model.Entities
 
         public string ExCache => "e" + Id;
 
-        public string FontStyle => IsNew ? "Italic" : "Normal";
+        public string FontStyle
+        {
+            get => IsNew ? "Italic" : "Normal";
+            set => Update(ref _fontStyle, value);
+        }
 
         public bool HasNew => Count > 0;
 

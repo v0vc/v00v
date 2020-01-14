@@ -137,11 +137,11 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Properties
 
-        public ICommand AddTagCommand { get; set; }
+        public ICommand AddTagCommand { get; }
         public SourceList<Tag> All { get; }
         public string ChannelId { get; set; }
         public string ChannelTitle { get; set; }
-        public ReactiveCommand<Unit, Unit> CloseChannelCommand { get; set; }
+        public ReactiveCommand<Unit, Unit> CloseChannelCommand { get; }
 
         public string CloseText
         {
@@ -158,7 +158,7 @@ namespace v00v.ViewModel.Popup.Channel
         }
 
         public bool IsChannelEnabled { get; set; }
-        public ICommand SaveTagCommand { get; set; }
+        public ICommand SaveTagCommand { get; }
 
         public Tag SelectedTag
         {

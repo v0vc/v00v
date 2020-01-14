@@ -178,7 +178,6 @@ namespace v00v.ViewModel.Playlists
         public ICommand DeleteCommand { get; }
         public ICommand DownloadItemCommand { get; }
         public IEnumerable<Playlist> Entries => _entries;
-
         public ICommand ReloadCommand { get; }
 
         public string SearchText
