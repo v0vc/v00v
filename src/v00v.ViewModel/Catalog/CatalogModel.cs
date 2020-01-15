@@ -488,6 +488,7 @@ namespace v00v.ViewModel.Catalog
                 }
 
                 _baseChannel.Items.Clear();
+                _baseExplorerModel.Tags.Clear();
 
                 Parallel.ForEach(_entries.Where(x => x.Count > 0),
                                  channel =>

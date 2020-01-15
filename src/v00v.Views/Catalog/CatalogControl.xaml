@@ -100,7 +100,7 @@
 
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header >
-                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="25">
+                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="27">
                     <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />
