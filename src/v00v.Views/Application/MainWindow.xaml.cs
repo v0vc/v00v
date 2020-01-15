@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using v00v.ViewModel;
 
@@ -11,7 +10,7 @@ namespace v00v.Views.Application
         {
             AvaloniaXamlLoader.Load(this);
             DataContext = new MainWindowViewModel();
-            this.AttachDevTools();
+            //this.AttachDevTools();
         }
     }
 }
