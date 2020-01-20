@@ -87,6 +87,15 @@ namespace v00v.Services.ContentProvider
                 ?.SelectToken("items[0].id")?.Value<string>();
         }
 
+        private static string GetCommentText(JToken x, string levelName, Regex hrefRegex)
+        {
+            return hrefRegex.Replace(x.SelectToken(levelName)?.Value<string>().Replace("&quot;", @"""").Replace("<br />", " ")
+                                         .Replace("</a>", " ").Replace("<b>", string.Empty).Replace("</b>", string.Empty)
+                                         .Replace("&gt;", ">").Replace("&lt;", "<").Replace("&#39;", "'").RemoveSpecialCharacters()
+                                     ?? string.Empty,
+                                     string.Empty);
+        }
+
         private static async Task<JObject> GetJsonObjectAsync(Uri uri)
         {
             using (var client = new HttpClient())
@@ -111,6 +120,42 @@ namespace v00v.Services.ContentProvider
             }
         }
 
+        private static Item MakeItem(JToken x, string channelId, string cTitle)
+        {
+            return new Item
+            {
+                Id = x.SelectToken("id")?.Value<string>(),
+                ChannelId = channelId,
+                ChannelTitle = cTitle,
+                Title = x.SelectToken("snippet.title")?.Value<string>().RemoveNewLine().RemoveSpecialCharacters(),
+                Timestamp = x.SelectToken("snippet.publishedAt")?.Value<DateTime?>() ?? DateTime.MinValue,
+                Description = x.SelectToken("snippet.description")?.Value<string>(),
+                ViewCount = x.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0,
+                Comments = x.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0,
+                LikeCount = x.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0,
+                DislikeCount = x.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0,
+                ThumbnailLink = x.SelectToken("snippet.thumbnails.default.url")?.Value<string>(),
+                Duration = x.SelectToken("contentDetails.duration") != null
+                    ? (int)XmlConvert.ToTimeSpan(x.SelectToken("contentDetails.duration").Value<string>()).TotalSeconds
+                    : 0,
+                SyncState = SyncState.Unlisted
+            };
+        }
+
+        private static Item MakeItem(JToken x, string cTitle)
+        {
+            return new Item
+            {
+                Id = x.SelectToken("snippet.resourceId.videoId")?.Value<string>(),
+                ChannelTitle = cTitle,
+                Description = x.SelectToken("snippet.description")?.Value<string>(),
+                ChannelId = x.SelectToken("snippet.channelId")?.Value<string>(),
+                Title = x.SelectToken("snippet.title")?.Value<string>().RemoveNewLine().RemoveSpecialCharacters(),
+                Timestamp = x.SelectToken("contentDetails.videoPublishedAt", false)?.Value<DateTime?>() ?? DateTime.MinValue,
+                ThumbnailLink = x.SelectToken("snippet.thumbnails.default.url", false).Value<string>()
+            };
+        }
+
         #endregion
 
         #region Methods
@@ -124,33 +169,9 @@ namespace v00v.Services.ContentProvider
 
             var plu = channel.Playlists.First();
 
-            var itemms =
-                await
-                    GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
-
-            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => new Item
-            {
-                Id =
-                    x.SelectToken("snippet.resourceId.videoId")
-                        ?.Value<string>(),
-                ChannelTitle = channel.Title,
-                Description =
-                    x.SelectToken("snippet.description")
-                        ?.Value<string>(),
-                ChannelId =
-                    x.SelectToken("snippet.channelId")
-                        ?.Value<string>(),
-                Title =
-                    x.SelectToken("snippet.title")?.Value<string>()
-                        .RemoveNewLine().RemoveSpecialCharacters(),
-                Timestamp =
-                    x.SelectToken("contentDetails.videoPublishedAt",
-                                  false)?.Value<DateTime?>()
-                    ?? DateTime.MinValue,
-                ThumbnailLink =
-                    x.SelectToken("snippet.thumbnails.default.url",
-                                  false).Value<string>()
-            }).Skip(ItemsPerPage));
+            channel.Items.AddRange((await
+                                       GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}")
+                                   ).SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)).Skip(ItemsPerPage));
 
             plu.Items.Clear();
 
@@ -159,7 +180,7 @@ namespace v00v.Services.ContentProvider
             await SetItemsStatistic(channel, true, plu.Items);
 
             var cId = channel.Id;
-            
+
             var playlists =
                 (await
                     GetAll($"{Url}playlists?&channelId={channel.Id}&key={Key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
@@ -229,89 +250,8 @@ namespace v00v.Services.ContentProvider
                 await Task.WhenAll(tasks);
 
                 var cTitle = channel.Title;
-                channel.Items.AddRange(tasks.AsParallel().SelectMany(i => i.Result.SelectTokens("items.[*]").Select(x => new Item
-                {
-                    Id =
-                        x.SelectToken("id")
-                            ?
-                            .Value
-                            <
-                                string
-                            >(),
-                    ChannelId =
-                        cId,
-                    ChannelTitle =
-                        cTitle,
-                    Title =
-                        x.SelectToken("snippet.title")
-                            ?
-                            .Value
-                            <
-                                string
-                            >()
-                            .RemoveNewLine()
-                            .RemoveSpecialCharacters(),
-                    Timestamp =
-                        x.SelectToken("snippet.publishedAt")
-                            ?
-                            .Value
-                            <
-                                DateTime
-                                ?
-                            >()
-                        ?? DateTime
-                            .MinValue,
-                    Description =
-                        x.SelectToken("snippet.description")
-                            ?.Value
-                            <string
-                            >(),
-                    ViewCount =
-                        x.SelectToken("statistics.viewCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    Comments =
-                        x.SelectToken("statistics.commentCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    LikeCount =
-                        x.SelectToken("statistics.likeCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    DislikeCount =
-                        x.SelectToken("statistics.dislikeCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    ThumbnailLink
-                        = x
-                            .SelectToken("snippet.thumbnails.default.url")
-                            ?.Value
-                            <string
-                            >(),
-                    Duration =
-                        x.SelectToken("contentDetails.duration")
-                        != null
-                            ? (int
-                            )XmlConvert
-                                .ToTimeSpan(x
-                                                .SelectToken("contentDetails.duration")
-                                                .Value
-                                                <string
-                                                >())
-                                .TotalSeconds
-                            : 0,
-                    SyncState =
-                        SyncState
-                            .Unlisted
-                })));
+                channel.Items.AddRange(tasks.AsParallel()
+                                           .SelectMany(i => i.Result.SelectTokens("items.[*]").Select(x => MakeItem(x, cId, cTitle))));
             }
 
             await FillThumbs(channel.Playlists.Where(x => x.Thumb == null).ToHashSet());
@@ -398,29 +338,7 @@ namespace v00v.Services.ContentProvider
                 : await
                     GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
 
-            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => new Item
-            {
-                Id =
-                    x.SelectToken("snippet.resourceId.videoId")
-                        ?.Value<string>(),
-                ChannelTitle = channel.Title,
-                Description =
-                    x.SelectToken("snippet.description")
-                        ?.Value<string>(),
-                ChannelId =
-                    x.SelectToken("snippet.channelId")
-                        ?.Value<string>(),
-                Title =
-                    x.SelectToken("snippet.title")?.Value<string>()
-                        .RemoveNewLine().RemoveSpecialCharacters(),
-                Timestamp =
-                    x.SelectToken("contentDetails.videoPublishedAt",
-                                  false)?.Value<DateTime?>()
-                    ?? DateTime.MinValue,
-                ThumbnailLink =
-                    x.SelectToken("snippet.thumbnails.default.url",
-                                  false).Value<string>()
-            }));
+            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)));
 
             plu.Items.AddRange(channel.Items.Select(x => x.Id));
 
@@ -507,89 +425,9 @@ namespace v00v.Services.ContentProvider
                 await Task.WhenAll(tasks);
 
                 var chTitle = channel.Title;
-                channel.Items.AddRange(tasks.AsParallel().SelectMany(i => i.Result.SelectTokens("items.[*]").Select(x => new Item
-                {
-                    Id =
-                        x.SelectToken("id")
-                            ?
-                            .Value
-                            <
-                                string
-                            >(),
-                    ChannelId =
-                        channelId,
-                    ChannelTitle =
-                        chTitle,
-                    Title =
-                        x.SelectToken("snippet.title")
-                            ?
-                            .Value
-                            <
-                                string
-                            >()
-                            .RemoveNewLine()
-                            .RemoveSpecialCharacters(),
-                    Timestamp =
-                        x.SelectToken("snippet.publishedAt")
-                            ?
-                            .Value
-                            <
-                                DateTime
-                                ?
-                            >()
-                        ?? DateTime
-                            .MinValue,
-                    Description =
-                        x.SelectToken("snippet.description")
-                            ?.Value
-                            <string
-                            >(),
-                    ViewCount =
-                        x.SelectToken("statistics.viewCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    Comments =
-                        x.SelectToken("statistics.commentCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    LikeCount =
-                        x.SelectToken("statistics.likeCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    DislikeCount =
-                        x.SelectToken("statistics.dislikeCount")
-                            ?.Value
-                            <long
-                                ?>()
-                        ?? 0,
-                    ThumbnailLink
-                        = x
-                            .SelectToken("snippet.thumbnails.default.url")
-                            ?.Value
-                            <string
-                            >(),
-                    Duration =
-                        x.SelectToken("contentDetails.duration")
-                        != null
-                            ? (int
-                            )XmlConvert
-                                .ToTimeSpan(x
-                                                .SelectToken("contentDetails.duration")
-                                                .Value
-                                                <string
-                                                >())
-                                .TotalSeconds
-                            : 0,
-                    SyncState =
-                        SyncState
-                            .Unlisted
-                })));
+                channel.Items.AddRange(tasks.AsParallel()
+                                           .SelectMany(i => i.Result.SelectTokens("items.[*]")
+                                                           .Select(x => MakeItem(x, channelId, chTitle))));
             }
 
             await FillThumbs(channel.Playlists);
@@ -648,8 +486,9 @@ namespace v00v.Services.ContentProvider
                 .Where(x => x != null).Distinct().ToHashSet();
 
             diff.UploadedIds.AddRange(uploadvids);
-            diff.AddedItems.AddRange(uploadvids.Except(cs.Items).Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
-            diff.DeletedItems.AddRange(cs.Items.Except(uploadvids));
+            diff.AddedItems.AddRange(uploadvids.Except(cs.Items.Select(x => x.Item1))
+                                         .Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
+            diff.DeletedItems.AddRange(cs.Items.Select(x => x.Item1).Except(uploadvids));
 
             setLog?.Invoke($"{diff.ChannelTitle}, added: {diff.AddedItems.Count}, deleted: {diff.DeletedItems.Count}");
 
@@ -711,11 +550,9 @@ namespace v00v.Services.ContentProvider
             diff.DeletedPls.AddRange(cs.Playlists.Where(z => z != upId)
                                          .Except(diff.ExistPls.Select(x => x.Key).Union(diff.AddedPls.Select(x => x.Key.Id))));
 
-            var rawIds = diff.AddedPls.SelectMany(x => x.Value.Select(y => y.Id))
-                .Union(diff.ExistPls.SelectMany(x => x.Value.Select(y => y.Id))).Except(diff.AddedItems.Select(x => x.Id).Union(cs.Items))
-                .ToList();
-
-            var unlistedTasks = rawIds.Split()
+            var unlistedTasks = diff.AddedPls.SelectMany(x => x.Value.Select(y => y.Id))
+                .Union(diff.ExistPls.SelectMany(x => x.Value.Select(y => y.Id)))
+                .Except(diff.AddedItems.Select(x => x.Id).Union(cs.Items.Select(x => x.Item1))).ToList().Split()
                 .Select(vid =>
                             GetJsonObjectAsync(new
                                                    Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
@@ -732,25 +569,50 @@ namespace v00v.Services.ContentProvider
             diff.AddedItems.AddRange(unlisted.Except(diff.AddedItems.Select(x => x.Id))
                                          .Select(y => new ItemPrivacy { Id = y, Status = SyncState.Unlisted }));
 
-            var trueAdded = unlisted.Union(cs.Items).Union(diff.AddedItems.Select(x => x.Id));
+            var trueAdded = unlisted.Union(cs.Items.Select(x => x.Item1)).Union(diff.AddedItems.Select(x => x.Id));
 
-            Parallel.ForEach(diff.AddedPls,
-                             pair =>
-                             {
-                                 pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
-                             });
+            if (diff.AddedPls.Count > 0)
+            {
+                Parallel.ForEach(diff.AddedPls,
+                                 pair =>
+                                 {
+                                     pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
+                                 });
+            }
 
-            Parallel.ForEach(diff.ExistPls.Where(x => x.Key != upId),
-                             pair =>
-                             {
-                                 pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
-                             });
+            if (diff.ExistPls.Count > 0)
+            {
+                Parallel.ForEach(diff.ExistPls.Where(x => x.Key != upId),
+                                 pair =>
+                                 {
+                                     pair.Value.RemoveAll(y => !trueAdded.Contains(y.Id));
+                                 });
+            }
 
             if (diff.DeletedItems.Count > 0)
             {
                 diff.DeletedItems.RemoveAll(x => diff.ExistPls.SelectMany(y => y.Value).Union(diff.AddedPls.SelectMany(y => y.Value))
                                                 .Where(z => z.Status == SyncState.Added || z.Status == SyncState.Unlisted)
                                                 .Select(y => y.Id).Contains(x));
+
+                if (diff.DeletedItems.Count > 0)
+                {
+                    var nonPlunl = diff.DeletedItems.Split()
+                        .Select(id =>
+                                    GetJsonObjectAsync(new
+                                                           Uri($"{Url}videos?id={string.Join(",", id)}&key={Key}&part=id&fields=items(id)&{PrintType}")))
+                        .ToHashSet();
+
+                    await Task.WhenAll(nonPlunl);
+
+                    diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
+                                                    .SelectMany(x => x.Result.SelectTokens("items.[*]")
+                                                                    .Select(z => z.SelectToken("id")?.Value<string>())));
+                    if (diff.UnlistedItems.Count > 0)
+                    {
+                        diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
+                    }
+                }
             }
 
             return diff;
@@ -906,18 +768,7 @@ namespace v00v.Services.ContentProvider
                         .RemoveSpecialCharacters(),
                 AuthorChannelId =
                     x.SelectToken("snippet.authorChannelId.value")?.Value<string>(),
-                Text =
-                    hrefRegex.Replace(x.SelectToken("snippet.textDisplay")
-                                          ?.Value<string>().Replace("&quot;", @"""")
-                                          .Replace("<br />", " ")
-                                          .Replace("</a>", " ")
-                                          .Replace("<b>", string.Empty)
-                                          .Replace("</b>", string.Empty)
-                                          .Replace("&gt;", ">").Replace("&lt;", "<")
-                                          .Replace("&#39;", "'")
-                                          .RemoveSpecialCharacters()
-                                      ?? string.Empty,
-                                      string.Empty),
+                Text = GetCommentText(x, "snippet.textDisplay", hrefRegex),
                 TextUrl = hrefRegex
                     .Match(x.SelectToken("snippet.textDisplay")?.Value<string>()
                            ?? string.Empty).Value.Replace("<a href=", string.Empty)
@@ -1003,16 +854,9 @@ namespace v00v.Services.ContentProvider
                     x.SelectToken("snippet.topLevelComment.snippet.authorChannelId.value")
                         ?.Value<string>(),
                 Text =
-                    hrefRegex
-                        .Replace(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")
-                                     ?.Value<string>().Replace("&quot;", @"""")
-                                     .Replace("<br />", " ").Replace("</a>", " ")
-                                     .Replace("<b>", string.Empty)
-                                     .Replace("</b>", string.Empty)
-                                     .Replace("&gt;", ">").Replace("&lt;", "<")
-                                     .Replace("&#39;", "'")
-                                     .RemoveSpecialCharacters() ?? string.Empty,
-                                 string.Empty),
+                    GetCommentText(x,
+                                   "snippet.topLevelComment.snippet.textDisplay",
+                                   hrefRegex),
                 TextUrl =
                     hrefRegex
                         .Match(x.SelectToken("snippet.topLevelComment.snippet.textDisplay")

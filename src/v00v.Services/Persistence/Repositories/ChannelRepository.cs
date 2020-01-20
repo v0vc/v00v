@@ -146,8 +146,9 @@ namespace v00v.Services.Persistence.Repositories
                         {
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
-                            Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                            Items = channel.Items.Select(y => new Tuple<string, int>(y.Id, y.SyncState)),
+                            //Items = channel.Items.Select(y => y.Id),
+                            //UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         }
                     };
@@ -161,9 +162,10 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     ChannelId = channel.Id,
                     ChannelTitle = channel.Title,
-                    Items = channel.Items.Select(y => y.Id),
-                    UnlistedItems =
-                        channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                    Items = channel.Items.Select(y => new Tuple<string, int>(y.Id, y.SyncState)),
+                    //Items = channel.Items.Select(y => y.Id),
+                    //UnlistedItems =
+                    //    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                     Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                 }).ToListAsync();
             }
@@ -186,8 +188,9 @@ namespace v00v.Services.Persistence.Repositories
                         {
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
-                            Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                            Items = channel.Items.Select(y => new Tuple<string, int>(y.Id, y.SyncState)),
+                            //Items = channel.Items.Select(y => y.Id),
+                            //UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         };
                     }
@@ -204,8 +207,9 @@ namespace v00v.Services.Persistence.Repositories
                         {
                             ChannelId = channel.Id,
                             ChannelTitle = channel.Title,
-                            Items = channel.Items.Select(y => y.Id),
-                            UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
+                            Items = channel.Items.Select(y => new Tuple<string, int>(y.Id, y.SyncState)),
+                            //Items = channel.Items.Select(y => y.Id),
+                            //UnlistedItems = channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                             Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
                         };
                     }
@@ -383,9 +387,20 @@ namespace v00v.Services.Persistence.Repositories
                         foreach (var s in fdiff.DeletedItems)
                         {
                             var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
-                            if (item != null)
+                            if (item != null && item.SyncState != 3)
                             {
                                 item.SyncState = 3;
+                                context.Entry(item).Property(x => x.SyncState).IsModified = true;
+                            }
+                        }
+
+                        //unlisted not from any pl
+                        foreach (var s in fdiff.UnlistedItems)
+                        {
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
+                            if (item != null)
+                            {
+                                item.SyncState = 2;
                                 context.Entry(item).Property(x => x.SyncState).IsModified = true;
                             }
                         }

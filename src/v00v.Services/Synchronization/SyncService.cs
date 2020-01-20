@@ -33,17 +33,16 @@ namespace v00v.Services.Synchronization
 
         public async Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog)
         {
-            setLog?.Invoke(channels.Count == 1
-                               ? $"Working: {channels.First().Title}.."
+            setLog?.Invoke(channels.Count <= 2
+                               ? $"Working: {channels.Last().Title}.."
                                : $"Working channels: {channels.Count - 1}, parallel: {parallel}");
 
             var unl = new List<string>();
             IEnumerable<ChannelStruct> channelStructs = null;
-            //channelStructs = await _channelRepository.GetChannelsStruct(syncPls, channels.Count == 2 ? channels.Last().Id : null);
             await Task.Run(() =>
             {
                 channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
-                unl.AddRange(channelStructs.SelectMany(x => x.UnlistedItems));
+                unl.AddRange(channelStructs.SelectMany(x => x.Items.Where(y => y.Item2 == 2 || y.Item2 == 3).Select(z => z.Item1)));
             });
 
             var diffs = new List<ChannelDiff>();
@@ -66,7 +65,6 @@ namespace v00v.Services.Synchronization
             }
             else
             {
-                var err = new List<ChannelStruct>();
                 var cur = 1;
                 foreach (var x in channelStructs)
                 {
@@ -79,26 +77,7 @@ namespace v00v.Services.Synchronization
                     }
                     catch (Exception e)
                     {
-                        err.Add(x);
-                        setLog?.Invoke($"Add to second try: {x.ChannelId}, {e.Message}");
-                    }
-                }
-
-                if (err.Count > 0)
-                {
-                    setLog?.Invoke($"Second try: {err.Count}");
-                    foreach (var cs in err)
-                    {
-                        try
-                        {
-                            var diff = await _youtubeService.GetChannelDiffAsync(cs, syncPls, setLog);
-                            diffs.Add(diff);
-                            setLog?.Invoke($"{diff.ChannelId} ok");
-                        }
-                        catch (Exception e)
-                        {
-                            setLog?.Invoke($"Second try fail: {e.Message}");
-                        }
+                        setLog?.Invoke($"Error: {x.ChannelId}, {e.Message}");
                     }
                 }
             }
@@ -139,9 +118,13 @@ namespace v00v.Services.Synchronization
 
             res.DeletedItems.AddRange(diffs.SelectMany(x => x.DeletedItems));
 
+            res.UnlistedItems.AddRange(diffs.SelectMany(x => x.UnlistedItems));
+
             if (res.Items.Count > 0)
             {
                 res.NewItems.AddRange(await _youtubeService.GetItems(res.Items.ToDictionary(entry => entry.Key, entry => entry.Value)));
+                channels.First(x => x.IsStateChannel).Items.AddRange(res.NewItems);
+                channels.First(x => x.IsStateChannel).Count += res.NewItems.Count;
             }
 
             setLog?.Invoke($"New items: {res.NewItems.Count}");
@@ -196,25 +179,21 @@ namespace v00v.Services.Synchronization
                                  }
                              });
 
-            if (res.NewItems.Count > 0)
-            {
-                var stateChannel = channels.First(x => x.IsStateChannel);
-                stateChannel.Items.AddRange(res.NewItems);
-                stateChannel.Count += res.NewItems.Count;
-            }
-
             setLog?.Invoke("Saving to db..");
-            var rows = _channelRepository.StoreDiff(res);
-            await rows.ContinueWith(x =>
+            await Task.Run(() =>
             {
-                if (rows.IsCompletedSuccessfully)
+                var rows = _channelRepository.StoreDiff(res);
+                rows.ContinueWith(x =>
                 {
-                    setLog?.Invoke($"Saved {rows.Result} rows!");
-                }
-                else
-                {
-                    setLog?.Invoke(rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
-                }
+                    if (rows.IsCompletedSuccessfully)
+                    {
+                        setLog?.Invoke($"Saved {rows.Result} rows!");
+                    }
+                    else
+                    {
+                        setLog?.Invoke(rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
+                    }
+                });
             });
 
             return res;

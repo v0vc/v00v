@@ -15,6 +15,7 @@ namespace v00v.Model.SyncEntities
             AddedItems = new List<ItemPrivacy>();
             UploadedIds = new List<string>();
             DeletedItems = new List<string>();
+            UnlistedItems = new List<string>();
             if (syncPls)
             {
                 AddedPls = new ConcurrentDictionary<Playlist, List<ItemPrivacy>>();
@@ -37,6 +38,7 @@ namespace v00v.Model.SyncEntities
         public ConcurrentDictionary<string, List<ItemPrivacy>> ExistPls { get; }
         public bool Faulted { get; set; }
         public long SubsCount { get; set; }
+        public List<string> UnlistedItems { get; }
         public List<string> UploadedIds { get; }
         public long ViewCount { get; set; }
 

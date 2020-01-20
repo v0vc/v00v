@@ -339,7 +339,7 @@ namespace v00v.ViewModel.Catalog
             return x => x.IsStateChannel || x.Tags.Select(y => y.Id).Contains(tag.Id);
         }
 
-        private static void MarkUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
+        private static void MarkNoUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
         {
             Parallel.ForEach(channel.Items.Where(x => noUnlisted.Contains(x.Id)),
                              item =>
@@ -1051,7 +1051,24 @@ namespace v00v.ViewModel.Catalog
                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
                 unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
                 unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
-                MarkUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
+                MarkNoUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
+            }
+
+            var newUnlisted = task.Result.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id);
+            var existUlisted = task.Result.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted)
+                .Select(x => x.Id);
+
+            var allUnlisted = task.Result.UnlistedItems.Union(newUnlisted).Union(existUlisted).ToHashSet();
+            if (allUnlisted.Count > 0)
+            {
+                Parallel.ForEach(channel.Items.Where(y=>allUnlisted.Contains(y.Id)),
+                                 x =>
+                                 {
+                                     if (x.SyncState != SyncState.Unlisted)
+                                     {
+                                         x.SyncState = SyncState.Unlisted;
+                                     }
+                                 });
             }
 
             if (task.Result.DeletedItems.Count > 0)
@@ -1117,7 +1134,7 @@ namespace v00v.ViewModel.Catalog
                 Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
                                  channel =>
                                  {
-                                     MarkUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.PlCache));
+                                     MarkNoUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.PlCache));
                                  });
             }
 

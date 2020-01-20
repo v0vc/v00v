@@ -12,13 +12,17 @@ namespace v00v.Model.SyncEntities
         {
             SyncPls = syncPls;
             Channels = new Dictionary<string, ChannelStats>();
-            DeletedPlaylists = new List<string>();
             Items = new ConcurrentDictionary<string, SyncPrivacy>();
             NewItems = new List<Item>();
-            NewPlaylists = new List<Playlist>();
             ErrorSyncChannels = new List<string>();
             NoUnlistedAgain = new List<string>();
             DeletedItems = new List<string>();
+            UnlistedItems = new List<string>();
+            if (syncPls)
+            {
+                DeletedPlaylists = new List<string>();
+                NewPlaylists = new List<Playlist>();
+            }
         }
 
         #endregion
@@ -34,6 +38,7 @@ namespace v00v.Model.SyncEntities
         public List<Item> NewItems { get; }
         public List<Playlist> NewPlaylists { get; }
         public List<string> NoUnlistedAgain { get; }
+        public List<string> UnlistedItems { get; }
         public bool SyncPls { get; }
 
         #endregion
