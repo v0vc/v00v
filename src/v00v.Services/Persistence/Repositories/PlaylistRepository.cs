@@ -60,7 +60,7 @@ namespace v00v.Services.Persistence.Repositories
             {
                 return new[]
                 {
-                    context.Items.AsNoTracking().Count(x => x.SyncState == 2),
+                    context.Items.AsNoTracking().Count(x => x.SyncState == 2 || x.SyncState == 3),
                     context.Items.AsNoTracking().Count(x => x.WatchState == 2),
                     context.Items.AsNoTracking().Count(x => x.WatchState == 1)
                 };

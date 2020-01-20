@@ -180,20 +180,11 @@ namespace v00v.Services.Synchronization
                              });
 
             setLog?.Invoke("Saving to db..");
-            await Task.Run(() =>
+            var rows = _channelRepository.StoreDiff(res);
+            await Task.WhenAll(rows).ContinueWith(x =>
             {
-                var rows = _channelRepository.StoreDiff(res);
-                rows.ContinueWith(x =>
-                {
-                    if (rows.IsCompletedSuccessfully)
-                    {
-                        setLog?.Invoke($"Saved {rows.Result} rows!");
-                    }
-                    else
-                    {
-                        setLog?.Invoke(rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
-                    }
-                });
+                setLog?.Invoke(rows.IsCompletedSuccessfully ? $"Saved {rows.Result} rows!" :
+                               rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
             });
 
             return res;

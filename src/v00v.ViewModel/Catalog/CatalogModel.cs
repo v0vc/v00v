@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -341,13 +342,10 @@ namespace v00v.ViewModel.Catalog
 
         private static void MarkNoUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
         {
-            Parallel.ForEach(channel.Items.Where(x => noUnlisted.Contains(x.Id)),
+            Parallel.ForEach(channel.Items.Where(x => noUnlisted.Contains(x.Id) && x.SyncState != SyncState.Notset),
                              item =>
                              {
-                                 if (item.SyncState != SyncState.Notset)
-                                 {
-                                     item.SyncState = SyncState.Notset;
-                                 }
+                                 item.SyncState = SyncState.Notset;
                              });
 
             var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
@@ -365,6 +363,20 @@ namespace v00v.ViewModel.Catalog
             {
                 unlistpl.Items.RemoveAll(noUnlisted.Contains);
                 unlistpl.Count -= noUnlisted.Count;
+            }
+        }
+
+        private static void MarkUnlisted(Channel channel, IEnumerable<string> allUnlisted)
+        {
+            Parallel.ForEach(channel.Items.Where(y => allUnlisted.Contains(y.Id) && y.SyncState != SyncState.Unlisted),
+                             x =>
+                             {
+                                 x.SyncState = SyncState.Unlisted;
+                             });
+            var unlistpl = channel.Playlists?.FirstOrDefault(x => x.Id == channel.Id);
+            if (unlistpl == null)
+            {
+                return;
             }
         }
 
@@ -732,19 +744,15 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        private void MarkDeleted(Channel channel, ICollection<string> deletedIds)
+        private void MarkHidden(Channel channel,
+            ICollection<string> hiddenIds,
+            SyncState syncState,
+            ConcurrentDictionary<string, Item> hiddenItems)
         {
-            var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-            unlistedpl.StateItems?.AddRange(channel.Items.Where(x => deletedIds.Contains(x.Id)));
-            unlistedpl.Count += deletedIds.Count;
-
-            Parallel.ForEach(channel.Items.Where(x => deletedIds.Contains(x.Id)),
+            Parallel.ForEach(channel.Items.Where(x => hiddenIds.Contains(x.Id) && x.SyncState != syncState),
                              item =>
                              {
-                                 if (item.SyncState != SyncState.Deleted)
-                                 {
-                                     item.SyncState = SyncState.Deleted;
-                                 }
+                                 item.SyncState = syncState;
                              });
 
             var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
@@ -754,18 +762,27 @@ namespace v00v.ViewModel.Catalog
                 unpl.IsStatePlaylist = false;
                 unpl.Id = channel.Id;
                 unpl.Order = channel.Playlists.Count;
-                unpl.Count = deletedIds.Count;
-                unpl.Items.AddRange(deletedIds);
+                unpl.Count = hiddenIds.Count;
+                unpl.Items.AddRange(hiddenIds);
                 channel.Playlists.Add(unpl);
+                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unpl);
+                Parallel.ForEach(channel.Items.Where(x => hiddenIds.Contains(x.Id)),
+                                 item =>
+                                 {
+                                     hiddenItems.TryAdd(item.Id, item);
+                                 });
             }
             else
             {
-                var deldiff = deletedIds.Except(unlistpl.Items).ToHashSet();
-                if (deldiff.Count > 0)
-                {
-                    unlistpl.Items.AddRange(deldiff);
-                    unlistpl.Count += deldiff.Count;
-                }
+                var ids = hiddenIds.Except(unlistpl.Items).ToHashSet();
+                unlistpl.Items.AddRange(ids);
+                unlistpl.Count += ids.Count;
+                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unlistpl);
+                Parallel.ForEach(channel.Items.Where(x => ids.Contains(x.Id)),
+                                 item =>
+                                 {
+                                     hiddenItems.TryAdd(item.Id, item);
+                                 });
             }
         }
 
@@ -1020,61 +1037,63 @@ namespace v00v.ViewModel.Catalog
             _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.NewItems.Count, sw));
 
             var plmodel = GetCachedPlaylistModel(channel.PlCache);
-            if (task.Result.NewPlaylists.Count > 0)
-            {
-                channel.Playlists.AddRange(task.Result.NewPlaylists);
-                plmodel?.All.AddOrUpdate(task.Result.NewPlaylists);
-            }
 
-            if (task.Result.DeletedPlaylists.Count > 0)
+            if (plmodel != null)
             {
-                channel.Playlists.RemoveAll(x => task.Result.DeletedPlaylists.Contains(x.Id));
-                var deletedpl = task.Result.DeletedPlaylists;
-                plmodel?.All.RemoveKeys(deletedpl);
-            }
+                if (task.Result.NewPlaylists.Count > 0)
+                {
+                    channel.Playlists.AddRange(task.Result.NewPlaylists);
+                    plmodel.All.AddOrUpdate(task.Result.NewPlaylists);
+                }
 
-            Parallel.ForEach(task.Result.ExistPlaylists,
-                             pair =>
-                             {
-                                 var (key, value) = pair;
-                                 var pl = plmodel?.All.Items.FirstOrDefault(x => x.Id == key);
-                                 if (pl != null)
+                if (task.Result.DeletedPlaylists.Count > 0)
+                {
+                    channel.Playlists.RemoveAll(x => task.Result.DeletedPlaylists.Contains(x.Id));
+                    plmodel.All.RemoveKeys(task.Result.DeletedPlaylists);
+                }
+
+                Parallel.ForEach(task.Result.ExistPlaylists,
+                                 pair =>
                                  {
-                                     pl.Count = value.Count;
-                                     pl.Items.Clear();
-                                     pl.Items.AddRange(value.Select(x => x.Id));
-                                 }
-                             });
-
-            if (task.Result.NoUnlistedAgain.Count > 0)
-            {
-                var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-                unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
-                unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
-                MarkNoUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
-            }
-
-            var newUnlisted = task.Result.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id);
-            var existUlisted = task.Result.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted)
-                .Select(x => x.Id);
-
-            var allUnlisted = task.Result.UnlistedItems.Union(newUnlisted).Union(existUlisted).ToHashSet();
-            if (allUnlisted.Count > 0)
-            {
-                Parallel.ForEach(channel.Items.Where(y=>allUnlisted.Contains(y.Id)),
-                                 x =>
-                                 {
-                                     if (x.SyncState != SyncState.Unlisted)
+                                     var (key, value) = pair;
+                                     var pl = plmodel.All.Items.FirstOrDefault(x => x.Id == key);
+                                     if (pl != null)
                                      {
-                                         x.SyncState = SyncState.Unlisted;
+                                         pl.Count = value.Count;
+                                         pl.Items.Clear();
+                                         pl.Items.AddRange(value.Select(x => x.Id));
                                      }
                                  });
+
+                if (task.Result.NoUnlistedAgain.Count > 0)
+                {
+                    var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
+                    unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
+                    unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
+                    MarkNoUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
+                }
+            }
+
+            var allUnlisted = task.Result.UnlistedItems
+                .Union(task.Result.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id))
+                .Union(task.Result.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted).Select(x => x.Id))
+                .Distinct().ToHashSet();
+
+            var hiddenDic = new ConcurrentDictionary<string, Item>();
+            if (allUnlisted.Count > 0)
+            {
+                MarkHidden(channel, allUnlisted, SyncState.Unlisted, hiddenDic);
             }
 
             if (task.Result.DeletedItems.Count > 0)
             {
-                MarkDeleted(channel, task.Result.DeletedItems);
+                MarkHidden(channel, task.Result.DeletedItems, SyncState.Deleted, hiddenDic);
             }
+
+            var baseUnlisted = _baseChannel.Playlists.First(x => x.Id == "-2");
+            baseUnlisted.StateItems?.AddRange(hiddenDic.Select(x => x.Value));
+            baseUnlisted.Count += hiddenDic.Count;
+            GetCachedPlaylistModel(null)?.All.AddOrUpdate(baseUnlisted);
 
             All.AddOrUpdate(lst);
             if (task.Result.NewItems.Count > 0)
@@ -1131,32 +1150,54 @@ namespace v00v.ViewModel.Catalog
                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
                 unlistedpl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
                 unlistedpl.Count -= diff.NoUnlistedAgain.Count;
-                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew && x.Loaded),
                                  channel =>
                                  {
                                      MarkNoUnlisted(channel, diff.NoUnlistedAgain, GetCachedPlaylistModel(channel.PlCache));
                                  });
             }
 
-            if (diff.DeletedItems.Count > 0)
+            var allUnlisted = diff.SyncPls
+                ? diff.UnlistedItems.Union(diff.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id))
+                    .Union(diff.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted).Select(x => x.Id))
+                    .Distinct().ToHashSet()
+                : diff.UnlistedItems.Union(diff.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id)).Distinct()
+                    .ToHashSet();
+
+            var hiddenDic = new ConcurrentDictionary<string, Item>();
+            if (allUnlisted.Count > 0)
             {
-                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew),
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew && x.Loaded),
                                  channel =>
                                  {
-                                     MarkDeleted(channel, diff.DeletedItems);
+                                     MarkHidden(channel, allUnlisted, SyncState.Unlisted, hiddenDic);
                                  });
             }
+
+            if (diff.DeletedItems.Count > 0)
+            {
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew && x.Loaded),
+                                 channel =>
+                                 {
+                                     MarkHidden(channel, diff.DeletedItems, SyncState.Deleted, hiddenDic);
+                                 });
+            }
+
+            var baseUnlisted = _baseChannel.Playlists.First(x => x.Id == "-2");
+            baseUnlisted.StateItems?.AddRange(hiddenDic.Select(x => x.Value));
+            baseUnlisted.Count += hiddenDic.Count;
+            GetCachedPlaylistModel(null)?.All.AddOrUpdate(baseUnlisted);
 
             All.AddOrUpdate(_entries.Where(x => !x.IsNew));
             if (diff.NewItems.Count > 0)
             {
+                UpdateTags(diff.NewItems.SelectMany(x => x.Tags).Distinct());
                 _baseExplorerModel.All.AddOrUpdate(diff.NewItems);
                 _baseExplorerModel.EnableLog = _baseExplorerModel.All.Items.Any();
                 _setPageIndex?.Invoke(0);
-                UpdateTags(diff.NewItems.SelectMany(x => x.Tags).Distinct());
             }
 
-            if (SelectedEntry != null && SelectedEntry.Id != _baseChannel.Id)
+            if (SelectedEntry == null)
             {
                 SelectedEntry = _baseChannel;
             }

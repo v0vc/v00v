@@ -120,6 +120,23 @@ namespace v00v.Services.ContentProvider
             }
         }
 
+        private static async Task GetTrueDeleted(ChannelDiff diff)
+        {
+            var nonPlunl = diff.DeletedItems.Split()
+                .Select(id =>
+                            GetJsonObjectAsync(new
+                                                   Uri($"{Url}videos?id={string.Join(",", id)}&key={Key}&part=id&fields=items(id)&{PrintType}")))
+                .ToHashSet();
+
+            await Task.WhenAll(nonPlunl);
+
+            diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
+                                            .SelectMany(x => x.Result.SelectTokens("items.[*]")
+                                                            .Select(z => z.SelectToken("id")?.Value<string>())));
+
+            diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
+        }
+
         private static Item MakeItem(JToken x, string channelId, string cTitle)
         {
             return new Item
@@ -494,6 +511,11 @@ namespace v00v.Services.ContentProvider
 
             if (!syncPls)
             {
+                if (diff.DeletedItems.Count > 0)
+                {
+                    await GetTrueDeleted(diff);
+                }
+
                 return diff;
             }
 
@@ -597,21 +619,7 @@ namespace v00v.Services.ContentProvider
 
                 if (diff.DeletedItems.Count > 0)
                 {
-                    var nonPlunl = diff.DeletedItems.Split()
-                        .Select(id =>
-                                    GetJsonObjectAsync(new
-                                                           Uri($"{Url}videos?id={string.Join(",", id)}&key={Key}&part=id&fields=items(id)&{PrintType}")))
-                        .ToHashSet();
-
-                    await Task.WhenAll(nonPlunl);
-
-                    diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
-                                                    .SelectMany(x => x.Result.SelectTokens("items.[*]")
-                                                                    .Select(z => z.SelectToken("id")?.Value<string>())));
-                    if (diff.UnlistedItems.Count > 0)
-                    {
-                        diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
-                    }
+                    await GetTrueDeleted(diff);
                 }
             }
 
