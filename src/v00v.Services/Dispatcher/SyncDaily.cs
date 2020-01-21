@@ -21,7 +21,7 @@ namespace v00v.Services.Dispatcher
             var setLog = (Action<string>)context.JobDetail.JobDataMap[BaseSync.Log];
             var updateList = (Action<SyncDiff>)context.JobDetail.JobDataMap[BaseSync.UpdateList];
 
-            setLog?.Invoke($"-=start {BaseSync.DailySync}=-");
+            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=start {BaseSync.DailySync}=-");
             var syncStatus = await appLog.GetAppSyncStatus(appLog.AppId);
             if (syncStatus != AppStatus.NoSync && syncStatus != AppStatus.DailySyncFinished
                                                && syncStatus != AppStatus.PeriodicSyncFinished
@@ -29,7 +29,7 @@ namespace v00v.Services.Dispatcher
                                                && syncStatus != AppStatus.SyncWithoutPlaylistFinished)
             {
                 setLog?.Invoke($"{syncStatus} in progress, bye");
-                setLog?.Invoke($"-=stop {BaseSync.DailySync}=-");
+                setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {BaseSync.DailySync}=-");
                 return;
             }
 
@@ -47,7 +47,7 @@ namespace v00v.Services.Dispatcher
 
             await appLog.SetStatus(AppStatus.DailySyncFinished, $"{BaseSync.DailySync} finished {end}");
 
-            setLog?.Invoke($"-=stop {BaseSync.DailySync}=-");
+            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {BaseSync.DailySync}=-");
 
             updateList?.Invoke(res);
         }
