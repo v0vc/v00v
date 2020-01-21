@@ -9,95 +9,52 @@
     >
     
     <UserControl.KeyBindings>
-        <KeyBinding Command="{Binding Context.CloseCommand, Mode=OneTime}" Gesture="Escape"/>
+        <KeyBinding Command="{Binding CloseCommand, Mode=OneWay}" Gesture="Escape"/>
     </UserControl.KeyBindings>
 
-    <Grid Name="grid"
-        RowDefinitions="auto,*"
-        ColumnDefinitions="*,auto,*">
+    <Grid Name="grid" RowDefinitions="auto,*" ColumnDefinitions="*,auto,*">
         
-        <Rectangle
-            Grid.RowSpan="3"
-            Grid.ColumnSpan="3"
-            Fill="#000000"
-            Opacity="0.75" />
+        <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3" Fill="#000000" Opacity="0.75" />
         
-        <Border
-            Grid.Column="1"
-            Grid.Row="0"
-            Margin="0,24,0,0"
-            Background="#ffffff"
-            BorderThickness="1"
-            BorderBrush="#00c8ff"
-            CornerRadius="2">
+        <Border Grid.Column="1" Grid.Row="0" Margin="0,24,0,0" Background="#ffffff" BorderThickness="1" BorderBrush="#00c8ff" CornerRadius="2">
             
-            <Grid
-                RowDefinitions="auto,auto,auto"
-                ColumnDefinitions="auto,*,auto">
+            <Grid RowDefinitions="auto,auto,auto" ColumnDefinitions="auto,*,auto">
                 
-                <Border
-                    Classes="Title"
-                    Grid.Row="0"
-                    Grid.RowSpan="2"
-                    Grid.ColumnSpan="3">
-                    <TextBlock
-                        Foreground="#444444"
-                        FontWeight="Medium"
-                        Text="{Binding Context.Title, Mode=OneWay}"
-                        VerticalAlignment="Center" />
-                    
+                <Border Classes="Title" Grid.Row="0" Grid.RowSpan="2" Grid.ColumnSpan="3">
+                    <TextBlock Foreground="#444444" FontWeight="Medium" Text="{Binding Context.Title, Mode=OneWay}" VerticalAlignment="Center" />
                 </Border>
-                
-                <Button
-                    Grid.Row="0"
-                    Grid.Column="2"
-                    Command="{Binding Context.CloseCommand, Mode=OneTime}"
-                    Width="16"
-                    Height="16"
-                    Margin="8"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    IsEnabled="{Binding !Context.IsWorking, Mode=OneWay}"
-                    >
-                    
-                    <Image
-                        Source="resm:v00v.MainApp.Icons.Dark.X32.png?assembly=v00v.MainApp"
-                        Width="16"
-                        Height="16"
-                        Opacity="0.66" />
-                </Button>
-                
-                <Carousel
-                    Grid.Row="2"
-                    Grid.ColumnSpan="3"
-                    MinWidth="380"
-                    MinHeight="20"
-                    Margin="6"
-                    Items="{Binding Contexts, Mode=OneWay}"
-                    SelectedItem="{Binding Context, Mode=OneWay}">
-                    
-                    <Carousel.DataTemplates>
 
+                <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
+                    <Button Command="{Binding ExpandCommand, Mode=OneWay}" IsVisible="{Binding Context.CanExpanded, Mode=OneWay}"
+                            Width="16" Height="16" Margin="8" Background="Transparent" BorderThickness="0"
+                            >
+                        <Image Source="{Binding Context.ExpandThumb, Mode=OneWay}" Opacity="0.66"/>
+                    </Button>
+                    <Button Command="{Binding CloseCommand, Mode=OneWay}"
+                            Width="16" Height="16" Margin="8" Background="Transparent" BorderThickness="0"
+                            IsEnabled="{Binding !Context.IsWorking, Mode=OneWay}"
+                            >
+                        <Image Source="resm:v00v.MainApp.Icons.Dark.X32.png?assembly=v00v.MainApp" Width="16" Height="16" Opacity="0.66" />
+                    </Button>
+                </StackPanel>
+
+                <Carousel Grid.Row="2" Grid.ColumnSpan="3" MinWidth="380" MinHeight="20" Margin="6" 
+                          Items="{Binding Contexts, Mode=OneWay}" SelectedItem="{Binding Context, Mode=OneWay}"
+                          >
+                    <Carousel.DataTemplates>
                         <DataTemplate DataType="{x:Type channelmodel:ChannelPopupContext}">
                             <channelview:ChannelPopupControl />
                         </DataTemplate>
-
                         <DataTemplate DataType="{x:Type itemmodel:ItemPopupContext}">
                             <itemview:ItemPopupControl />
                         </DataTemplate>
-                        
                     </Carousel.DataTemplates>
-                    
                 </Carousel>
-                
             </Grid>
-            
         </Border>
-        
     </Grid>
     
     <UserControl.Styles>
-        
         <Style Selector="Border.Title">
             <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="10,0,10,0"/>
@@ -107,12 +64,6 @@
             <Setter Property="BorderBrush" Value="#dddddd" />
             <!-- <Setter Property="CornerRadius" Value="8,8,0,0" /> -->
         </Style>
-        
-        <!--<Style Selector="Border.Title TextBlock">
-             <Setter Property="Foreground" Value="#ffffff" /> 
-             <Setter Property="FontSize" Value="13" /> 
-        </Style>-->
-
     </UserControl.Styles>
     
 </UserControl>

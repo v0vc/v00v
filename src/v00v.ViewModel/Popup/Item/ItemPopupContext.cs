@@ -25,6 +25,7 @@ namespace v00v.ViewModel.Popup.Item
         private readonly ReadOnlyObservableCollection<Comment> _comments;
         private readonly Model.Entities.Item _item;
         private readonly IItemRepository _itemRepository;
+        private readonly IPopupController _popupController;
         private readonly IYoutubeService _youtubeService;
 
         #endregion
@@ -43,23 +44,26 @@ namespace v00v.ViewModel.Popup.Item
         #region Constructors
 
         public ItemPopupContext(Model.Entities.Item item) : this(AvaloniaLocator.Current.GetService<IYoutubeService>(),
-                                                                 AvaloniaLocator.Current.GetService<IItemRepository>())
+                                                                 AvaloniaLocator.Current.GetService<IItemRepository>(),
+                                                                 AvaloniaLocator.Current.GetService<IPopupController>())
         {
+            CurrentWidth = _popupController.MinWidth;
+            CurrentHeight = _popupController.MinHeight;
             _item = item;
             Description = item.Description.WordWrap(75);
             if (item.LargeThumb == null)
             {
                 Thumb = item.Thumb;
-                ImageWidth = 120;
-                ImageHeight = 90;
-                DescrHeight = 410;
+                ImageWidth = _popupController.MinImageWidth;
+                ImageHeight = _popupController.MinImageHeight;
+                DescrHeight = _popupController.MinDescrHeight;
             }
             else
             {
                 Thumb = item.LargeThumb;
-                ImageWidth = 480;
-                ImageHeight = 360;
-                DescrHeight = 140;
+                ImageWidth = _popupController.MaxImageWidth;
+                ImageHeight = _popupController.MaxImageHeight;
+                DescrHeight = _popupController.MaxDescrHeight;
             }
 
             Title = item.ChannelTitle;
@@ -68,13 +72,14 @@ namespace v00v.ViewModel.Popup.Item
             All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
                 .Sort(GetCommentSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _comments).DisposeMany().Subscribe();
-            this.WhenValueChanged(x => x.SelectedTab).Where(x => x == 1).InvokeCommand(LoadCommentsCommand);
+            this.WhenValueChanged(x => x.SelectedTab).InvokeCommand(LoadCommentsCommand);
         }
 
-        private ItemPopupContext(IYoutubeService youtubeService, IItemRepository itemRepository)
+        private ItemPopupContext(IYoutubeService youtubeService, IItemRepository itemRepository, IPopupController popupController)
         {
             _youtubeService = youtubeService;
             _itemRepository = itemRepository;
+            _popupController = popupController;
             LoadCommentsCommand = ReactiveCommand.CreateFromTask((byte tab) => LoadComments(tab), null, RxApp.MainThreadScheduler);
             LoadRepliesCommand = ReactiveCommand.CreateFromTask((Comment c) => LoadReplies(c), null, RxApp.MainThreadScheduler);
             SetSortCommand = ReactiveCommand.Create((string par) => SetSort(par), null, RxApp.MainThreadScheduler);
@@ -224,11 +229,19 @@ namespace v00v.ViewModel.Popup.Item
 
         private async Task LoadComments(byte selectedTab)
         {
-            if (selectedTab == 0 || _comments.Count > 0)
+            if (selectedTab == 0)
             {
+                CanExpanded = false;
                 return;
             }
 
+            if (_comments.Count > 0)
+            {
+                CanExpanded = true;
+                return;
+            }
+
+            CanExpanded = true;
             Working = true;
             var oldTitle = Title;
             Title += ", loading comments..";

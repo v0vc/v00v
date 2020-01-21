@@ -27,18 +27,14 @@ namespace v00v.ViewModel
 
         public MainWindowViewModel() : this(AvaloniaLocator.Current.GetService<IPopupController>())
         {
-            PopupModel = PopupModel.Hidden();
-
-            var trigger = _popupController?.Trigger;
-
-            trigger?.Subscribe(context =>
+            PopupModel = new PopupModel(null);
+            _popupController?.Trigger?.Subscribe(context =>
             {
-                PopupModel = context == null ? PopupModel.Hidden() : PopupModel.NoHidden(context, _popupController);
+                PopupModel = new PopupModel(context);
             });
 
             CatalogModel = new CatalogModel(SetTitle, SetPageIndex);
             StartupModel = AvaloniaLocator.Current.GetService<IStartupModel>() as StartupModel;
-
             WindowTitle = $"Channels: {CatalogModel.Entries.Count - 1}";
         }
 

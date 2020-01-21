@@ -4,15 +4,13 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="clr-namespace:v00v.Views.Controls"
     xmlns:item="clr-namespace:v00v.Views.Popup.Item">
-    <TabControl MaxWidth="480" MinWidth="480" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
+    <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
         <TabItem Header="Information">
-            <Grid RowDefinitions="auto,auto">
-                <Image Grid.Row="0" 
-                       Source="{Binding Thumb, Mode=OneTime}" 
-                       Stretch="Fill" 
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Left"
-                       Width="{Binding ImageWidth, Mode=OneTime}" Height="{Binding ImageHeight, Mode=OneTime}"
+            <Grid RowDefinitions="auto,auto" Width="480">
+                <Image Grid.Row="0" Source="{Binding Thumb, Mode=OneTime}" 
+                       Stretch="Fill" VerticalAlignment="Center" HorizontalAlignment="Left"
+                       Width="{Binding ImageWidth, Mode=OneTime}" 
+                       Height="{Binding ImageHeight, Mode=OneTime}"
                        />
 
                 <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
@@ -28,7 +26,7 @@
             </Grid>
         </TabItem>
         <TabItem Header="Comments">
-            <Grid RowDefinitions="*,33" Height="503">
+            <Grid RowDefinitions="*,33" Height="{Binding CurrentHeight, Mode=TwoWay}" Width="{Binding CurrentWidth, Mode=TwoWay}">
                 <ListBox Name="CommentList" BorderThickness="0" Grid.Row="0"
                          Items="{Binding Comments, Mode=OneWay}"
                          SelectedItem="{Binding SelectedComment, Mode=TwoWay}"

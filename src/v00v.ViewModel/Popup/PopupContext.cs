@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+﻿using Avalonia.Media.Imaging;
 using v00v.Model;
 
 namespace v00v.ViewModel.Popup
@@ -7,6 +7,10 @@ namespace v00v.ViewModel.Popup
     {
         #region Fields
 
+        private bool _canExpanded;
+        private int _currentHeight;
+        private int _currentWidth;
+        private Bitmap _expandThumb;
         private bool _isWorking;
         private string _title;
 
@@ -14,7 +18,29 @@ namespace v00v.ViewModel.Popup
 
         #region Properties
 
-        public ICommand CloseCommand { get; set; }
+        public bool CanExpanded
+        {
+            get => _canExpanded;
+            set => Update(ref _canExpanded, value);
+        }
+
+        public int CurrentHeight
+        {
+            get => _currentHeight;
+            set => Update(ref _currentHeight, value);
+        }
+
+        public int CurrentWidth
+        {
+            get => _currentWidth;
+            set => Update(ref _currentWidth, value);
+        }
+
+        public Bitmap ExpandThumb
+        {
+            get => _expandThumb;
+            set => Update(ref _expandThumb, value);
+        }
 
         public bool IsWorking
         {
