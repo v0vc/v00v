@@ -11,9 +11,9 @@
                   Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}"
                   IsEnabled="{Binding EnableLog, Mode=OneWay}"
                   >
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" Height="29">
                     <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
-                    <ComboBox Width="90" Height="25" Margin="10,0,0,1" BorderThickness="1" 
+                    <ComboBox Width="90" Height="25" Margin="10,3,0,0" BorderThickness="1" 
                               IsVisible="{Binding EnableTags, Mode=OneWay}"
                               ToolTip.Tip="Tag"
                               VirtualizationMode="Simple" 
@@ -94,7 +94,7 @@
         <Style Selector="TextBox">
             <Setter Property="Height" Value="25" />
             <Setter Property="Width" Value="150" />
-            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="Margin" Value="10,3,0,0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#ffffff" />
             <Setter Property="Background" Value="#1b2333" />

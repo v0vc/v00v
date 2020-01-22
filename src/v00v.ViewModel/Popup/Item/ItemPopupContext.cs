@@ -47,6 +47,7 @@ namespace v00v.ViewModel.Popup.Item
                                                                  AvaloniaLocator.Current.GetService<IItemRepository>(),
                                                                  AvaloniaLocator.Current.GetService<IPopupController>())
         {
+            ContextId = 1;
             CurrentWidth = _popupController.MinWidth;
             CurrentHeight = _popupController.MinHeight;
             _item = item;

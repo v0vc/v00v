@@ -68,7 +68,6 @@
                              Orientation="Vertical" Opacity="0.5" MinHeight="0"
                              />
             </Panel>
-
         </Grid>
     </Border>
 </UserControl>

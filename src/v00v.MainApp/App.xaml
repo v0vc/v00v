@@ -42,5 +42,9 @@
             <Setter Property="Padding" Value="3,2,3,2"/>
         </Style>
 
+        <Style Selector="Expander /template/ ToggleButton#PART_toggle:pointerover /template/ Border">
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+
     </Application.Styles>
 </Application>

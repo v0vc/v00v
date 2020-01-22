@@ -76,6 +76,7 @@ namespace v00v.ViewModel.Popup.Channel
             _resortList = resortList;
             _getMinOrder = getMinOrder;
 
+            ContextId = 0;
             All = new SourceList<Tag>();
             if (channel?.Tags.Count > 0)
             {

@@ -24,6 +24,8 @@ namespace v00v.ViewModel.Popup
             set => Update(ref _canExpanded, value);
         }
 
+        public byte ContextId { get; set; }
+
         public int CurrentHeight
         {
             get => _currentHeight;

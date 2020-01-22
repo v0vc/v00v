@@ -34,18 +34,22 @@ namespace v00v.ViewModel.Popup
                 Contexts = new[] { context };
                 Context = context;
                 CloseCommand = ReactiveCommand.Create(_popupController.Hide, null, RxApp.MainThreadScheduler);
-                ExpandCommand = ReactiveCommand.Create(() => ExpandPopup(context), null, RxApp.MainThreadScheduler);
-                if (_popupController.ExpandUp == null)
-                {
-                    _popupController.ExpandUp = Convert.FromBase64String(_popupController.ExpandUpPopup).CreateThumb();
-                }
 
-                if (_popupController.ExpandDown == null)
+                if (context.ContextId == 1)
                 {
-                    _popupController.ExpandDown = Convert.FromBase64String(_popupController.ExpandDownPopup).CreateThumb();
-                }
+                    ExpandCommand = ReactiveCommand.Create(() => ExpandPopup(context), null, RxApp.MainThreadScheduler);
+                    if (_popupController.ExpandUp == null)
+                    {
+                        _popupController.ExpandUp = Convert.FromBase64String(_popupController.ExpandUpPopup).CreateThumb();
+                    }
 
-                context.ExpandThumb = _popupController.ExpandUp;
+                    if (_popupController.ExpandDown == null)
+                    {
+                        _popupController.ExpandDown = Convert.FromBase64String(_popupController.ExpandDownPopup).CreateThumb();
+                    }
+
+                    context.ExpandThumb = _popupController.ExpandUp;
+                }
             }
         }
 

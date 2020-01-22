@@ -14,7 +14,7 @@
         <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9" Text="{Binding SearchText, Mode=TwoWay}" />
 
         <ListBox Grid.Row="1" Grid.ColumnSpan="2" BorderThickness="0"
-            Items="{Binding Entries}"
+            Items="{Binding Entries, Mode=OneWay}"
             SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
             VirtualizationMode="Simple"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -100,7 +100,7 @@
 
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header >
-                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="27">
+                <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="29">
                     <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />
@@ -305,7 +305,7 @@
         <Style Selector="RadioButton.dot">
             <Setter Property="RenderTransform">
                 <Setter.Value>
-                    <MatrixTransform Matrix="0.6,0,0,0.6,-2,-5" />
+                    <MatrixTransform Matrix="0.6,0,0,0.6,-3,-4" />
                 </Setter.Value>
             </Setter>
         </Style>
