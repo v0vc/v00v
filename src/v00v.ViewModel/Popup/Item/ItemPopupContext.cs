@@ -68,11 +68,9 @@ namespace v00v.ViewModel.Popup.Item
             }
 
             Title = item.ChannelTitle;
-
-            All = new SourceCache<Comment, string>(x => x.CommentId);
-            All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter))
-                .Sort(GetCommentSorter(), SortOptimisations.ComparesImmutableValuesOnly, 25).ObserveOn(RxApp.MainThreadScheduler)
-                .Bind(out _comments).DisposeMany().Subscribe();
+            All = new SourceList<Comment>();
+            All.Connect().Filter(this.WhenValueChanged(t => t.SearchText).Select(BuildFilter)).Sort(GetCommentSorter())
+                .ObserveOn(RxApp.MainThreadScheduler).Bind(out _comments).DisposeMany().Subscribe();
             this.WhenValueChanged(x => x.SelectedTab).InvokeCommand(LoadCommentsCommand);
         }
 
@@ -91,7 +89,7 @@ namespace v00v.ViewModel.Popup.Item
 
         #region Properties
 
-        public SourceCache<Comment, string> All { get; }
+        public SourceList<Comment> All { get; }
         public IEnumerable<Comment> Comments => _comments;
 
         public CommentSort CommentSort
@@ -223,8 +221,12 @@ namespace v00v.ViewModel.Popup.Item
                 parcomm.Order += comment.Replies.Count;
             }
 
-            All.AddOrUpdate(comment.Replies);
-            CommentSort = CommentSort.Order;
+            All.AddRange(comment.Replies);
+            if (CommentSort != CommentSort.Order)
+            {
+                CommentSort = CommentSort.Order;
+            }
+
             comment.IsExpanded = true;
         }
 
@@ -246,7 +248,7 @@ namespace v00v.ViewModel.Popup.Item
             Working = true;
             var oldTitle = Title;
             Title += ", loading comments..";
-            All.AddOrUpdate(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
+            All.AddRange(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
             Title = oldTitle;
             if (!_comments.Any())
             {
@@ -286,7 +288,12 @@ namespace v00v.ViewModel.Popup.Item
                         comm.Order -= comment.Replies.Count;
                     }
 
-                    All.RemoveKeys(comment.Replies.Select(x => x.CommentId));
+                    All.RemoveMany(comment.Replies);
+                    if (CommentSort != CommentSort.Order)
+                    {
+                        CommentSort = CommentSort.Order;
+                    }
+
                     comment.IsExpanded = false;
                 }
                 else
@@ -313,7 +320,7 @@ namespace v00v.ViewModel.Popup.Item
 
         private void SetSort(string par)
         {
-            All.RemoveKeys(_comments.Where(x => x.IsReply).Select(x => x.CommentId));
+            All.RemoveMany(_comments.Where(x => x.IsReply));
             SearchText = null;
             Parallel.ForEach(_comments.Where(x => x.IsExpanded),
                              comment =>
