@@ -409,15 +409,16 @@ namespace v00v.ViewModel.Startup
                 return;
             }
 
-            var param = IsYoutubeLink ? MakeParam(SelectedFormat) : $"-o \"{BaseDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}";
-
             await Task.Run(() =>
             {
-                using (var process = Process.Start(YouParser, param))
+                using (var process = Process.Start(YouParser,
+                                                   IsYoutubeLink
+                                                       ? MakeParam(SelectedFormat)
+                                                       : $"-o \"{BaseDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}"))
                 {
                     process?.Close();
                 }
-            }).ConfigureAwait(false);
+            }).ContinueWith(x => DownloadUrl = null);
         }
 
         private string MakeParam(string par)

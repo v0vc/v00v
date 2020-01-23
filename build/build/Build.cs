@@ -17,9 +17,6 @@ class Build : NukeBuild
     [Solution]
     readonly Solution Solution;
 
-    [GitRepository]
-    readonly GitRepository GitRepository;
-
     [Parameter("configuration")]
     public string Configuration { get; set; }
 
@@ -37,14 +34,12 @@ class Build : NukeBuild
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
 
-    //AbsolutePath TestsDirectory => RootDirectory / "tests";
-
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
     protected override void OnBuildInitialized()
     {
-        Configuration = Configuration ?? "Release";
-        VersionSuffix = VersionSuffix ?? "";
+        Configuration ??= "Release";
+        VersionSuffix ??= string.Empty;
     }
 
     private void DeleteDirectories(IReadOnlyCollection<string> directories)
@@ -59,7 +54,6 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
-            //DeleteDirectories(GlobDirectories(TestsDirectory, "**/bin", "**/obj"));
             EnsureCleanDirectory(ArtifactsDirectory);
         });
 
@@ -82,34 +76,8 @@ class Build : NukeBuild
                 .EnableNoRestore());
         });
 
-    Target Test => _ => _
-        .DependsOn(Compile)
-        .Executes(() =>
-        {
-            DotNetTest(s => s
-                .SetProjectFile(Solution)
-                .SetConfiguration(Configuration)
-                .SetLogger("trx")
-                .SetResultsDirectory(ArtifactsDirectory / "TestResults")
-                .EnableNoBuild()
-                .EnableNoRestore());
-        });
-
-    Target Pack => _ => _
-        .DependsOn(Test)
-        .Executes(() =>
-        {
-            DotNetPack(s => s
-                .SetProject(Solution)
-                .SetConfiguration(Configuration)
-                .SetVersionSuffix(VersionSuffix)
-                .SetOutputDirectory(ArtifactsDirectory / "NuGet")
-                .EnableNoBuild()
-                .EnableNoRestore());
-        });
-
     Target Publish => _ => _
-        .DependsOn(Test)
+        .DependsOn(Compile)
         .Requires(() => PublishRuntime)
         .Requires(() => PublishFramework)
         .Requires(() => PublishProject)

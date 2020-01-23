@@ -154,6 +154,7 @@ namespace v00v.Model.Entities
             {
                 _proc = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
                 _proc.OutputDataReceived += OutputDataReceived;
+                _proc.ErrorDataReceived += ErrorDataReceived;
                 _proc.Start();
                 _proc.StandardInput.Close();
                 _proc.BeginOutputReadLine();
@@ -236,6 +237,7 @@ namespace v00v.Model.Entities
             }
 
             _proc.OutputDataReceived -= OutputDataReceived;
+            _proc.OutputDataReceived -= ErrorDataReceived;
             _proc.Dispose();
         }
 
@@ -268,6 +270,11 @@ namespace v00v.Model.Entities
         #endregion
 
         #region Event Handling
+
+        private void ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            _setLog?.Invoke(e?.Data);
+        }
 
         private void OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
