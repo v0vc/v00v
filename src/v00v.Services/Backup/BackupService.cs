@@ -40,6 +40,38 @@ namespace v00v.Services.Backup
 
         #endregion
 
+        #region Properties
+
+        public string AppSettings => "AppSettings";
+        public bool CustomDbEnabled => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableCustomDb}");
+        public string CustomDbPath => _configuration.GetValue<string>($"{AppSettings}:{KeyDbDir}");
+        public string DailySyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailySyncSchedule}");
+        public string DownloadDir => _configuration.GetValue<string>($"{AppSettings}:{KeyDownloadDir}");
+        public bool EnableDailySchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySchedule}");
+        public bool EnableParserUpdateSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableParserUpdateSchedule}");
+        public bool EnableRepeatSyncSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSyncSchedule}");
+        public string KeyDailySyncSchedule => "DailySyncSchedule(HH:mm)";
+        public string KeyDbDir => "DbDir";
+        public string KeyDownloadDir => "DownloadDir";
+        public string KeyEnableCustomDb => "EnableCustomDb";
+        public string KeyEnableDailySchedule => "EnableDailySyncSchedule";
+        public string KeyEnableParserUpdateSchedule => "EnableParserUpdateSchedule";
+        public string KeyEnableRepeatSyncSchedule => "EnableRepeatSyncSchedule";
+        public string KeyParserUpdateSchedule => "ParserUpdateSchedule(HH:mm)";
+        public string KeyRepeatSyncSchedule => "RepeatSyncSchedule(min)";
+        public string KeyWatchApp => "WatchApp";
+        public string KeyYouParam => "YouParam";
+        public string KeyYouParser => "YouParser";
+        public string ParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyParserUpdateSchedule}");
+        public string RepeatSyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSyncSchedule}");
+        public string UseSqlite { get; set; }
+        public bool UseSqliteInit { get; set; } = false;
+        public string WatchApp => _configuration.GetValue<string>($"{AppSettings}:{KeyWatchApp}");
+        public string YouParam => _configuration.GetValue<string>($"{AppSettings}:{KeyYouParam}");
+        public string YouParser => _configuration.GetValue<string>($"{AppSettings}:{KeyYouParser}");
+
+        #endregion
+
         #region Methods
 
         public async Task<int> Backup(IEnumerable<Channel> entries, Action<string> setLog)
@@ -77,12 +109,6 @@ namespace v00v.Services.Backup
             File.Move(tempFileName, fileName);
             setLog?.Invoke($"Done, saved to {fileName}");
             return bcp.Items.Count();
-        }
-
-        public string GetSettingsName()
-        {
-            var prov = (FileConfigurationProvider)_configuration.Providers.First();
-            return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
         }
 
         public async Task<RestoreResult> Restore(IEnumerable<string> existChannels,
@@ -170,6 +196,15 @@ namespace v00v.Services.Backup
             setLog?.Invoke($"Total planned: {res.PlannedCount}");
             setLog?.Invoke($"Total watched: {res.WatchedCount}");
             return res;
+        }
+
+        public void SaveChanges(string key, string value)
+        {
+            var prov = (FileConfigurationProvider)_configuration.Providers.First();
+            var file = Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
+            dynamic jsonObj = JsonConvert.DeserializeObject(File.ReadAllText(file));
+            jsonObj[AppSettings][key] = value;
+            File.WriteAllText(file, JsonConvert.SerializeObject(jsonObj, Formatting.Indented));
         }
 
         private bool CheckJsonBackup(Action<string> setLog)

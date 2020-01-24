@@ -119,8 +119,7 @@ namespace v00v
                                               AvaloniaLocator.Current.GetService<IChannelRepository>()));
 
             AvaloniaLocator.CurrentMutable.Bind<IStartupModel>()
-                .ToConstant(new StartupModel(AvaloniaLocator.Current.GetService<IConfigurationRoot>(),
-                                             AvaloniaLocator.Current.GetService<IBackupService>(),
+                .ToConstant(new StartupModel(AvaloniaLocator.Current.GetService<IBackupService>(),
                                              AvaloniaLocator.Current.GetService<IYoutubeService>()));
         }
 
@@ -140,7 +139,7 @@ namespace v00v
             }
 
             context.Dispose();
-            AvaloniaLocator.Current.GetService<IPopupController>().Trigger.Dispose();
+            AvaloniaLocator.Current.GetService<IPopupController>().Trigger?.Dispose();
             AvaloniaLocator.Current.GetService<ITaskDispatcher>().Stop();
         }
 

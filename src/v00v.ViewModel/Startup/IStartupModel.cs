@@ -6,10 +6,12 @@ namespace v00v.ViewModel.Startup
     {
         #region Properties
 
-        string BaseDir { get; set; }
         bool DailyParsed { get; }
         TimeSpan DailyParserUpdateTime { get; }
         TimeSpan DailySyncTime { get; }
+        string DbDir { get; set; }
+        string DownloadDir { get; set; }
+        bool EnableCustomDb { get; }
         bool EnableDailySchedule { get; }
         bool EnableParserUpdateSchedule { get; }
         bool EnableRepeatSchedule { get; }

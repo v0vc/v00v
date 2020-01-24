@@ -31,7 +31,18 @@ namespace v00v.Views.Startup
                 {
                     if (x.IsCompletedSuccessfully && !string.IsNullOrWhiteSpace(ofd.Result))
                     {
-                        AvaloniaLocator.Current.GetService<IStartupModel>().BaseDir = ofd.Result;
+                        AvaloniaLocator.Current.GetService<IStartupModel>().DownloadDir = ofd.Result;
+                    }
+                });
+            };
+            this.FindControl<Button>("SelectDbFolder").Click += delegate
+            {
+                var ofd = new OpenFolderDialog { Title = "Select folder" }.ShowAsync(GetWindow());
+                ofd.ContinueWith(x =>
+                {
+                    if (x.IsCompletedSuccessfully && !string.IsNullOrWhiteSpace(ofd.Result))
+                    {
+                        AvaloniaLocator.Current.GetService<IStartupModel>().DbDir = ofd.Result;
                     }
                 });
             };

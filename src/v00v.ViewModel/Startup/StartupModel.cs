@@ -6,8 +6,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using DynamicData.Binding;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using v00v.Model;
 using v00v.Model.Extensions;
 using v00v.Services.Backup;
@@ -17,35 +15,20 @@ namespace v00v.ViewModel.Startup
 {
     public class StartupModel : ViewModelBase, IStartupModel
     {
-        #region Constants
-
-        private const string AppSettings = "AppSettings";
-        private const string KeyBaseDir = "BaseDir";
-        private const string KeyDailySyncSchedule = "DailySyncSchedule(HH:mm)";
-        private const string KeyEnableDailySchedule = "EnableDailySyncSchedule";
-        private const string KeyEnableParserUpdateSchedule = "EnableParserUpdateSchedule";
-        private const string KeyEnableRepeatSyncSchedule = "EnableRepeatSyncSchedule";
-        private const string KeyParserUpdateSchedule = "ParserUpdateSchedule(HH:mm)";
-        private const string KeyRepeatSyncSchedule = "RepeatSyncSchedule(min)";
-        private const string KeyWatchApp = "WatchApp";
-        private const string KeyYouParam = "YouParam";
-        private const string KeyYouParser = "YouParser";
-
-        #endregion
-
         #region Static and Readonly Fields
 
-        private readonly IBackupService _backupService;
         private readonly bool _isInited;
 
         #endregion
 
         #region Fields
 
-        private string _baseDir;
         private TimeSpan _dailyParserUpdateTime;
         private TimeSpan _dailySyncTime;
+        private string _dbDir;
+        private string _downloadDir;
         private string _downloadUrl;
+        private bool _enableCustomDb;
         private bool _enableDailySchedule;
         private bool _enableParserUpdateSchedule;
         private bool _enableRepeatSchedule;
@@ -65,10 +48,8 @@ namespace v00v.ViewModel.Startup
 
         #region Constructors
 
-        public StartupModel(IConfiguration configuration, IBackupService backupService, IYoutubeService youtubeService)
+        public StartupModel(IBackupService backupService, IYoutubeService youtubeService)
         {
-            _backupService = backupService;
-
             Hours = new[]
             {
                 "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18",
@@ -85,15 +66,21 @@ namespace v00v.ViewModel.Startup
 
             DownloadCommand = new Command(async () => await DownloadItem());
 
-            _baseDir = configuration.GetValue<string>($"{AppSettings}:{KeyBaseDir}");
-            _watchApp = configuration.GetValue<string>($"{AppSettings}:{KeyWatchApp}");
-            YouParser = configuration.GetValue<string>($"{AppSettings}:{KeyYouParser}");
-            YouParam = configuration.GetValue<string>($"{AppSettings}:{KeyYouParam}");
+            _downloadDir = backupService.DownloadDir;
+            _enableCustomDb = backupService.CustomDbEnabled;
+            if (_enableCustomDb)
+            {
+                _dbDir = backupService.CustomDbPath;
+            }
 
-            _enableParserUpdateSchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableParserUpdateSchedule}");
+            _watchApp = backupService.WatchApp;
+            YouParser = backupService.YouParser;
+            YouParam = backupService.YouParam;
+
+            _enableParserUpdateSchedule = backupService.EnableParserUpdateSchedule;
             if (_enableParserUpdateSchedule)
             {
-                ParserUpdateParsed = DateTime.TryParseExact(configuration.GetValue<string>($"{AppSettings}:{KeyParserUpdateSchedule}"),
+                ParserUpdateParsed = DateTime.TryParseExact(backupService.ParserUpdateSchedule,
                                                             "HH:mm",
                                                             CultureInfo.InvariantCulture,
                                                             DateTimeStyles.None,
@@ -106,10 +93,10 @@ namespace v00v.ViewModel.Startup
                 }
             }
 
-            _enableDailySchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySchedule}");
+            _enableDailySchedule = backupService.EnableDailySchedule;
             if (_enableDailySchedule)
             {
-                DailyParsed = DateTime.TryParseExact(configuration.GetValue<string>($"{AppSettings}:{KeyDailySyncSchedule}"),
+                DailyParsed = DateTime.TryParseExact(backupService.DailySyncSchedule,
                                                      "HH:mm",
                                                      CultureInfo.InvariantCulture,
                                                      DateTimeStyles.None,
@@ -122,10 +109,10 @@ namespace v00v.ViewModel.Startup
                 }
             }
 
-            _enableRepeatSchedule = configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSyncSchedule}");
+            _enableRepeatSchedule = backupService.EnableRepeatSyncSchedule;
             if (_enableRepeatSchedule)
             {
-                RepeatParsed = int.TryParse(configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSyncSchedule}"),
+                RepeatParsed = int.TryParse(backupService.RepeatSyncSchedule,
                                             NumberStyles.None,
                                             CultureInfo.InvariantCulture,
                                             out var min);
@@ -140,69 +127,92 @@ namespace v00v.ViewModel.Startup
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyEnableRepeatSyncSchedule, EnableRepeatSchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableRepeatSyncSchedule, EnableRepeatSchedule.ToString());
                 }
             });
             this.WhenValueChanged(x => EnableDailySchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyEnableDailySchedule, EnableDailySchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableDailySchedule, EnableDailySchedule.ToString());
+                }
+            });
+            this.WhenValueChanged(x => EnableCustomDb).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    backupService.SaveChanges(backupService.KeyEnableCustomDb, EnableCustomDb.ToString());
+                    DbDir = !EnableCustomDb ? null : backupService.CustomDbPath;
                 }
             });
             this.WhenValueChanged(x => EnableParserUpdateSchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyEnableParserUpdateSchedule, EnableParserUpdateSchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableParserUpdateSchedule, EnableParserUpdateSchedule.ToString());
                 }
             });
             this.WhenValueChanged(x => RepeatMin).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyRepeatSyncSchedule, RepeatMin.ToString());
+                    backupService.SaveChanges(backupService.KeyRepeatSyncSchedule, RepeatMin.ToString());
                 }
             });
             this.WhenValueChanged(x => SelectedHour).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedMinute).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedParserHour).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
+                    backupService.SaveChanges(backupService.KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedParserMinute).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    SaveChanges(KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
+                    backupService.SaveChanges(backupService.KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
-            this.WhenValueChanged(x => BaseDir).Subscribe(x =>
+            this.WhenValueChanged(x => DownloadDir).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    var path = BaseDir.Trim();
+                    var path = DownloadDir.Trim();
                     if (!string.IsNullOrWhiteSpace(path))
                     {
                         var dir = new DirectoryInfo(path);
                         if (dir.Exists)
                         {
-                            SaveChanges(KeyBaseDir, path);
+                            backupService.SaveChanges(backupService.KeyDownloadDir, path);
+                        }
+                    }
+                }
+            });
+            this.WhenValueChanged(x => DbDir).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    var path = DbDir?.Trim();
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        var dir = new DirectoryInfo(path);
+                        if (dir.Exists)
+                        {
+                            backupService.SaveChanges(backupService.KeyDbDir, path);
                         }
                     }
                 }
@@ -217,7 +227,7 @@ namespace v00v.ViewModel.Startup
                         var fn = new FileInfo(path);
                         if (fn.Exists)
                         {
-                            SaveChanges(KeyWatchApp, path);
+                            backupService.SaveChanges(backupService.KeyWatchApp, path);
                         }
                     }
                 }
@@ -252,12 +262,6 @@ namespace v00v.ViewModel.Startup
 
         #region Properties
 
-        public string BaseDir
-        {
-            get => _baseDir;
-            set => Update(ref _baseDir, value);
-        }
-
         public bool DailyParsed { get; }
 
         public TimeSpan DailyParserUpdateTime
@@ -272,12 +276,30 @@ namespace v00v.ViewModel.Startup
             set => Update(ref _dailySyncTime, value);
         }
 
+        public string DbDir
+        {
+            get => _dbDir;
+            set => Update(ref _dbDir, value);
+        }
+
         public ICommand DownloadCommand { get; set; }
+
+        public string DownloadDir
+        {
+            get => _downloadDir;
+            set => Update(ref _downloadDir, value);
+        }
 
         public string DownloadUrl
         {
             get => _downloadUrl;
             set => Update(ref _downloadUrl, value);
+        }
+
+        public bool EnableCustomDb
+        {
+            get => _enableCustomDb;
+            set => Update(ref _enableCustomDb, value);
         }
 
         public bool EnableDailySchedule
@@ -414,7 +436,7 @@ namespace v00v.ViewModel.Startup
                 using (var process = Process.Start(YouParser,
                                                    IsYoutubeLink
                                                        ? MakeParam(SelectedFormat)
-                                                       : $"-o \"{BaseDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}"))
+                                                       : $"-o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}"))
                 {
                     process?.Close();
                 }
@@ -424,7 +446,7 @@ namespace v00v.ViewModel.Startup
         private string MakeParam(string par)
         {
             string param = null;
-            var basePar = $" -o \"{BaseDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}";
+            var basePar = $" -o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}";
 
             switch (par)
             {
@@ -454,14 +476,6 @@ namespace v00v.ViewModel.Startup
             }
 
             return param;
-        }
-
-        private void SaveChanges(string key, string value)
-        {
-            var file = _backupService.GetSettingsName();
-            dynamic jsonObj = JsonConvert.DeserializeObject(File.ReadAllText(file));
-            jsonObj[AppSettings][key] = value;
-            File.WriteAllText(file, JsonConvert.SerializeObject(jsonObj, Formatting.Indented));
         }
 
         #endregion

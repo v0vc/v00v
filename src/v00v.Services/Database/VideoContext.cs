@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.IO;
+using Avalonia;
+using Microsoft.EntityFrameworkCore;
+using v00v.Services.Backup;
 using v00v.Services.Database.Models;
 
 namespace v00v.Services.Database
@@ -25,7 +28,25 @@ namespace v00v.Services.Database
             //optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             //optionsBuilder.EnableSensitiveDataLogging();
             //optionsBuilder.UseLazyLoadingProxies();
-            optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
+
+            var backupservice = AvaloniaLocator.Current.GetService<IBackupService>();
+            if (!backupservice.UseSqliteInit)
+            {
+                if (backupservice.CustomDbEnabled)
+                {
+                    var dir = new DirectoryInfo(backupservice.CustomDbPath);
+                    backupservice.UseSqlite = dir.Exists ? $"Data Source={dir.FullName}\\data.db" : "Data Source=data.db";
+                }
+                else
+                {
+                    backupservice.UseSqlite = "Data Source=data.db";
+                }
+
+                backupservice.UseSqliteInit = true;
+            }
+
+            optionsBuilder.UseSqlite(backupservice.UseSqlite);
+            //optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

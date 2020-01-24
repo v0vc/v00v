@@ -247,7 +247,7 @@ namespace v00v.ViewModel.Explorer
                     return;
                 }
 
-                var fn = new FileInfo(Path.Combine(_settings.BaseDir, item.ChannelId, item.FileName));
+                var fn = new FileInfo(Path.Combine(_settings.DownloadDir, item.ChannelId, item.FileName));
                 if (!fn.Exists)
                 {
                     return;
@@ -268,7 +268,7 @@ namespace v00v.ViewModel.Explorer
         public async Task Download(string par, Item item)
         {
             var skip = par == "subs";
-            item.SaveDir = $"{Path.Combine(_settings.BaseDir, item.ChannelId)}";
+            item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
             var task = item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
@@ -537,7 +537,7 @@ namespace v00v.ViewModel.Explorer
 
         private async Task RunItem()
         {
-            SelectedEntry?.RunItem(_settings.WatchApp, _settings.BaseDir, $"{_youtubeService.ItemLink}{SelectedEntry.Id}");
+            SelectedEntry?.RunItem(_settings.WatchApp, _settings.DownloadDir, $"{_youtubeService.ItemLink}{SelectedEntry.Id}");
             await SetItemState(WatchState.Watched);
         }
 
