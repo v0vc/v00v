@@ -464,7 +464,7 @@ namespace v00v.ViewModel.Catalog
             IsWorking = true;
             var sw = Stopwatch.StartNew();
             _setTitle.Invoke($"Backup {_entries.Count - 1} channels..");
-            var task = _backupService.Backup(_entries.Where(x => !x.IsStateChannel), SetLog);
+            var task = _backupService.Backup(_entries.Where(x => !x.IsNew && !x.IsStateChannel), SetLog);
             await Task.WhenAll(task).ContinueWith(done =>
             {
                 IsWorking = false;
@@ -1018,21 +1018,29 @@ namespace v00v.ViewModel.Catalog
             if (_settings.EnableDailyBackupSchedule && _settings.DailyBackupParsed)
             {
                 _taskDispatcher.DailyBackup = _settings.DailyBackupTime;
-                Task.Factory.StartNew(() => _taskDispatcher.RunBackup(_backupService, _entries.Where(x => !x.IsNew), SetLog, false),
-                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
-                {
-                    SetLog(t.Exception?.Message);
-                });
+                Task.Factory
+                    .StartNew(() => _taskDispatcher.RunBackup(_backupService,
+                                                              _entries.Where(x => !x.IsNew && !x.IsStateChannel),
+                                                              SetLog,
+                                                              false),
+                              TaskCreationOptions.LongRunning).ContinueWith(t =>
+                    {
+                        SetLog(t.Exception?.Message);
+                    });
             }
 
             if (_settings.EnableRepeatBackupSchedule && _settings.RepeatBackupParsed)
             {
                 _taskDispatcher.RepeatBackup = _settings.RepeatBackupMin;
-                Task.Factory.StartNew(() => _taskDispatcher.RunBackup(_backupService, _entries.Where(x => !x.IsNew), SetLog, true),
-                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
-                {
-                    SetLog(t.Exception?.Message);
-                });
+                Task.Factory
+                    .StartNew(() => _taskDispatcher.RunBackup(_backupService,
+                                                              _entries.Where(x => !x.IsNew && !x.IsStateChannel),
+                                                              SetLog,
+                                                              true),
+                              TaskCreationOptions.LongRunning).ContinueWith(t =>
+                    {
+                        SetLog(t.Exception?.Message);
+                    });
             }
         }
 

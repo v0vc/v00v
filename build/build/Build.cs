@@ -1,11 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Nuke.Common;
-using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -34,7 +30,7 @@ class Build : NukeBuild
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
 
-    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    //AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
     protected override void OnBuildInitialized()
     {
@@ -54,7 +50,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
-            EnsureCleanDirectory(ArtifactsDirectory);
+            //EnsureCleanDirectory(ArtifactsDirectory);
         });
 
     Target Restore => _ => _
@@ -76,19 +72,15 @@ class Build : NukeBuild
                 .EnableNoRestore());
         });
 
-    Target Publish => _ => _
-        .DependsOn(Compile)
-        .Requires(() => PublishRuntime)
-        .Requires(() => PublishFramework)
-        .Requires(() => PublishProject)
-        .Executes(() =>
-        {
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(PublishProject))
-                .SetConfiguration(Configuration)
-                .SetVersionSuffix(VersionSuffix)
-                .SetFramework(PublishFramework)
-                .SetRuntime(PublishRuntime)
-                .SetOutput(ArtifactsDirectory / "Publish" / PublishProject + "-" + PublishFramework + "-" + PublishRuntime));
-        });
+    //Target Publish => _ => _
+    //    .DependsOn(Compile)
+    //    .Requires(() => PublishRuntime)
+    //    .Requires(() => PublishFramework)
+    //    .Requires(() => PublishProject)
+    //    .Executes(() =>
+    //    {
+    //        DotNetPublish(s => s.SetProject(Solution.GetProject(PublishProject)).SetConfiguration(Configuration)
+    //                          .SetVersionSuffix(VersionSuffix).SetFramework(PublishFramework).SetRuntime(PublishRuntime));
+    //        //.SetOutput(ArtifactsDirectory / "Publish" / PublishProject + "-" + PublishFramework + "-" + PublishRuntime));
+    //    });
 }

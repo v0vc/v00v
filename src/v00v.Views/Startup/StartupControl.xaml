@@ -96,12 +96,8 @@
 
                     <StackPanel Orientation="Horizontal" Grid.Row="17" IsVisible="{Binding IsYoutubeLink, Mode=OneWay}">
                         <TextBlock Text="Options:"/>
-                        <ComboBox Margin="23,0,0,0" Width="90" Items="{Binding Formats, Mode=OneTime}"
-                                  SelectedItem="{Binding SelectedFormat, Mode=TwoWay}"
-                                  />
-                        <CheckBox Content="With subtitles" IsChecked="{Binding WithSubs, Mode=TwoWay}" Margin="15,0,0,0" 
-                                  IsEnabled="{Binding SubsEnabled, Mode=OneWay}"
-                                  />
+                        <ComboBox Margin="58,0,0,0" Width="90" Items="{Binding Formats, Mode=OneTime}" SelectedItem="{Binding SelectedFormat, Mode=TwoWay}" />
+                        <CheckBox Content="With subtitles" IsChecked="{Binding WithSubs, Mode=TwoWay}" Margin="15,0,0,0" IsEnabled="{Binding SubsEnabled, Mode=OneWay}" />
                     </StackPanel>
 
                 </Grid>
