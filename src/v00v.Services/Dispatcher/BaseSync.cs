@@ -20,6 +20,8 @@
 
         public const string PeriodicSync = "periodic sync";
 
+        public const string PeriodicUpdate = "periodic parser update";
+
         public const string PlaylistSync = "playlist sync";
 
         public const string SyncPls = "syncPls";
@@ -31,6 +33,7 @@
         public const string UpdateList = "updatelist";
 
         public const string UpdateParser = "updateparser";
+        public const string RepeatParser = "repeatParser";
 
         #endregion
     }

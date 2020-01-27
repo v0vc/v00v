@@ -8,7 +8,7 @@ using v00v.Model.SyncEntities;
 using v00v.Services.Persistence;
 using v00v.Services.Synchronization;
 
-namespace v00v.Services.Dispatcher
+namespace v00v.Services.Dispatcher.Jobs
 {
     [DisallowConcurrentExecution]
     internal class SyncDaily : IJob

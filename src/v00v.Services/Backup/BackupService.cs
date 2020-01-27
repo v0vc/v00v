@@ -45,24 +45,38 @@ namespace v00v.Services.Backup
         public string AppSettings => "AppSettings";
         public bool CustomDbEnabled => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableCustomDb}");
         public string CustomDbPath => _configuration.GetValue<string>($"{AppSettings}:{KeyDbDir}");
+        public string DailyParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailyParserUpdateSchedule}");
         public string DailySyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailySyncSchedule}");
         public string DownloadDir => _configuration.GetValue<string>($"{AppSettings}:{KeyDownloadDir}");
-        public bool EnableDailySchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySchedule}");
-        public bool EnableParserUpdateSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableParserUpdateSchedule}");
+        public bool EnableDailyDataBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyDailyDataBackupSchedule}");
+
+        public bool EnableDailyParserUpdateSchedule =>
+            _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailyParserUpdateSchedule}");
+
+        public bool EnableDailySyncSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySyncSchedule}");
+        public bool EnableRepeatDataBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyRepeatDataBackupSchedule}");
+
+        public bool EnableRepeatParserUpdateSchedule =>
+            _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatParserUpdateSchedule}");
+
         public bool EnableRepeatSyncSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSyncSchedule}");
-        public string KeyDailySyncSchedule => "DailySyncSchedule(HH:mm)";
+        public string KeyDailyDataBackupSchedule => "DailyDataBackupSchedule";
+        public string KeyDailyParserUpdateSchedule => "DailyParserUpdateSchedule";
+        public string KeyDailySyncSchedule => "DailySyncSchedule";
         public string KeyDbDir => "DbDir";
         public string KeyDownloadDir => "DownloadDir";
         public string KeyEnableCustomDb => "EnableCustomDb";
-        public string KeyEnableDailySchedule => "EnableDailySyncSchedule";
-        public string KeyEnableParserUpdateSchedule => "EnableParserUpdateSchedule";
+        public string KeyEnableDailyParserUpdateSchedule => "EnableDailyParserUpdateSchedule";
+        public string KeyEnableDailySyncSchedule => "EnableDailySyncSchedule";
+        public string KeyEnableRepeatParserUpdateSchedule => "EnableRepeatParserUpdateSchedule";
         public string KeyEnableRepeatSyncSchedule => "EnableRepeatSyncSchedule";
-        public string KeyParserUpdateSchedule => "ParserUpdateSchedule(HH:mm)";
-        public string KeyRepeatSyncSchedule => "RepeatSyncSchedule(min)";
+        public string KeyRepeatDataBackupSchedule => "RepeatDataBackupSchedule";
+        public string KeyRepeatParserUpdateSchedule => "RepeatParserUpdateSchedule";
+        public string KeyRepeatSyncSchedule => "RepeatSyncSchedule";
         public string KeyWatchApp => "WatchApp";
         public string KeyYouParam => "YouParam";
         public string KeyYouParser => "YouParser";
-        public string ParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyParserUpdateSchedule}");
+        public string RepeatParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatParserUpdateSchedule}");
         public string RepeatSyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSyncSchedule}");
         public string UseSqlite { get; set; }
         public bool UseSqliteInit { get; set; } = false;

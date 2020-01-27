@@ -5,6 +5,7 @@ using Quartz;
 using Quartz.Impl;
 using v00v.Model.Entities;
 using v00v.Model.SyncEntities;
+using v00v.Services.Dispatcher.Jobs;
 using v00v.Services.Persistence;
 using v00v.Services.Synchronization;
 
@@ -40,6 +41,7 @@ namespace v00v.Services.Dispatcher
         public TimeSpan DailySync { private get; set; }
         public TimeSpan ParserUpdate { private get; set; }
         public int RepeatSync { private get; set; }
+        public int RepeatParser { private get; set; }
 
         private IScheduler Scheduler
         {
@@ -127,16 +129,21 @@ namespace v00v.Services.Dispatcher
             await Scheduler.ScheduleJob(job, trigger);
         }
 
-        public async Task RunUpdateParser(Action<string> log, Action<int> runUpdate)
+        public async Task RunUpdateParser(Action<string> log, Action<int> runUpdate, bool isRepeat)
         {
             await CheckSchedulerStarted();
 
-            var job = JobBuilder.Create<UpdateDaily>().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).Build();
+            var job = JobBuilder.Create<UpdateParser>().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).Build();
             job.JobDataMap[BaseSync.Log] = log;
             job.JobDataMap[BaseSync.UpdateParser] = runUpdate;
+            job.JobDataMap[BaseSync.UpdateParser] = runUpdate;
+            job.JobDataMap[BaseSync.RepeatParser] = isRepeat;
 
-            var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).StartNow()
-                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(ParserUpdate.Hours, ParserUpdate.Minutes)).ForJob(job).Build();
+            var trigger = isRepeat
+                ? TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicUpdate, BaseSync.UpdateGroup).StartNow()
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatParser).RepeatForever()).ForJob(job).Build()
+                : TriggerBuilder.Create().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).StartNow()
+                    .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(ParserUpdate.Hours, ParserUpdate.Minutes)).ForJob(job).Build();
 
             await Scheduler.ScheduleJob(job, trigger);
         }

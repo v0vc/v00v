@@ -29,16 +29,23 @@ namespace v00v.ViewModel.Startup
         private string _downloadDir;
         private string _downloadUrl;
         private bool _enableCustomDb;
-        private bool _enableDailySchedule;
-        private bool _enableParserUpdateSchedule;
-        private bool _enableRepeatSchedule;
+        private bool _enableDailyDataBackupSchedule;
+        private bool _enableDailyParserUpdateSchedule;
+        private bool _enableDailySyncSchedule;
+        private bool _enableRepeatDataBackupSchedule;
+        private bool _enableRepeatParserUpdateSchedule;
+        private bool _enableRepeatSyncSchedule;
         private bool _isYoutubeLink;
-        private int _repeatMin;
+        private int _repeatBackupMin;
+        private int _repeatParserMin;
+        private int _repeatSyncMin;
+        private string _selectedBackupHour;
+        private string _selectedBackupMinute;
         private string _selectedFormat;
-        private string _selectedHour;
-        private string _selectedMinute;
         private string _selectedParserHour;
         private string _selectedParserMinute;
+        private string _selectedSyncHour;
+        private string _selectedSyncMinute;
         private bool _showSettings;
         private bool _subsEnabled;
         private string _watchApp;
@@ -77,15 +84,15 @@ namespace v00v.ViewModel.Startup
             YouParser = backupService.YouParser;
             YouParam = backupService.YouParam;
 
-            _enableParserUpdateSchedule = backupService.EnableParserUpdateSchedule;
-            if (_enableParserUpdateSchedule)
+            _enableDailyParserUpdateSchedule = backupService.EnableDailyParserUpdateSchedule;
+            if (_enableDailyParserUpdateSchedule)
             {
-                ParserUpdateParsed = DateTime.TryParseExact(backupService.ParserUpdateSchedule,
-                                                            "HH:mm",
-                                                            CultureInfo.InvariantCulture,
-                                                            DateTimeStyles.None,
-                                                            out var dt);
-                if (ParserUpdateParsed)
+                DailyParserUpdateParsed = DateTime.TryParseExact(backupService.DailyParserUpdateSchedule,
+                                                                 "HH:mm",
+                                                                 CultureInfo.InvariantCulture,
+                                                                 DateTimeStyles.None,
+                                                                 out var dt);
+                if (DailyParserUpdateParsed)
                 {
                     _dailyParserUpdateTime = dt.TimeOfDay;
                     SelectedParserHour = $"{_dailyParserUpdateTime.Hours:D2}";
@@ -93,48 +100,62 @@ namespace v00v.ViewModel.Startup
                 }
             }
 
-            _enableDailySchedule = backupService.EnableDailySchedule;
-            if (_enableDailySchedule)
+            _enableDailySyncSchedule = backupService.EnableDailySyncSchedule;
+            if (_enableDailySyncSchedule)
             {
-                DailyParsed = DateTime.TryParseExact(backupService.DailySyncSchedule,
-                                                     "HH:mm",
-                                                     CultureInfo.InvariantCulture,
-                                                     DateTimeStyles.None,
-                                                     out var dt);
-                if (DailyParsed)
+                DailySyncParsed = DateTime.TryParseExact(backupService.DailySyncSchedule,
+                                                         "HH:mm",
+                                                         CultureInfo.InvariantCulture,
+                                                         DateTimeStyles.None,
+                                                         out var dt);
+                if (DailySyncParsed)
                 {
                     _dailySyncTime = dt.TimeOfDay;
-                    SelectedHour = $"{_dailySyncTime.Hours:D2}";
-                    SelectedMinute = $"{_dailySyncTime.Minutes:D2}";
+                    SelectedSyncHour = $"{_dailySyncTime.Hours:D2}";
+                    SelectedSyncMinute = $"{_dailySyncTime.Minutes:D2}";
                 }
             }
 
-            _enableRepeatSchedule = backupService.EnableRepeatSyncSchedule;
-            if (_enableRepeatSchedule)
+            _enableRepeatSyncSchedule = backupService.EnableRepeatSyncSchedule;
+            if (_enableRepeatSyncSchedule)
             {
-                RepeatParsed = int.TryParse(backupService.RepeatSyncSchedule,
-                                            NumberStyles.None,
-                                            CultureInfo.InvariantCulture,
-                                            out var min);
-                if (RepeatParsed)
+                RepeatSyncParsed = int.TryParse(backupService.RepeatSyncSchedule,
+                                                NumberStyles.None,
+                                                CultureInfo.InvariantCulture,
+                                                out var min);
+                if (RepeatSyncParsed && min >= 1)
                 {
-                    _repeatMin = min;
-                    RepeatMin = _repeatMin;
+                    _repeatSyncMin = min;
+                    RepeatSyncMin = _repeatSyncMin;
                 }
             }
 
-            this.WhenValueChanged(x => EnableRepeatSchedule).Subscribe(x =>
+            _enableRepeatParserUpdateSchedule = backupService.EnableRepeatParserUpdateSchedule;
+            if (_enableRepeatParserUpdateSchedule)
+            {
+                RepeatParserUpdateParsed = int.TryParse(backupService.RepeatParserUpdateSchedule,
+                                                        NumberStyles.None,
+                                                        CultureInfo.InvariantCulture,
+                                                        out var min);
+                if (RepeatParserUpdateParsed && min >= 1)
+                {
+                    _repeatParserMin = min;
+                    RepeatParserMin = _repeatParserMin;
+                }
+            }
+
+            this.WhenValueChanged(x => EnableRepeatSyncSchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyEnableRepeatSyncSchedule, EnableRepeatSchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableRepeatSyncSchedule, EnableRepeatSyncSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableDailySchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableDailySyncSchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyEnableDailySchedule, EnableDailySchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableDailySyncSchedule, EnableDailySyncSchedule.ToString());
                 }
             });
             this.WhenValueChanged(x => EnableCustomDb).Subscribe(x =>
@@ -145,46 +166,62 @@ namespace v00v.ViewModel.Startup
                     DbDir = !EnableCustomDb ? null : backupService.CustomDbPath;
                 }
             });
-            this.WhenValueChanged(x => EnableParserUpdateSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableDailyParserUpdateSchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyEnableParserUpdateSchedule, EnableParserUpdateSchedule.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableDailyParserUpdateSchedule,
+                                              EnableDailyParserUpdateSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => RepeatMin).Subscribe(x =>
+            this.WhenValueChanged(x => EnableRepeatParserUpdateSchedule).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyRepeatSyncSchedule, RepeatMin.ToString());
+                    backupService.SaveChanges(backupService.KeyEnableRepeatParserUpdateSchedule,
+                                              EnableRepeatParserUpdateSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => SelectedHour).Subscribe(x =>
+            this.WhenValueChanged(x => RepeatSyncMin).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    backupService.SaveChanges(backupService.KeyRepeatSyncSchedule, RepeatSyncMin.ToString());
                 }
             });
-            this.WhenValueChanged(x => SelectedMinute).Subscribe(x =>
+            this.WhenValueChanged(x => RepeatParserMin).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedHour}:{SelectedMinute}");
+                    backupService.SaveChanges(backupService.KeyRepeatParserUpdateSchedule, RepeatParserMin.ToString());
+                }
+            });
+            this.WhenValueChanged(x => SelectedSyncHour).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedSyncHour}:{SelectedSyncMinute}");
+                }
+            });
+            this.WhenValueChanged(x => SelectedSyncMinute).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedSyncHour}:{SelectedSyncMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedParserHour).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
+                    backupService.SaveChanges(backupService.KeyDailyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
             this.WhenValueChanged(x => SelectedParserMinute).Subscribe(x =>
             {
                 if (_isInited)
                 {
-                    backupService.SaveChanges(backupService.KeyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
+                    backupService.SaveChanges(backupService.KeyDailyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
             this.WhenValueChanged(x => DownloadDir).Subscribe(x =>
@@ -262,13 +299,15 @@ namespace v00v.ViewModel.Startup
 
         #region Properties
 
-        public bool DailyParsed { get; }
+        public bool DailyParserUpdateParsed { get; }
 
         public TimeSpan DailyParserUpdateTime
         {
             get => _dailyParserUpdateTime;
             set => Update(ref _dailyParserUpdateTime, value);
         }
+
+        public bool DailySyncParsed { get; }
 
         public TimeSpan DailySyncTime
         {
@@ -282,7 +321,7 @@ namespace v00v.ViewModel.Startup
             set => Update(ref _dbDir, value);
         }
 
-        public ICommand DownloadCommand { get; set; }
+        public ICommand DownloadCommand { get; }
 
         public string DownloadDir
         {
@@ -302,22 +341,40 @@ namespace v00v.ViewModel.Startup
             set => Update(ref _enableCustomDb, value);
         }
 
-        public bool EnableDailySchedule
+        public bool EnableDailyDataBackupSchedule
         {
-            get => _enableDailySchedule;
-            set => Update(ref _enableDailySchedule, value);
+            get => _enableDailyDataBackupSchedule;
+            set => Update(ref _enableDailyDataBackupSchedule, value);
         }
 
-        public bool EnableParserUpdateSchedule
+        public bool EnableDailyParserUpdateSchedule
         {
-            get => _enableParserUpdateSchedule;
-            set => Update(ref _enableParserUpdateSchedule, value);
+            get => _enableDailyParserUpdateSchedule;
+            set => Update(ref _enableDailyParserUpdateSchedule, value);
         }
 
-        public bool EnableRepeatSchedule
+        public bool EnableDailySyncSchedule
         {
-            get => _enableRepeatSchedule;
-            set => Update(ref _enableRepeatSchedule, value);
+            get => _enableDailySyncSchedule;
+            set => Update(ref _enableDailySyncSchedule, value);
+        }
+
+        public bool EnableRepeatDataBackupSchedule
+        {
+            get => _enableRepeatDataBackupSchedule;
+            set => Update(ref _enableRepeatDataBackupSchedule, value);
+        }
+
+        public bool EnableRepeatParserUpdateSchedule
+        {
+            get => _enableRepeatParserUpdateSchedule;
+            set => Update(ref _enableRepeatParserUpdateSchedule, value);
+        }
+
+        public bool EnableRepeatSyncSchedule
+        {
+            get => _enableRepeatSyncSchedule;
+            set => Update(ref _enableRepeatSyncSchedule, value);
         }
 
         public IEnumerable<string> Formats { get; }
@@ -332,32 +389,44 @@ namespace v00v.ViewModel.Startup
 
         public IEnumerable<string> Minutes { get; }
 
-        public bool ParserUpdateParsed { get; }
-
-        public int RepeatMin
+        public int RepeatBackupMin
         {
-            get => _repeatMin;
-            set => Update(ref _repeatMin, value);
+            get => _repeatBackupMin;
+            set => Update(ref _repeatBackupMin, value);
         }
 
-        public bool RepeatParsed { get; }
+        public int RepeatParserMin
+        {
+            get => _repeatParserMin;
+            set => Update(ref _repeatParserMin, value);
+        }
+
+        public bool RepeatParserUpdateParsed { get; }
+
+        public int RepeatSyncMin
+        {
+            get => _repeatSyncMin;
+            set => Update(ref _repeatSyncMin, value);
+        }
+
+        public bool RepeatSyncParsed { get; }
+
+        public string SelectedBackupHour
+        {
+            get => _selectedBackupHour;
+            set => Update(ref _selectedBackupHour, value);
+        }
+
+        public string SelectedBackupMinute
+        {
+            get => _selectedBackupMinute;
+            set => Update(ref _selectedBackupMinute, value);
+        }
 
         public string SelectedFormat
         {
             get => _selectedFormat;
             set => Update(ref _selectedFormat, value);
-        }
-
-        public string SelectedHour
-        {
-            get => _selectedHour;
-            set => Update(ref _selectedHour, value);
-        }
-
-        public string SelectedMinute
-        {
-            get => _selectedMinute;
-            set => Update(ref _selectedMinute, value);
         }
 
         public string SelectedParserHour
@@ -370,6 +439,18 @@ namespace v00v.ViewModel.Startup
         {
             get => _selectedParserMinute;
             set => Update(ref _selectedParserMinute, value);
+        }
+
+        public string SelectedSyncHour
+        {
+            get => _selectedSyncHour;
+            set => Update(ref _selectedSyncHour, value);
+        }
+
+        public string SelectedSyncMinute
+        {
+            get => _selectedSyncMinute;
+            set => Update(ref _selectedSyncMinute, value);
         }
 
         public bool ShowSettings

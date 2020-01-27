@@ -963,7 +963,7 @@ namespace v00v.ViewModel.Catalog
 
         private void StartSchedulerTasks()
         {
-            if (_settings.EnableDailySchedule && _settings.DailyParsed)
+            if (_settings.EnableDailySyncSchedule && _settings.DailySyncParsed)
             {
                 _taskDispatcher.DailySync = _settings.DailySyncTime;
                 Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
@@ -978,9 +978,9 @@ namespace v00v.ViewModel.Catalog
                 });
             }
 
-            if (_settings.EnableRepeatSchedule && _settings.RepeatParsed)
+            if (_settings.EnableRepeatSyncSchedule && _settings.RepeatSyncParsed)
             {
-                _taskDispatcher.RepeatSync = _settings.RepeatMin;
+                _taskDispatcher.RepeatSync = _settings.RepeatSyncMin;
                 Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
                                                                       _appLogRepository,
                                                                       _entries.Where(x => !x.IsNew).ToList(),
@@ -993,10 +993,20 @@ namespace v00v.ViewModel.Catalog
                 });
             }
 
-            if (_settings.EnableParserUpdateSchedule && _settings.ParserUpdateParsed)
+            if (_settings.EnableDailyParserUpdateSchedule && _settings.DailyParserUpdateParsed)
             {
                 _taskDispatcher.ParserUpdate = _settings.DailyParserUpdateTime;
-                Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser),
+                Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser, false),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
+            }
+
+            if (_settings.EnableRepeatParserUpdateSchedule && _settings.RepeatParserUpdateParsed)
+            {
+                _taskDispatcher.RepeatParser = _settings.RepeatParserMin;
+                Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser, true),
                                       TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
                     SetLog(t.Exception?.Message);

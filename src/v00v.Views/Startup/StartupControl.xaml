@@ -7,7 +7,7 @@
 
     <Border BorderThickness="1" BorderBrush="#bdacd1">
         <Panel>
-            <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="30,25,35,*,25,25,25,25,10">
+            <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="30,30,*,25,25,25,25,10">
 
                 <StackPanel Grid.Column="1" Grid.Row ="0" Margin="0,10,0,0" Orientation="Horizontal">
                     <Panel>
@@ -15,22 +15,19 @@
                         <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp" />
                     </Panel>
                     <TextBlock Text="Add" Margin="10,0,0,0"/>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Grid.Row ="1" Margin="0,10,0,0" Orientation="Horizontal">
-                    <Panel>
+                    <Panel Margin="10,0,0,0">
                         <Ellipse />
                         <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp" />
                     </Panel>
                     <TextBlock Text="Synchronize" Margin="10,0,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Grid.Row="2" Margin="3,15,0,0" Orientation="Horizontal">
+                <StackPanel Grid.Column="1" Grid.Row="1" Margin="3,0,0,0" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <CheckBox IsChecked="{Binding ShowSettings, Mode=TwoWay}"/>
                     <TextBlock Text="Show settings" Margin="12,0,0,0"/>
                 </StackPanel>
 
-                <Grid Grid.Column="1" Grid.Row ="3" RowDefinitions="7,25,2,25,2,25,10,25,2,25,2,25,2,25,25,25,4,25" IsVisible="{Binding ShowSettings, Mode=OneWay}">
+                <Grid Grid.Column="1" Grid.Row ="2" RowDefinitions="15,25,2,25,2,25,30,25,2,25,2,25,2,25,25,25,4,25" IsVisible="{Binding ShowSettings, Mode=OneWay}">
 
                     <StackPanel Orientation="Horizontal" Grid.Row="1">
                         <TextBlock Text="Database folder:" ToolTip.Tip="For db location" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}"/>
@@ -55,40 +52,40 @@
                         <TextBlock Text="Schedulers:" ToolTip.Tip="Restart required"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="9" ToolTip.Tip="Restart required">
-                        <CheckBox Margin="0,0,5,0" IsChecked="{Binding EnableRepeatSchedule, Mode=TwoWay}"/>
-                        <TextBlock Text="Synchronize every (min):"/>
-                        <TextBox Width="40" Margin="7,0,0,0" IsEnabled="{Binding EnableRepeatSchedule, Mode=OneWay}"
-                                 Text="{Binding RepeatMin, Mode=TwoWay}"
-                                 />
+                    <StackPanel Orientation="Horizontal" Grid.Row="9">
+                        <TextBlock Text="Synchronization" ToolTip.Tip="Restart required"/>
+                        <CheckBox Margin="16,0,5,0" IsChecked="{Binding EnableRepeatSyncSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical synchronization"/>
+                        <TextBlock Text="Every (min):" ToolTip.Tip="Minutes"/>
+                        <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatSyncSchedule, Mode=OneWay}" Text="{Binding RepeatSyncMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
+                        <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailySyncSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily synchronization"/>
+                        <TextBlock Text="Once:" ToolTip.Tip="HH:mm"/>
+                        <ComboBox Margin="8,0,0,0" Width="40" IsEnabled="{Binding EnableDailySyncSchedule, Mode=OneWay}" Items="{Binding Hours, Mode=OneTime}" SelectedItem="{Binding SelectedSyncHour, Mode=TwoWay}" ToolTip.Tip="Hours"/>
+                        <TextBlock Text=":" Margin="2,0,2,0"/>
+                        <ComboBox Width="40" IsEnabled="{Binding EnableDailySyncSchedule, Mode=OneWay}" Items="{Binding Minutes, Mode=OneTime}" SelectedItem="{Binding SelectedSyncMinute, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="11" ToolTip.Tip="Restart required">
-                        <CheckBox Margin="0,0,5,0" IsChecked="{Binding EnableDailySchedule, Mode=TwoWay}"/>
-                        <TextBlock Text="Synchronize at (hh:mm):"/>
-                        <ComboBox Margin="8,0,3,0" Width="40" IsEnabled="{Binding EnableDailySchedule, Mode=OneWay}"
-                                  Items="{Binding Hours, Mode=OneTime}"
-                                  SelectedItem="{Binding SelectedHour, Mode=TwoWay}"
-                                  />
-                        <TextBlock Text=":"/>
-                        <ComboBox Margin="2,0,0,0" Width="40" IsEnabled="{Binding EnableDailySchedule, Mode=OneWay}"
-                                  Items="{Binding Minutes, Mode=OneTime}"
-                                  SelectedItem="{Binding SelectedMinute, Mode=TwoWay}"
-                                  />
+                    <StackPanel Orientation="Horizontal" Grid.Row="11">
+                        <TextBlock Text="Parser update" ToolTip.Tip="Restart required"/>
+                        <CheckBox Margin="28,0,5,0" IsChecked="{Binding EnableRepeatParserUpdateSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical parser updating"/>
+                        <TextBlock Text="Every (min):" ToolTip.Tip="Minutes"/>
+                        <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatParserUpdateSchedule, Mode=OneWay}" Text="{Binding RepeatParserMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
+                        <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailyParserUpdateSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily parser updating"/>
+                        <TextBlock Text="Once:" ToolTip.Tip="HH:mm"/>
+                        <ComboBox Margin="8,0,0,0" Width="40" IsEnabled="{Binding EnableDailyParserUpdateSchedule, Mode=OneWay}" Items="{Binding Hours, Mode=OneTime}" SelectedItem="{Binding SelectedParserHour, Mode=TwoWay}" ToolTip.Tip="Hours"/>
+                        <TextBlock Text=":" Margin="2,0,2,0"/>
+                        <ComboBox Width="40" IsEnabled="{Binding EnableDailyParserUpdateSchedule, Mode=OneWay}" Items="{Binding Minutes, Mode=OneTime}" SelectedItem="{Binding SelectedParserMinute, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="13" ToolTip.Tip="Restart required">
-                        <CheckBox Margin="0,0,8,0" IsChecked="{Binding EnableParserUpdateSchedule, Mode=TwoWay}"/>
-                        <TextBlock Text="Update parser (hh:mm):"/>
-                        <ComboBox Margin="8,0,3,0" Width="40" IsEnabled="{Binding EnableParserUpdateSchedule, Mode=OneWay}"
-                                  Items="{Binding Hours, Mode=OneTime}"
-                                  SelectedItem="{Binding SelectedParserHour, Mode=TwoWay}"
-                                  />
-                        <TextBlock Text=":"/>
-                        <ComboBox Margin="2,0,0,0" Width="40" IsEnabled="{Binding EnableParserUpdateSchedule, Mode=OneWay}"
-                                  Items="{Binding Minutes, Mode=OneTime}"
-                                  SelectedItem="{Binding SelectedParserMinute, Mode=TwoWay}"
-                                  />
+                    <StackPanel Orientation="Horizontal" Grid.Row="13">
+                        <TextBlock Text="Backup data" ToolTip.Tip="Restart required"/>
+                        <CheckBox Margin="37,0,5,0" IsChecked="{Binding EnableRepeatDataBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical parser updating"/>
+                        <TextBlock Text="Every (min):" ToolTip.Tip="Minutes"/>
+                        <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatDataBackupSchedule, Mode=OneWay}" Text="{Binding RepeatBackupMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
+                        <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailyDataBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily parser updating"/>
+                        <TextBlock Text="Once:" ToolTip.Tip="HH:mm"/>
+                        <ComboBox Margin="8,0,0,0" Width="40" IsEnabled="{Binding EnableDailyDataBackupSchedule, Mode=OneWay}" Items="{Binding Hours, Mode=OneTime}" SelectedItem="{Binding SelectedBackupHour, Mode=TwoWay}" ToolTip.Tip="Hours"/>
+                        <TextBlock Text=":" Margin="2,0,2,0"/>
+                        <ComboBox Width="40" IsEnabled="{Binding EnableDailyDataBackupSchedule, Mode=OneWay}" Items="{Binding Minutes, Mode=OneTime}" SelectedItem="{Binding SelectedBackupMinute, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="15">
@@ -111,18 +108,22 @@
 
                 <!--<TextBlock Text="* To download video you need to install ffmpeg and youtube-dl. Easy way to do it:" />-->
 
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="4" Width="450" IsReadOnly="True" Text="https://chocolatey.org/docs/installation"/>
-                <TextBlock Grid.Column="2" Grid.Row="4" Text="Install chocolatey" Margin="10,0,0,0"/>
-
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="5" Width="450" IsReadOnly="True" Text="choco install ffmpeg" />
-                <TextBlock Grid.Column="2" Grid.Row="5" Text="Install ffmpeg" Margin="10,0,0,0"/>
-
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="6" Width="450" IsReadOnly="True" Text="choco install youtube-dl" />
-                <TextBlock Grid.Column="2" Grid.Row="6" Text="Install youtube-dl" Margin="10,0,0,0"/>
-
-                <controls:ExtendedTextBox Grid.Column="1" Grid.Row="7" Width="450" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" />
-                <TextBlock Grid.Column="2" Grid.Row="7" Text="Install mpc-be" Margin="10,0,0,0"/>
-
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://chocolatey.org/docs/installation"/>
+                    <TextBlock Text="Install chocolatey" Margin="10,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install ffmpeg" />
+                    <TextBlock Text="Install ffmpeg" Margin="10,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install youtube-dl" />
+                    <TextBlock Text="Install youtube-dl" Margin="10,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="6">
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" />
+                    <TextBlock Text="Install mpc-be" Margin="10,0,0,0"/>
+                </StackPanel>
             </Grid>
         </Panel>
     </Border>

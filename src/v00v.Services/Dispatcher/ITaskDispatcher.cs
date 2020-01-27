@@ -15,6 +15,7 @@ namespace v00v.Services.Dispatcher
         TimeSpan DailySync { set; }
         TimeSpan ParserUpdate { set; }
         int RepeatSync { set; }
+        int RepeatParser { set; }
 
         #endregion
 
@@ -34,7 +35,7 @@ namespace v00v.Services.Dispatcher
             Action<string> log,
             Action<SyncDiff> updateList);
 
-        Task RunUpdateParser(Action<string> log, Action<int> runUpdate);
+        Task RunUpdateParser(Action<string> log, Action<int> runUpdate, bool isRepeat);
 
         Task Stop();
 
