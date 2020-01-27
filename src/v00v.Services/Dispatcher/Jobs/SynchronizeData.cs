@@ -11,17 +11,25 @@ using v00v.Services.Synchronization;
 namespace v00v.Services.Dispatcher.Jobs
 {
     [DisallowConcurrentExecution]
-    internal class SyncDaily : IJob
+    internal class SynchronizeData : IJob
     {
         #region Methods
 
         public async Task Execute(IJobExecutionContext context)
         {
+            var isRepeat = (bool)context.JobDetail.JobDataMap[BaseSync.RepeatSync];
+            if (isRepeat && context.PreviousFireTimeUtc == null)
+            {
+                return;
+            }
+
+            var log = isRepeat ? BaseSync.PeriodicSync : BaseSync.DailySync;
+
             var appLog = (IAppLogRepository)context.JobDetail.JobDataMap[BaseSync.AppLog];
             var setLog = (Action<string>)context.JobDetail.JobDataMap[BaseSync.Log];
             var updateList = (Action<SyncDiff>)context.JobDetail.JobDataMap[BaseSync.UpdateList];
+            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=start {log}=-");
 
-            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=start {BaseSync.DailySync}=-");
             var syncStatus = await appLog.GetAppSyncStatus(appLog.AppId);
             if (syncStatus != AppStatus.NoSync && syncStatus != AppStatus.DailySyncFinished
                                                && syncStatus != AppStatus.PeriodicSyncFinished
@@ -29,7 +37,7 @@ namespace v00v.Services.Dispatcher.Jobs
                                                && syncStatus != AppStatus.SyncWithoutPlaylistFinished)
             {
                 setLog?.Invoke($"{syncStatus} in progress, bye");
-                setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {BaseSync.DailySync}=-");
+                setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {log}=-");
                 return;
             }
 
@@ -37,17 +45,17 @@ namespace v00v.Services.Dispatcher.Jobs
 
             var syncPls = (bool)context.JobDetail.JobDataMap[BaseSync.SyncPls];
 
-            setLog?.Invoke($"{BaseSync.PlaylistSync}: {syncPls}");
+            setLog?.Invoke($"{BaseSync.PlaylistSync}:{syncPls}");
 
-            await appLog.SetStatus(AppStatus.DailySyncStarted, $"{BaseSync.DailySync} started");
+            await appLog.SetStatus(isRepeat ? AppStatus.PeriodicSyncStarted : AppStatus.DailySyncStarted, $"{log} started");
 
             var res = await syncService.Sync(false, syncPls, (List<Channel>)context.JobDetail.JobDataMap[BaseSync.Entries], setLog);
 
             var end = res == null ? "with error" : "ok";
 
-            await appLog.SetStatus(AppStatus.DailySyncFinished, $"{BaseSync.DailySync} finished {end}");
+            await appLog.SetStatus(isRepeat ? AppStatus.PeriodicSyncFinished : AppStatus.DailySyncFinished, $"{log} finished {end}");
 
-            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {BaseSync.DailySync}=-");
+            setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=stop {log}=-");
 
             updateList?.Invoke(res);
         }

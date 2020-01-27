@@ -5,6 +5,7 @@ using Quartz;
 using Quartz.Impl;
 using v00v.Model.Entities;
 using v00v.Model.SyncEntities;
+using v00v.Services.Backup;
 using v00v.Services.Dispatcher.Jobs;
 using v00v.Services.Persistence;
 using v00v.Services.Synchronization;
@@ -38,11 +39,12 @@ namespace v00v.Services.Dispatcher
 
         #region Properties
 
+        public TimeSpan DailyBackup { private get; set; }
+        public TimeSpan DailyParser { private get; set; }
         public TimeSpan DailySync { private get; set; }
-        public TimeSpan ParserUpdate { private get; set; }
-        public int RepeatSync { private get; set; }
+        public int RepeatBackup { private get; set; }
         public int RepeatParser { private get; set; }
-
+        public int RepeatSync { private get; set; }
         private IScheduler Scheduler
         {
             get
@@ -56,75 +58,58 @@ namespace v00v.Services.Dispatcher
 
         #endregion
 
-        #region Static Methods
+        #region Methods
 
-        private static IJobDetail CreateJob<T>(string name,
-            string groupname,
-            ISyncService syncService,
+        public async Task RunBackup(IBackupService backupService, IEnumerable<Channel> channels, Action<string> setLog, bool isRepeat)
+        {
+            await CheckSchedulerStarted();
+
+            var job = JobBuilder.Create<BackupData>().WithIdentity(isRepeat ? BaseSync.PeriodicBackup : BaseSync.DailyBackup,
+                                                                        isRepeat
+                                                                            ? BaseSync.PeriodicBackupGroup
+                                                                            : BaseSync.DailyBackupGroup).Build();
+
+            job.JobDataMap[BaseSync.BackupService] = backupService;
+            job.JobDataMap[BaseSync.Entries] = channels;
+            job.JobDataMap[BaseSync.Log] = setLog;
+            job.JobDataMap[BaseSync.RepeatBackup] = isRepeat;
+
+            var trigger = isRepeat
+                ? TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicBackup, BaseSync.PeriodicBackupGroup).StartNow()
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatBackup).RepeatForever()).ForJob(job).Build()
+                : TriggerBuilder.Create().WithIdentity(BaseSync.DailyBackup, BaseSync.DailyBackupGroup).StartNow()
+                    .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(DailyBackup.Hours, DailyBackup.Minutes)).ForJob(job).Build();
+
+            await Scheduler.ScheduleJob(job, trigger);
+        }
+
+        public async Task RunSynchronization(ISyncService syncService,
             IAppLogRepository appLog,
-            IReadOnlyCollection<Channel> entries,
+            List<Channel> entries,
             bool syncPls,
             Action<string> log,
-            Action<SyncDiff> updateList) where T : IJob
+            Action<SyncDiff> updateList,
+            bool isRepeat)
         {
-            var job = JobBuilder.Create<T>().WithIdentity(name, groupname).Build();
+            await CheckSchedulerStarted();
+
+            var job = JobBuilder.Create<SynchronizeData>().WithIdentity(isRepeat ? BaseSync.PeriodicSync : BaseSync.DailySync,
+                                                                        isRepeat ? BaseSync.PeriodicSyncGroup : BaseSync.DailySyncGroup)
+                .Build();
+
             job.JobDataMap[BaseSync.SyncService] = syncService;
             job.JobDataMap[BaseSync.AppLog] = appLog;
             job.JobDataMap[BaseSync.Entries] = entries;
             job.JobDataMap[BaseSync.SyncPls] = syncPls;
             job.JobDataMap[BaseSync.Log] = log;
             job.JobDataMap[BaseSync.UpdateList] = updateList;
-            return job;
-        }
+            job.JobDataMap[BaseSync.RepeatSync] = isRepeat;
 
-        #endregion
-
-        #region Methods
-
-        public async Task RunDaily(ISyncService syncService,
-            IAppLogRepository appLog,
-            List<Channel> entries,
-            bool syncPls,
-            Action<string> log,
-            Action<SyncDiff> updateList)
-        {
-            await CheckSchedulerStarted();
-
-            var job = CreateJob<SyncDaily>(BaseSync.DailySync,
-                                           BaseSync.DailyGroup,
-                                           syncService,
-                                           appLog,
-                                           entries,
-                                           syncPls,
-                                           log,
-                                           updateList);
-
-            var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.DailySync, BaseSync.DailyGroup).StartNow()
-                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(DailySync.Hours, DailySync.Minutes)).ForJob(job).Build();
-
-            await Scheduler.ScheduleJob(job, trigger);
-        }
-
-        public async Task RunRepeat(ISyncService syncService,
-            IAppLogRepository appLog,
-            List<Channel> entries,
-            bool syncPls,
-            Action<string> log,
-            Action<SyncDiff> updateList)
-        {
-            await CheckSchedulerStarted();
-
-            var job = CreateJob<SyncRepeat>(BaseSync.PeriodicSync,
-                                            BaseSync.PeriodicGroup,
-                                            syncService,
-                                            appLog,
-                                            entries,
-                                            syncPls,
-                                            log,
-                                            updateList);
-
-            var trigger = TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicSync, BaseSync.PeriodicGroup).StartNow()
-                .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatSync).RepeatForever()).ForJob(job).Build();
+            var trigger = isRepeat
+                ? TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicSync, BaseSync.PeriodicSyncGroup).StartNow()
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatSync).RepeatForever()).ForJob(job).Build()
+                : TriggerBuilder.Create().WithIdentity(BaseSync.DailySync, BaseSync.DailySyncGroup).StartNow()
+                    .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(DailySync.Hours, DailySync.Minutes)).ForJob(job).Build();
 
             await Scheduler.ScheduleJob(job, trigger);
         }
@@ -133,17 +118,19 @@ namespace v00v.Services.Dispatcher
         {
             await CheckSchedulerStarted();
 
-            var job = JobBuilder.Create<UpdateParser>().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).Build();
+            var job = JobBuilder.Create<UpdateParser>().WithIdentity(isRepeat ? BaseSync.PeriodicParser : BaseSync.DailyParser,
+                                                                     isRepeat ? BaseSync.PeriodicParserGroup : BaseSync.DailyParserGroup)
+                .Build();
+
             job.JobDataMap[BaseSync.Log] = log;
-            job.JobDataMap[BaseSync.UpdateParser] = runUpdate;
             job.JobDataMap[BaseSync.UpdateParser] = runUpdate;
             job.JobDataMap[BaseSync.RepeatParser] = isRepeat;
 
             var trigger = isRepeat
-                ? TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicUpdate, BaseSync.UpdateGroup).StartNow()
+                ? TriggerBuilder.Create().WithIdentity(BaseSync.PeriodicParser, BaseSync.PeriodicParserGroup).StartNow()
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(RepeatParser).RepeatForever()).ForJob(job).Build()
-                : TriggerBuilder.Create().WithIdentity(BaseSync.DailyUpdate, BaseSync.UpdateGroup).StartNow()
-                    .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(ParserUpdate.Hours, ParserUpdate.Minutes)).ForJob(job).Build();
+                : TriggerBuilder.Create().WithIdentity(BaseSync.DailyParser, BaseSync.DailyParserGroup).StartNow()
+                    .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(DailyParser.Hours, DailyParser.Minutes)).ForJob(job).Build();
 
             await Scheduler.ScheduleJob(job, trigger);
         }

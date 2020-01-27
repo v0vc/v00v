@@ -45,37 +45,41 @@ namespace v00v.Services.Backup
         public string AppSettings => "AppSettings";
         public bool CustomDbEnabled => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableCustomDb}");
         public string CustomDbPath => _configuration.GetValue<string>($"{AppSettings}:{KeyDbDir}");
+        public string DailyBackupSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailyBackupSchedule}");
         public string DailyParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailyParserUpdateSchedule}");
         public string DailySyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyDailySyncSchedule}");
         public string DownloadDir => _configuration.GetValue<string>($"{AppSettings}:{KeyDownloadDir}");
-        public bool EnableDailyDataBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyDailyDataBackupSchedule}");
+        public bool EnableDailyBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailyBackupSchedule}");
 
         public bool EnableDailyParserUpdateSchedule =>
             _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailyParserUpdateSchedule}");
 
         public bool EnableDailySyncSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableDailySyncSchedule}");
-        public bool EnableRepeatDataBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyRepeatDataBackupSchedule}");
+        public bool EnableRepeatBackupSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatBackupSchedule}");
 
         public bool EnableRepeatParserUpdateSchedule =>
             _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatParserUpdateSchedule}");
 
         public bool EnableRepeatSyncSchedule => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableRepeatSyncSchedule}");
-        public string KeyDailyDataBackupSchedule => "DailyDataBackupSchedule";
+        public string KeyDailyBackupSchedule => "DailyBackupSchedule";
         public string KeyDailyParserUpdateSchedule => "DailyParserUpdateSchedule";
         public string KeyDailySyncSchedule => "DailySyncSchedule";
         public string KeyDbDir => "DbDir";
         public string KeyDownloadDir => "DownloadDir";
         public string KeyEnableCustomDb => "EnableCustomDb";
+        public string KeyEnableDailyBackupSchedule => "EnableDailyBackupSchedule";
         public string KeyEnableDailyParserUpdateSchedule => "EnableDailyParserUpdateSchedule";
         public string KeyEnableDailySyncSchedule => "EnableDailySyncSchedule";
+        public string KeyEnableRepeatBackupSchedule => "EnableRepeatBackupSchedule";
         public string KeyEnableRepeatParserUpdateSchedule => "EnableRepeatParserUpdateSchedule";
         public string KeyEnableRepeatSyncSchedule => "EnableRepeatSyncSchedule";
-        public string KeyRepeatDataBackupSchedule => "RepeatDataBackupSchedule";
+        public string KeyRepeatBackupSchedule => "RepeatBackupSchedule";
         public string KeyRepeatParserUpdateSchedule => "RepeatParserUpdateSchedule";
         public string KeyRepeatSyncSchedule => "RepeatSyncSchedule";
         public string KeyWatchApp => "WatchApp";
         public string KeyYouParam => "YouParam";
         public string KeyYouParser => "YouParser";
+        public string RepeatBackupSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatBackupSchedule}");
         public string RepeatParserUpdateSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatParserUpdateSchedule}");
         public string RepeatSyncSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatSyncSchedule}");
         public string UseSqlite { get; set; }
@@ -108,7 +112,7 @@ namespace v00v.Services.Backup
             setLog?.Invoke($"Start backup {bcp.Items.Count()} channels..");
             var fileName = GetBackupName();
             var tempFileName = fileName + ".new";
-            string res = string.Empty;
+            var res = string.Empty;
             var ss = Task.Factory.StartNew(() =>
             {
                 res = JsonConvert.SerializeObject(bcp, Formatting.Indented);
@@ -235,7 +239,17 @@ namespace v00v.Services.Backup
         private string GetBackupName()
         {
             var prov = (FileConfigurationProvider)_configuration.Providers.Last();
-            return Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
+            string folder;
+            if (CustomDbEnabled && !string.IsNullOrWhiteSpace(CustomDbPath))
+            {
+                var dir = new DirectoryInfo(CustomDbPath);
+                folder = dir.Exists ? dir.FullName : ((PhysicalFileProvider)prov.Source.FileProvider).Root;
+            }
+            else
+            {
+                folder = ((PhysicalFileProvider)prov.Source.FileProvider).Root;
+            }
+            return Path.Combine(folder, prov.Source.Path);
         }
 
         private async Task<int> RestoreOneByOne(IEnumerable<BackupItem> lst,

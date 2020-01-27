@@ -966,12 +966,13 @@ namespace v00v.ViewModel.Catalog
             if (_settings.EnableDailySyncSchedule && _settings.DailySyncParsed)
             {
                 _taskDispatcher.DailySync = _settings.DailySyncTime;
-                Task.Factory.StartNew(() => _taskDispatcher.RunDaily(_syncService,
-                                                                     _appLogRepository,
-                                                                     _entries.Where(x => !x.IsNew).ToList(),
-                                                                     true,
-                                                                     SetLog,
-                                                                     UpdateChannels),
+                Task.Factory.StartNew(() => _taskDispatcher.RunSynchronization(_syncService,
+                                                                               _appLogRepository,
+                                                                               _entries.Where(x => !x.IsNew).ToList(),
+                                                                               true,
+                                                                               SetLog,
+                                                                               UpdateChannels,
+                                                                               false),
                                       TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
                     SetLog(t.Exception?.Message);
@@ -981,12 +982,13 @@ namespace v00v.ViewModel.Catalog
             if (_settings.EnableRepeatSyncSchedule && _settings.RepeatSyncParsed)
             {
                 _taskDispatcher.RepeatSync = _settings.RepeatSyncMin;
-                Task.Factory.StartNew(() => _taskDispatcher.RunRepeat(_syncService,
-                                                                      _appLogRepository,
-                                                                      _entries.Where(x => !x.IsNew).ToList(),
-                                                                      false,
-                                                                      SetLog,
-                                                                      UpdateChannels),
+                Task.Factory.StartNew(() => _taskDispatcher.RunSynchronization(_syncService,
+                                                                               _appLogRepository,
+                                                                               _entries.Where(x => !x.IsNew).ToList(),
+                                                                               false,
+                                                                               SetLog,
+                                                                               UpdateChannels,
+                                                                               true),
                                       TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
                     SetLog(t.Exception?.Message);
@@ -995,7 +997,7 @@ namespace v00v.ViewModel.Catalog
 
             if (_settings.EnableDailyParserUpdateSchedule && _settings.DailyParserUpdateParsed)
             {
-                _taskDispatcher.ParserUpdate = _settings.DailyParserUpdateTime;
+                _taskDispatcher.DailyParser = _settings.DailyParserUpdateTime;
                 Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser, false),
                                       TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
@@ -1007,6 +1009,26 @@ namespace v00v.ViewModel.Catalog
             {
                 _taskDispatcher.RepeatParser = _settings.RepeatParserMin;
                 Task.Factory.StartNew(() => _taskDispatcher.RunUpdateParser(SetLog, _settings.UpdateParser, true),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
+            }
+
+            if (_settings.EnableDailyBackupSchedule && _settings.DailyBackupParsed)
+            {
+                _taskDispatcher.DailyBackup = _settings.DailyBackupTime;
+                Task.Factory.StartNew(() => _taskDispatcher.RunBackup(_backupService, _entries.Where(x => !x.IsNew), SetLog, false),
+                                      TaskCreationOptions.LongRunning).ContinueWith(t =>
+                {
+                    SetLog(t.Exception?.Message);
+                });
+            }
+
+            if (_settings.EnableRepeatBackupSchedule && _settings.RepeatBackupParsed)
+            {
+                _taskDispatcher.RepeatBackup = _settings.RepeatBackupMin;
+                Task.Factory.StartNew(() => _taskDispatcher.RunBackup(_backupService, _entries.Where(x => !x.IsNew), SetLog, true),
                                       TaskCreationOptions.LongRunning).ContinueWith(t =>
                 {
                     SetLog(t.Exception?.Message);

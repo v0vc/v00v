@@ -77,15 +77,15 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="13">
-                        <TextBlock Text="Backup data" ToolTip.Tip="Restart required"/>
-                        <CheckBox Margin="37,0,5,0" IsChecked="{Binding EnableRepeatDataBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical parser updating"/>
+                        <TextBlock Text="Backup data" ToolTip.Tip="To database folder (restart required)"/>
+                        <CheckBox Margin="37,0,5,0" IsChecked="{Binding EnableRepeatBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical data backup (to database folder)"/>
                         <TextBlock Text="Every (min):" ToolTip.Tip="Minutes"/>
-                        <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatDataBackupSchedule, Mode=OneWay}" Text="{Binding RepeatBackupMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
-                        <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailyDataBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily parser updating"/>
+                        <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatBackupSchedule, Mode=OneWay}" Text="{Binding RepeatBackupMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
+                        <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailyBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily data backup (to database folder)"/>
                         <TextBlock Text="Once:" ToolTip.Tip="HH:mm"/>
-                        <ComboBox Margin="8,0,0,0" Width="40" IsEnabled="{Binding EnableDailyDataBackupSchedule, Mode=OneWay}" Items="{Binding Hours, Mode=OneTime}" SelectedItem="{Binding SelectedBackupHour, Mode=TwoWay}" ToolTip.Tip="Hours"/>
+                        <ComboBox Margin="8,0,0,0" Width="40" IsEnabled="{Binding EnableDailyBackupSchedule, Mode=OneWay}" Items="{Binding Hours, Mode=OneTime}" SelectedItem="{Binding SelectedBackupHour, Mode=TwoWay}" ToolTip.Tip="Hours"/>
                         <TextBlock Text=":" Margin="2,0,2,0"/>
-                        <ComboBox Width="40" IsEnabled="{Binding EnableDailyDataBackupSchedule, Mode=OneWay}" Items="{Binding Minutes, Mode=OneTime}" SelectedItem="{Binding SelectedBackupMinute, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
+                        <ComboBox Width="40" IsEnabled="{Binding EnableDailyBackupSchedule, Mode=OneWay}" Items="{Binding Minutes, Mode=OneTime}" SelectedItem="{Binding SelectedBackupMinute, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="15">
