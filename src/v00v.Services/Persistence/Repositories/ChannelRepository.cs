@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using v00v.Model.Enums;
 using v00v.Model.Extensions;
@@ -11,6 +10,7 @@ using v00v.Model.SyncEntities;
 using v00v.Services.Database;
 using v00v.Services.Database.Models;
 using v00v.Services.Persistence.Helpers;
+using v00v.Services.Persistence.Mappers;
 using Channel = v00v.Model.Entities.Channel;
 
 namespace v00v.Services.Persistence.Repositories
@@ -20,13 +20,13 @@ namespace v00v.Services.Persistence.Repositories
         #region Static and Readonly Fields
 
         private readonly IContextFactory _contextFactory;
-        private readonly IMapper _mapper;
+        private readonly ICommonMapper _mapper;
 
         #endregion
 
         #region Constructors
 
-        public ChannelRepository(IContextFactory contextFactory, IMapper mapper)
+        public ChannelRepository(IContextFactory contextFactory, ICommonMapper mapper)
         {
             _contextFactory = contextFactory;
             _mapper = mapper;

@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using v00v.Model.Entities;
 using v00v.Services.Database;
 using v00v.Services.Persistence.Helpers;
+using v00v.Services.Persistence.Mappers;
 
 namespace v00v.Services.Persistence.Repositories
 {
@@ -16,13 +16,13 @@ namespace v00v.Services.Persistence.Repositories
 
         private readonly IContextFactory _contextFactory;
 
-        private readonly IMapper _mapper;
+        private readonly ICommonMapper _mapper;
 
         #endregion
 
         #region Constructors
 
-        public TagRepository(IContextFactory contextFactory, IMapper mapper)
+        public TagRepository(IContextFactory contextFactory, ICommonMapper mapper)
         {
             _contextFactory = contextFactory;
             _mapper = mapper;

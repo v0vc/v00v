@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using v00v.Model.Entities;
 using v00v.Model.Enums;
 using v00v.Services.Database;
+using v00v.Services.Persistence.Mappers;
 
 namespace v00v.Services.Persistence.Repositories
 {
@@ -14,13 +14,13 @@ namespace v00v.Services.Persistence.Repositories
 
         private readonly IContextFactory _contextFactory;
 
-        private readonly IMapper _mapper;
+        private readonly ICommonMapper _mapper;
 
         #endregion
 
         #region Constructors
 
-        public PlaylistRepository(IContextFactory contextFactory, IMapper mapper)
+        public PlaylistRepository(IContextFactory contextFactory, ICommonMapper mapper)
         {
             _contextFactory = contextFactory;
             _mapper = mapper;

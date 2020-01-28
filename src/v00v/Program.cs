@@ -77,29 +77,23 @@ namespace v00v
 
             AvaloniaLocator.CurrentMutable.Bind<IContextFactory>().ToSingleton<ContextFactory>();
 
-            AvaloniaLocator.CurrentMutable.Bind<IMapper>().ToConstant(new MapperConfiguration(mc =>
-            {
-                mc.AddProfile(new ChannelMapProfile());
-                mc.AddProfile(new PlaylistMapProfile());
-                mc.AddProfile(new ItemMapProfile());
-                mc.AddProfile(new TagMapProfile());
-            }).CreateMapper());
+            AvaloniaLocator.CurrentMutable.Bind<ICommonMapper>().ToConstant(CommonMapper.Instance);
 
             AvaloniaLocator.CurrentMutable.Bind<IChannelRepository>()
                 .ToConstant(new ChannelRepository(AvaloniaLocator.Current.GetService<IContextFactory>(),
-                                                  AvaloniaLocator.Current.GetService<IMapper>()));
+                                                  AvaloniaLocator.Current.GetService<ICommonMapper>()));
 
             AvaloniaLocator.CurrentMutable.Bind<IItemRepository>()
                 .ToConstant(new ItemRepository(AvaloniaLocator.Current.GetService<IContextFactory>(),
-                                               AvaloniaLocator.Current.GetService<IMapper>()));
+                                               AvaloniaLocator.Current.GetService<ICommonMapper>()));
 
             AvaloniaLocator.CurrentMutable.Bind<IPlaylistRepository>()
                 .ToConstant(new PlaylistRepository(AvaloniaLocator.Current.GetService<IContextFactory>(),
-                                                   AvaloniaLocator.Current.GetService<IMapper>()));
+                                                   AvaloniaLocator.Current.GetService<ICommonMapper>()));
 
             AvaloniaLocator.CurrentMutable.Bind<ITagRepository>()
                 .ToConstant(new TagRepository(AvaloniaLocator.Current.GetService<IContextFactory>(),
-                                              AvaloniaLocator.Current.GetService<IMapper>()));
+                                              AvaloniaLocator.Current.GetService<ICommonMapper>()));
 
             AvaloniaLocator.CurrentMutable.Bind<IAppLogRepository>()
                 .ToConstant(new AppLogRepository(AvaloniaLocator.Current.GetService<IContextFactory>()));
