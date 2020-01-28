@@ -16,7 +16,7 @@
             <Button Grid.Column="0" Classes="Link" Command="{Binding AddTagCommand, Mode=OneWay}">
                 <TextBlock Text="Add"/>
             </Button>
-            <Button Grid.Column="1" Classes="Link" Command="{Binding SaveTagCommand, Mode=OneWay}" CommandParameter="{Binding SelectedTag}">
+            <Button Grid.Column="1" Classes="Link" Command="{Binding SaveTagCommand, Mode=OneWay}">
                 <TextBlock Text="Save" />
             </Button>
         </Grid>

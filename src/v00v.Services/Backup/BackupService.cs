@@ -249,6 +249,7 @@ namespace v00v.Services.Backup
             {
                 folder = ((PhysicalFileProvider)prov.Source.FileProvider).Root;
             }
+
             return Path.Combine(folder, prov.Source.Path);
         }
 

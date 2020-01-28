@@ -537,6 +537,12 @@ namespace v00v.ViewModel.Explorer
 
         private async Task RunItem()
         {
+            if (string.IsNullOrEmpty(_settings.WatchApp))
+            {
+                SetLog("Please select media player in setting");
+                return;
+            }
+
             SelectedEntry?.RunItem(_settings.WatchApp, _settings.DownloadDir, $"{_youtubeService.ItemLink}{SelectedEntry.Id}");
             await SetItemState(WatchState.Watched);
         }
