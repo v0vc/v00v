@@ -39,7 +39,7 @@ namespace v00v.Services.Persistence.Repositories
             {
                 try
                 {
-                    var res = await context.Items.AsNoTracking().Where(x => x.Id == itemId).FirstOrDefaultAsync();
+                    var res = await context.Items.AsNoTracking().Where(x => x.Id == itemId).FirstOrDefaultAsync().ConfigureAwait(false);
 
                     return res.Description?.Trim();
                 }
@@ -97,7 +97,8 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                return await context.Items.AsNoTracking().Where(x => x.WatchState != 0).ToDictionaryAsync(x => x.Id, y => y.WatchState);
+                return await context.Items.AsNoTracking().Where(x => x.WatchState != 0).ToDictionaryAsync(x => x.Id, y => y.WatchState)
+                    .ConfigureAwait(false);
             }
         }
 
@@ -109,7 +110,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId).ConfigureAwait(false);
                         if (item == null)
                         {
                             transaction.Rollback();
@@ -118,7 +119,7 @@ namespace v00v.Services.Persistence.Repositories
 
                         item.Comments = comments;
                         context.Entry(item).Property(x => x.Comments).IsModified = true;
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -140,7 +141,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId).ConfigureAwait(false);
                         if (item == null)
                         {
                             transaction.Rollback();
@@ -152,7 +153,8 @@ namespace v00v.Services.Persistence.Repositories
                         context.Entry(item).Property(x => x.WatchState).IsModified = true;
                         if (channelId != null)
                         {
-                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId)
+                                .ConfigureAwait(false);
                             if (oldState == 0)
                             {
                                 switch (state)
@@ -203,7 +205,7 @@ namespace v00v.Services.Persistence.Repositories
                             }
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -225,14 +227,14 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == itemId).ConfigureAwait(false);
                         if (item != null)
                         {
                             item.FileName = filename;
                             context.Entry(item).Property(x => x.FileName).IsModified = true;
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -281,7 +283,7 @@ namespace v00v.Services.Persistence.Repositories
                         //    context.Entry(item).Property(x => x.FileName).IsModified = false;
                         //}
 
-                        await context.SaveChangesAsync();
+                        await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         var ids = items.Select(y => y.Id);
 
@@ -310,14 +312,14 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == parsedId);
+                        var item = await context.Items.AsNoTracking().FirstOrDefaultAsync(x => x.Id == parsedId).ConfigureAwait(false);
                         if (item != null)
                         {
                             item.WatchState = watch;
                             context.Entry(item).Property(x => x.WatchState).IsModified = true;
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }

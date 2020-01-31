@@ -45,8 +45,8 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         channel.Playlists.RemoveAll(x => x.Id == channel.Id || x.Id == channel.ExCache || x.Id == channel.PlCache);
-                        await context.Channels.AddAsync(_mapper.Map<Database.Models.Channel>(channel));
-                        var res = await context.SaveChangesAsync();
+                        await context.Channels.AddAsync(_mapper.Map<Database.Models.Channel>(channel)).ConfigureAwait(false);
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -69,8 +69,9 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         channels.ForEach(x => x.Playlists.RemoveAll(y => y.Id == x.Id || y.Id == x.ExCache || y.Id == x.PlCache));
-                        await context.Channels.AddRangeAsync(channels.Select(x => _mapper.Map<Database.Models.Channel>(x)));
-                        var res = await context.SaveChangesAsync();
+                        await context.Channels.AddRangeAsync(channels.Select(x => _mapper.Map<Database.Models.Channel>(x)))
+                            .ConfigureAwait(false);
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -92,7 +93,8 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId)
+                            .ConfigureAwait(false);
                         if (channel == null)
                         {
                             transaction.Rollback();
@@ -100,7 +102,7 @@ namespace v00v.Services.Persistence.Repositories
                         }
 
                         context.Channels.Remove(channel);
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -167,7 +169,7 @@ namespace v00v.Services.Persistence.Repositories
                     //UnlistedItems =
                     //    channel.Items.Where(x => x.SyncState == 2 || x.SyncState == 3).Select(y => y.Id),
                     Playlists = syncPls ? channel.Playlists.Select(x => x.Id) : null
-                }).ToListAsync();
+                }).ToListAsync().ConfigureAwait(false);
             }
         }
 
@@ -222,7 +224,7 @@ namespace v00v.Services.Persistence.Repositories
             using (var context = _contextFactory.CreateVideoContext())
             {
                 return await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
-                    .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState));
+                    .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState)).ConfigureAwait(false);
             }
         }
 
@@ -253,7 +255,7 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         var ch = await context.Channels.AsNoTracking().Include(x => x.Tags).AsNoTracking()
-                            .FirstOrDefaultAsync(x => x.Id == channelId);
+                            .FirstOrDefaultAsync(x => x.Id == channelId).ConfigureAwait(false);
 
                         if (ch == null)
                         {
@@ -271,10 +273,11 @@ namespace v00v.Services.Persistence.Repositories
                             context.ChannelTags.RemoveRange(ch.Tags);
                         }
 
-                        await context.ChannelTags.AddRangeAsync(tags.Select(x => new ChannelTag { TagId = x, ChannelId = channelId }));
+                        await context.ChannelTags.AddRangeAsync(tags.Select(x => new ChannelTag { TagId = x, ChannelId = channelId }))
+                            .ConfigureAwait(false);
 
                         context.Entry(ch).State = EntityState.Modified;
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -309,7 +312,7 @@ namespace v00v.Services.Persistence.Repositories
                                 var dbPls = fdiff.NewPlaylists.Select(x => _mapper.Map<Playlist>(x)).ToHashSet();
                                 var ptask = context.Playlists.AddRangeAsync(dbPls);
                                 var iptask = context.ItemPlaylists.AddRangeAsync(dbPls.SelectMany(x => x.Items));
-                                await Task.WhenAny(ptask, iptask);
+                                await Task.WhenAny(ptask, iptask).ConfigureAwait(false);
                             }
 
                             // playlist-items
@@ -336,7 +339,8 @@ namespace v00v.Services.Persistence.Repositories
                                     context.ItemPlaylists.RemoveRange(deleted);
                                     foreach (var playlist in deleted.GroupBy(x => x.PlaylistId))
                                     {
-                                        var pl = await context.Playlists.FirstOrDefaultAsync(x => x.Id == playlist.Key);
+                                        var pl = await context.Playlists.FirstOrDefaultAsync(x => x.Id == playlist.Key)
+                                            .ConfigureAwait(false);
                                         if (pl == null)
                                         {
                                             continue;
@@ -353,7 +357,8 @@ namespace v00v.Services.Persistence.Repositories
                                     await context.ItemPlaylists.AddRangeAsync(added);
                                     foreach (var playlist in added.GroupBy(x => x.PlaylistId))
                                     {
-                                        var pl = await context.Playlists.AsTracking().FirstOrDefaultAsync(x => x.Id == playlist.Key);
+                                        var pl = await context.Playlists.AsTracking().FirstOrDefaultAsync(x => x.Id == playlist.Key)
+                                            .ConfigureAwait(false);
                                         if (pl == null)
                                         {
                                             continue;
@@ -369,13 +374,13 @@ namespace v00v.Services.Persistence.Repositories
                         // items
                         if (fdiff.NewItems.Count > 0)
                         {
-                            await context.Items.AddRangeAsync(fdiff.NewItems.Select(x => _mapper.Map<Item>(x)));
+                            await context.Items.AddRangeAsync(fdiff.NewItems.Select(x => _mapper.Map<Item>(x))).ConfigureAwait(false);
                         }
 
                         //become visible
                         foreach (var s in fdiff.NoUnlistedAgain)
                         {
-                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s).ConfigureAwait(false);
                             if (item != null && (item.SyncState == 2 || item.SyncState == 3))
                             {
                                 item.SyncState = 0;
@@ -386,7 +391,7 @@ namespace v00v.Services.Persistence.Repositories
                         //become deleted
                         foreach (var s in fdiff.DeletedItems)
                         {
-                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s).ConfigureAwait(false);
                             if (item != null && item.SyncState != 3)
                             {
                                 item.SyncState = 3;
@@ -397,7 +402,7 @@ namespace v00v.Services.Persistence.Repositories
                         //unlisted not from any pl
                         foreach (var s in fdiff.UnlistedItems)
                         {
-                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s);
+                            var item = await context.Items.FirstOrDefaultAsync(x => x.Id == s).ConfigureAwait(false);
                             if (item != null)
                             {
                                 item.SyncState = 2;
@@ -442,7 +447,7 @@ namespace v00v.Services.Persistence.Repositories
                             }
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -474,7 +479,7 @@ namespace v00v.Services.Persistence.Repositories
                             context.Entry(item).Property(x => x.SyncState).IsModified = true;
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -506,7 +511,8 @@ namespace v00v.Services.Persistence.Repositories
                         }
                         else
                         {
-                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                            var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId)
+                                .ConfigureAwait(false);
                             if (channel != null)
                             {
                                 channel.Count = count;
@@ -514,7 +520,7 @@ namespace v00v.Services.Persistence.Repositories
                             }
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -536,7 +542,8 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId)
+                            .ConfigureAwait(false);
                         if (channel != null)
                         {
                             if (count == 0)
@@ -558,7 +565,7 @@ namespace v00v.Services.Persistence.Repositories
                             context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }
@@ -580,7 +587,8 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId);
+                        var channel = await context.Channels.AsNoTracking().FirstOrDefaultAsync(x => x.Id == channelId)
+                            .ConfigureAwait(false);
                         if (channel != null)
                         {
                             if (count == 0)
@@ -602,7 +610,7 @@ namespace v00v.Services.Persistence.Repositories
                             context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
                         }
 
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }

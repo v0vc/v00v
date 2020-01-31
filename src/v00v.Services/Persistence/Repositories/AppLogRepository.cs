@@ -74,7 +74,7 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         await context.AppLogs.AddAsync(new AppLog { AppId = AppId, AppStatus = (byte)status, Comment = comment });
-                        var res = await context.SaveChangesAsync();
+                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
                         transaction.Commit();
                         return res;
                     }

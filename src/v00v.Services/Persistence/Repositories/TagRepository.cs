@@ -65,11 +65,12 @@ namespace v00v.Services.Persistence.Repositories
                     try
                     {
                         var tag = await context.Tags.AsNoTracking()
-                            .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase));
+                            .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase))
+                            .ConfigureAwait(false);
                         if (tag != null)
                         {
                             context.Tags.Remove(tag);
-                            var res = await context.SaveChangesAsync();
+                            var res = await context.SaveChangesAsync().ConfigureAwait(false);
                             transaction.Commit();
                             return res;
                         }
