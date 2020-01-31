@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using AutoMapper;
 using Avalonia;
 using Avalonia.ReactiveUI;
 using Microsoft.EntityFrameworkCore;
@@ -31,24 +30,24 @@ namespace v00v
         {
             Register();
 
-            PreAppStart(true);
+            PreAppStart(false);
 
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            //BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            Shutdown();
+            //Shutdown();
 
-            //try
-            //{
-            //    BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            //}
-            //catch (Exception e)
-            //{
-            //    AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
-            //}
-            //finally
-            //{
-            //    Shutdown();
-            //}
+            try
+            {
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            }
+            catch (Exception e)
+            {
+                AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
+            }
+            finally
+            {
+                Shutdown();
+            }
         }
 
         private static void PreAppStart(bool needMigrate)

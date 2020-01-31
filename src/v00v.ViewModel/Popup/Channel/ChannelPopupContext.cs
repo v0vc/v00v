@@ -200,10 +200,17 @@ namespace v00v.ViewModel.Popup.Channel
 
             if (SetExisted(ChannelId))
             {
+                IsWorking = false;
                 return;
             }
 
             var parsedId = await _youtubeService.GetChannelId(ChannelId);
+            if (parsedId == null)
+            {
+                IsWorking = false;
+                return;
+            }
+
             if (SetExisted(parsedId))
             {
                 return;

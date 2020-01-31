@@ -628,55 +628,42 @@ namespace v00v.Services.ContentProvider
 
         public async Task<string> GetChannelId(string inputChannelLink)
         {
-            var parsedChannelId = string.Empty;
             var sp = inputChannelLink.Split('/');
-            if (sp.Length > 1)
+            if (sp.Length <= 1)
             {
-                if (sp.Contains(YouUser))
-                {
-                    var indexuser = Array.IndexOf(sp, YouUser);
-                    if (indexuser < 0)
-                    {
-                        return string.Empty;
-                    }
-
-                    var user = sp[indexuser + 1];
-                    parsedChannelId = await GetChannelIdByUserNameNetAsync(user);
-                }
-                else if (sp.Contains(YouChannel))
-                {
-                    var indexchannel = Array.IndexOf(sp, YouChannel);
-                    if (indexchannel < 0)
-                    {
-                        return string.Empty;
-                    }
-
-                    parsedChannelId = sp[indexchannel + 1];
-                    var appSp = parsedChannelId.Split('?');
-                    if (appSp.Length > 1)
-                    {
-                        parsedChannelId = appSp[0];
-                    }
-                }
-                else
-                {
-                    if (!IsYoutubeLink(inputChannelLink, out var videoId))
-                    {
-                        return parsedChannelId;
-                    }
-
-                    var zap = $"{Url}videos?&id={videoId}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}";
-
-                    parsedChannelId = (await GetJsonObjectAsync(new Uri(zap)))?.SelectToken("items[0].snippet.channelId")
-                        ?.Value<string>();
-                }
-            }
-            else
-            {
-                parsedChannelId = await GetChannelIdByUserNameNetAsync(inputChannelLink) ?? inputChannelLink;
+                return await GetChannelIdByUserNameNetAsync(inputChannelLink) ?? inputChannelLink;
             }
 
-            return parsedChannelId;
+            if (sp.Contains(YouUser))
+            {
+                var indexuser = Array.IndexOf(sp, YouUser);
+                if (indexuser < 0)
+                {
+                    return string.Empty;
+                }
+
+                var user = sp[indexuser + 1];
+                return await GetChannelIdByUserNameNetAsync(user);
+            }
+
+            if (!sp.Contains(YouChannel))
+            {
+                return IsYoutubeLink(inputChannelLink, out var videoId)
+                    ? (await
+                        GetJsonObjectAsync(new
+                                               Uri($"{Url}videos?&id={videoId}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}"))
+                    )?.SelectToken("items[0].snippet.channelId")?.Value<string>()
+                    : string.Empty;
+            }
+
+            var indexchannel = Array.IndexOf(sp, YouChannel);
+            if (indexchannel < 0)
+            {
+                return string.Empty;
+            }
+
+            var appSp = sp[indexchannel + 1].Split('?');
+            return appSp.Length >= 1 ? appSp[0] : string.Empty;
         }
 
         public async Task<List<Item>> GetItems(Dictionary<string, SyncPrivacy> privacyItems)
@@ -898,7 +885,7 @@ namespace v00v.Services.ContentProvider
             var regex = new Regex(YouRegex, RegexOptions.None);
             var match = regex.Match(link);
             var res = match.Success;
-            videoId = res ? match.Groups[0].Value : null;
+            videoId = res ? match.Groups[1].Value : null;
             return res;
         }
 
