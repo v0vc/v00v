@@ -4,7 +4,7 @@
         xmlns:views="clr-namespace:v00v.Views.Application;assembly=v00v.Views"
         Width="1200" 
         Height="600"
-        Title="{Binding WindowTitle}"
+        Title="{Binding WindowTitle, Mode=OneWay}"
         >
     <views:MainView/>
 </Window>

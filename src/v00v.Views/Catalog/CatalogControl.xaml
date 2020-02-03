@@ -8,26 +8,21 @@
         <KeyBinding Command="{Binding SelectChannelCommand, Mode=OneWay}" Gesture="Home"/>
         <KeyBinding Command="{Binding ClearAddedCommand, Mode=OneWay}" Gesture="Delete"/>
     </UserControl.KeyBindings>
-
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
-
-        <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9" Text="{Binding SearchText, Mode=TwoWay}" />
-
+        <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan ="2" Margin="10,9,8,9" 
+                 Text="{Binding SearchText, Mode=TwoWay}"/>
         <ListBox Grid.Row="1" Grid.ColumnSpan="2" BorderThickness="0"
-            Items="{Binding Entries, Mode=OneWay}"
-            SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
-            VirtualizationMode="Simple"
-            ScrollViewer.VerticalScrollBarVisibility="Auto"
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            Background="Transparent" 
-            >
-
+                 Items="{Binding Entries, Mode=OneWay}"
+                 SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
+                 VirtualizationMode="Simple"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 Background="Transparent">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <catalog:EntryControl />
+                    <catalog:EntryControl/>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-
             <ListBox.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Add" Command="{Binding SaveChannelCommand, Mode=OneWay}" 
@@ -95,103 +90,82 @@
                     </MenuItem>
                 </ContextMenu>
             </ListBox.ContextMenu>
-
         </ListBox>
-
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header >
                 <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="29">
                     <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />
-                            <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp" />
+                            <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp"/>
                         </Panel>
                     </Button>
-                    <ComboBox Height="25" Width="90" ToolTip.Tip="Tag"
+                    <ComboBox Height="25" Width="90" ToolTip.Tip="Tags"
                               VerticalAlignment="Bottom" 
                               VirtualizationMode="Simple" 
                               Items="{Binding Tags, Mode=OneTime}" 
-                              SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
-                              >
+                              SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Text}"/>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-
                     <Button Command="{Binding SyncChannelsCommand, Mode=OneTime}" ToolTip.Tip="Sync">
                         <Panel>
                             <Ellipse />
-                            <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp" />
+                            <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp"/>
                         </Panel>
                     </Button>
-                    
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
-                                     IsChecked="{Binding !MassSync, Mode=TwoWay}"
-                                     />
+                                     IsChecked="{Binding !MassSync, Mode=TwoWay}"/>
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
-                                     IsChecked="{Binding MassSync, Mode=TwoWay}"
-                                     />
+                                     IsChecked="{Binding MassSync, Mode=TwoWay}"/>
                     </StackPanel>
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: on" Classes="dot"
-                                     IsChecked="{Binding SyncPls, Mode=TwoWay}" 
-                                     />
+                                     IsChecked="{Binding SyncPls, Mode=TwoWay}"/>
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: off" Classes="dot"
-                                     IsChecked="{Binding !SyncPls, Mode=TwoWay}"
-                                     />
+                                     IsChecked="{Binding !SyncPls, Mode=TwoWay}"/>
                     </StackPanel>
                 </StackPanel>
             </Expander.Header>
-
             <Border BorderBrush="#000000" BorderThickness="0.2">
                 <StackPanel Orientation="Horizontal" Height="25">
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By title" Classes="sort"
                                  IsChecked="True" 
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="Title"
-                                 />
+                                 CommandParameter="Title"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="Subs"
-                                 />
+                                 CommandParameter="Subs"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="View"
-                                 />
+                                 CommandParameter="View"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By items count" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="Count"
-                                 />
+                                 CommandParameter="Count"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By date" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="LastDate"
-                                 />
+                                 CommandParameter="LastDate"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By watched" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="Watched"
-                                 />
+                                 CommandParameter="Watched"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By planned" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="Planned"
-                                 />
+                                 CommandParameter="Planned"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs diff" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="SubsDiff"
-                                 />
+                                 CommandParameter="SubsDiff"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views diff" Classes="sort"
                                  Command="{Binding SetSortCommand, Mode=OneTime}"
-                                 CommandParameter="ViewDiff"
-                                 />
+                                 CommandParameter="ViewDiff"/>
                 </StackPanel>
             </Border>
         </Expander>
     </Grid>
-    
     <UserControl.Styles>
-
         <Style Selector="ComboBox">
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Background" Value="#1b2333" />
@@ -313,7 +287,5 @@
         <Style Selector="RadioButton.sort">
             <Setter Property="Margin" Value="0,0,4,0" />
         </Style>
-
     </UserControl.Styles>
-    
 </UserControl>

@@ -3,16 +3,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="clr-namespace:v00v.Views.Controls"
-    xmlns:item="clr-namespace:v00v.Views.Popup.Item">
+    xmlns:item="clr-namespace:v00v.Views.Popup.Item"
+    >
     <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
         <TabItem Header="Information">
             <Grid RowDefinitions="auto,auto" Width="480">
                 <Image Grid.Row="0" Source="{Binding Thumb, Mode=OneTime}" 
                        Stretch="Fill" VerticalAlignment="Center" HorizontalAlignment="Left"
                        Width="{Binding ImageWidth, Mode=OneTime}" 
-                       Height="{Binding ImageHeight, Mode=OneTime}"
-                       />
-
+                       Height="{Binding ImageHeight, Mode=OneTime}"/>
                 <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
                                           IsReadOnly="True"
                                           IsVisible="True"
@@ -21,8 +20,7 @@
                                           TextWrapping="Wrap"
                                           TextAlignment="Left"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                          />
+                                          ScrollViewer.HorizontalScrollBarVisibility="Hidden"/>
             </Grid>
         </TabItem>
         <TabItem Header="Comments">
@@ -32,11 +30,10 @@
                          SelectedItem="{Binding SelectedComment, Mode=TwoWay}"
                          VirtualizationMode="Simple"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         >
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.DataTemplates>
                         <DataTemplate>
-                            <item:CommentControl />
+                            <item:CommentControl/>
                         </DataTemplate>
                     </ListBox.DataTemplates>
                     <ListBox.ContextMenu>
@@ -59,41 +56,32 @@
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
-
                 <Border Grid.Row="1" Margin="2,2,0,2" BorderBrush="#242e44" BorderThickness="0.2" Background="AliceBlue">
                     <Grid ColumnDefinitions="*,auto,auto" IsEnabled="{Binding !Working, Mode=OneWay}">
                         <TextBox Grid.Column="0" Text="{Binding SearchText, Mode=TwoWay}" Watermark="{Binding Watermark, Mode=OneWay}" 
                                  HorizontalAlignment="Left" VerticalAlignment="Center" Width="235"
-                                 Margin="2" ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                 />
+                                 Margin="2" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="15,0,0,0">
                             <RadioButton GroupName="CommentSort" ToolTip.Tip="By date" IsChecked="True" Margin="0,0,5,0"
                                          Command="{Binding SetSortCommand, Mode=OneTime}"
-                                         CommandParameter="TimeStamp"
-                                         />
+                                         CommandParameter="TimeStamp"/>
                             <RadioButton GroupName="CommentSort" ToolTip.Tip="By likes" Margin="0,0,5,0"
                                          Command="{Binding SetSortCommand, Mode=OneTime}"
-                                         CommandParameter="LikeCount"
-                                         />
+                                         CommandParameter="LikeCount"/>
                             <RadioButton GroupName="CommentSort" ToolTip.Tip="By replies" Margin="0,0,5,0"
                                          Command="{Binding SetSortCommand, Mode=OneTime}"
-                                         CommandParameter="ReplyCount"
-                                         />
+                                         CommandParameter="ReplyCount"/>
                             <RadioButton GroupName="CommentSort" ToolTip.Tip="By author"
                                          Command="{Binding SetSortCommand, Mode=OneTime}"
-                                         CommandParameter="Author"
-                                         />
+                                         CommandParameter="Author"/>
                         </StackPanel>
                         <TextBlock Grid.Column="2" Text="{Binding Comments.Count, Mode=OneWay}" Foreground="#92a3b3"
-                                   VerticalAlignment="Center" Margin="0,0,15,0"
-                                   />
+                                   VerticalAlignment="Center" Margin="0,0,15,0"/>
                     </Grid>
                 </Border>
             </Grid>
-            
         </TabItem>
     </TabControl>
-
     <UserControl.Styles>
         <Style Selector="TextBox /template/ Border">
             <Setter Property="CornerRadius" Value="4" />
@@ -118,7 +106,5 @@
         <Style Selector="ListBoxItem:selected Grid">
             <Setter Property="Background" Value="#E6E6FA"/>
         </Style>
-
     </UserControl.Styles>
-    
 </UserControl>

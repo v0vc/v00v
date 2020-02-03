@@ -20,8 +20,7 @@
             </StackPanel>
             <Button Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="15" IsVisible="{Binding HasReply, Mode=OneWay}"
                     Background="Transparent" BorderThickness="0" BorderBrush="Transparent"
-                    Command="{Binding $parent[ListBox].DataContext.LoadRepliesCommand, Mode=OneWay}" CommandParameter="{Binding}"
-                    >
+                    Command="{Binding $parent[ListBox].DataContext.LoadRepliesCommand, Mode=OneWay}" CommandParameter="{Binding}">
                 <Image Source="{Binding ExpandThumb, Mode=OneWay}"/>
             </Button>
         </Grid>

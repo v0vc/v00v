@@ -3,15 +3,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns="https://github.com/avaloniaui"
     xmlns:channeltag="clr-namespace:v00v.Views.Popup.Channel"
-    xmlns:controls="clr-namespace:v00v.Views.Controls">
-
+    xmlns:controls="clr-namespace:v00v.Views.Controls"
+    >
     <Grid RowDefinitions="auto,auto,auto,auto,auto,auto" MaxWidth="380">
         <controls:ExtendedTextBox Grid.Row="0" ToolTip.Tip="{Binding SubTitle, Mode=OneWay}" Watermark="Id (required)"
-            IsReadOnly="{Binding !IsChannelEnabled, Mode=OneWay}" Text="{Binding ChannelId, Mode=TwoWay}"
-            />
-
+            IsReadOnly="{Binding !IsChannelEnabled, Mode=OneWay}" Text="{Binding ChannelId, Mode=TwoWay}"/>
         <controls:ExtendedTextBox Grid.Row="1" Watermark="Title (optional)" Text="{Binding ChannelTitle, Mode=TwoWay}"/>
-
         <Grid Grid.Row="2" ColumnDefinitions="auto,auto,*" Margin="0,15,0,0">
             <Button Grid.Column="0" Classes="Link" Command="{Binding AddTagCommand, Mode=OneWay}">
                 <TextBlock Text="Add"/>
@@ -20,29 +17,24 @@
                 <TextBlock Text="Save" />
             </Button>
         </Grid>
-
         <StackPanel Grid.Row="3" Orientation="Horizontal">
             <TextBox Width="185" IsEnabled="{Binding SelectedTag.IsEditable, Mode=OneWay}" Margin="0,0,0,10" Watermark="Tag" Text="{Binding SelectedTag.Text, Mode=TwoWay}"/>
             <TextBox Width="185" Margin="10,0,0,10" Watermark="Search" Text="{Binding FilterTag, Mode=TwoWay}"/>
         </StackPanel>
-
         <ListBox Grid.Row="4" Items="{Binding Entries}" SelectedItem="{Binding SelectedTag, Mode=TwoWay}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <channeltag:TagItemControl />
+                    <channeltag:TagItemControl/>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-
         <Grid Grid.Row="5">
             <Button IsEnabled="{Binding !IsWorking, Mode=OneWay}" Classes="Link" Command="{Binding CloseChannelCommand, Mode=OneWay}">
                 <TextBlock Text="{Binding CloseText, Mode=OneWay}"/>
             </Button>
         </Grid>
     </Grid>
-    
     <UserControl.Styles>
-        
         <Style Selector="ListBox">
             <Setter Property="Height" Value="100" />
             <Setter Property="BorderThickness" Value="1" />
@@ -107,7 +99,5 @@
         <Style Selector="TextBox /template/ Border">
             <Setter Property="CornerRadius" Value="4" />
         </Style>
-        
     </UserControl.Styles>
-    
 </UserControl>
