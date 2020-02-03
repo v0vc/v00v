@@ -412,6 +412,8 @@ namespace v00v.ViewModel.Explorer
                         return SortExpressionComparer<Item>.Descending(t => t.Downloaded);
                     case ItemSort.Title:
                         return SortExpressionComparer<Item>.Ascending(t => t.Title);
+                    case ItemSort.Quality:
+                        return SortExpressionComparer<Item>.Descending(t => t.Quality);
                     default:
                         return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
                 }

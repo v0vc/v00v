@@ -11,6 +11,7 @@
         Duration,
         Title,
         Diff,
-        File
+        File,
+        Quality
     }
 }

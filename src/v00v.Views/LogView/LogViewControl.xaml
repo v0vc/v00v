@@ -74,6 +74,11 @@
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Channel"
                                  />
+                    <RadioButton GroupName="ItemSort" ToolTip.Tip="By like/dislike*view" Margin="0,0,3,0"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Quality}}"
+                                 Command="{Binding SetSortCommand, Mode=OneWay}"
+                                 CommandParameter="Quality"
+                                 />
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By view diff"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Diff}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"

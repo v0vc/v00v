@@ -30,13 +30,9 @@ namespace v00v.Model.Entities
         #region Properties
 
         public string ChannelId { get; set; }
-
         public string ChannelTitle { get; set; }
-
         public long Comments { get; set; }
-
         public string Description { get; set; }
-
         public long DislikeCount { get; set; }
 
         public bool Downloaded
@@ -46,35 +42,30 @@ namespace v00v.Model.Entities
         }
 
         public int Duration { get; set; }
-
         public string DurationAgo => Timestamp.TimeAgo();
-
         public string DurationString => IntTostrTime(Duration);
-
-        public string FileName { get; set; }
-
+        public string FileName { get; private set; }
         public string Id { get; set; }
 
         public bool IsWorking
         {
             get => _isWorking;
-            set => Update(ref _isWorking, value);
+            private set => Update(ref _isWorking, value);
         }
 
         public IBitmap LargeThumb { get; set; }
-
         public long LikeCount { get; set; }
-
         public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
 
         public double Percentage
         {
             get => _percentage;
-            set => Update(ref _percentage, value);
+            private set => Update(ref _percentage, value);
         }
 
         public bool Planned => WatchState == WatchState.Planned;
 
+        public long Quality => GetQuality();
         public string SaveDir { get; set; }
 
         public SyncState SyncState
@@ -84,19 +75,12 @@ namespace v00v.Model.Entities
         }
 
         public IEnumerable<int> Tags { get; set; }
-
         public IBitmap Thumb => Thumbnail.CreateThumb();
-
         public byte[] Thumbnail { get; set; }
-
         public string ThumbnailLink { get; set; }
-
         public DateTime Timestamp { get; set; }
-
         public string Title { get; set; }
-
         public long ViewCount { get; set; }
-
         public long ViewDiff { get; set; }
         public bool Watched => WatchState == WatchState.Watched;
 
@@ -197,6 +181,17 @@ namespace v00v.Model.Entities
             var match = _numRegex.Match(input);
             return !match.Success ? 0 :
                 double.TryParse(match.Value.TrimEnd('%'), NumberStyles.Any, CultureInfo.InvariantCulture, out var res) ? res : 0;
+        }
+
+        private long GetQuality()
+        {
+            if (LikeCount == 0)
+            {
+                return 0;
+            }
+
+            var dis = DislikeCount == 0 ? 1 : DislikeCount;
+            return LikeCount / dis * ViewCount / 10000;
         }
 
         private void HandleDownload(bool skip)
