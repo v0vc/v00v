@@ -48,6 +48,7 @@ namespace v00v.ViewModel.Startup
         private bool _subsEnabled;
         private string _watchApp;
         private bool _withSubs;
+        private string _youApiKey;
 
         #endregion
 
@@ -81,6 +82,7 @@ namespace v00v.ViewModel.Startup
             _watchApp = backupService.WatchApp;
             YouParser = backupService.YouParser;
             YouParam = backupService.YouParam;
+            YouApiKey = backupService.YouApiKey;
 
             _enableDailyParserUpdateSchedule = backupService.EnableDailyParserUpdateSchedule;
             if (_enableDailyParserUpdateSchedule)
@@ -351,6 +353,13 @@ namespace v00v.ViewModel.Startup
                     }
                 }
             });
+            this.WhenValueChanged(x => YouApiKey).Subscribe(x =>
+            {
+                if (_isInited)
+                {
+                    backupService.SaveChanges(backupService.KeyYouApiKey, $"{YouApiKey}");
+                }
+            });
 
             _isInited = true;
         }
@@ -533,6 +542,12 @@ namespace v00v.ViewModel.Startup
         {
             get => _withSubs;
             set => Update(ref _withSubs, value);
+        }
+
+        public string YouApiKey
+        {
+            get => _youApiKey;
+            set => Update(ref _youApiKey, value);
         }
 
         public string YouParam { get; }

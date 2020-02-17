@@ -25,25 +25,22 @@
             </ListBox.ItemTemplate>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Add" Command="{Binding SaveChannelCommand, Mode=OneWay}" 
-                              IsVisible="{Binding SelectedEntry.IsNew, Mode=OneWay}"
-                              >
+                    <MenuItem Header="Save" Command="{Binding SaveChannelCommand, Mode=OneWay}" 
+                              IsVisible="{Binding SelectedEntry.IsNew, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Save32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Edit" Command="{Binding EditChannelCommand, Mode=OneWay}" 
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}" 
-                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Edit32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Sync" Command="{Binding SyncChannelCommand, Mode=OneWay}" 
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}" 
-                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Network32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
@@ -55,30 +52,26 @@
                     </MenuItem>
                     <MenuItem Header="Delete" Command="{Binding DeleteChannelCommand, Mode=OneWay}" 
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}" 
-                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Related" Command="{Binding GetRelatedChannelCommand, Mode=OneWay}" 
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}" 
-                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Book32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Backup" Command="{Binding BackupCommand, Mode=OneWay}" 
-                              IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Backup32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Restore" Command="{Binding RestoreCommand, Mode=OneWay}" 
-                              IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}"
-                              >
+                              IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Restore32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>

@@ -38,6 +38,7 @@ namespace v00v.Services.Backup
         string KeyRepeatParserUpdateSchedule { get; }
         string KeyRepeatSyncSchedule { get; }
         string KeyWatchApp { get; }
+        string KeyYouApiKey { get; }
         string KeyYouParam { get; }
         string KeyYouParser { get; }
         string RepeatBackupSchedule { get; }
@@ -46,6 +47,7 @@ namespace v00v.Services.Backup
         string UseSqlite { get; set; }
         bool UseSqliteInit { get; set; }
         string WatchApp { get; }
+        string YouApiKey { get; }
         string YouParam { get; }
         string YouParser { get; }
 

@@ -14,7 +14,6 @@ namespace v00v.ViewModel.Startup
         TimeSpan DailySyncTime { get; }
         string DbDir { get; set; }
         string DownloadDir { get; set; }
-        bool EnableCustomDb { get; }
         bool EnableDailyBackupSchedule { get; }
         bool EnableDailyParserUpdateSchedule { get; }
         bool EnableDailySyncSchedule { get; }

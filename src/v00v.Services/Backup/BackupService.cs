@@ -42,6 +42,8 @@ namespace v00v.Services.Backup
 
         #region Properties
 
+        //private const string OldKey = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
+        //private const string NewKey = "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc";
         public string AppSettings => "AppSettings";
         public bool CustomDbEnabled => _configuration.GetValue<bool>($"{AppSettings}:{KeyEnableCustomDb}");
         public string CustomDbPath => _configuration.GetValue<string>($"{AppSettings}:{KeyDbDir}");
@@ -77,6 +79,7 @@ namespace v00v.Services.Backup
         public string KeyRepeatParserUpdateSchedule => "RepeatParserUpdateSchedule";
         public string KeyRepeatSyncSchedule => "RepeatSyncSchedule";
         public string KeyWatchApp => "WatchApp";
+        public string KeyYouApiKey => "YouApiKey";
         public string KeyYouParam => "YouParam";
         public string KeyYouParser => "YouParser";
         public string RepeatBackupSchedule => _configuration.GetValue<string>($"{AppSettings}:{KeyRepeatBackupSchedule}");
@@ -85,6 +88,7 @@ namespace v00v.Services.Backup
         public string UseSqlite { get; set; }
         public bool UseSqliteInit { get; set; } = false;
         public string WatchApp => _configuration.GetValue<string>($"{AppSettings}:{KeyWatchApp}");
+        public string YouApiKey => _configuration.GetValue<string>($"{AppSettings}:{KeyYouApiKey}");
         public string YouParam => _configuration.GetValue<string>($"{AppSettings}:{KeyYouParam}");
         public string YouParser => _configuration.GetValue<string>($"{AppSettings}:{KeyYouParser}");
 

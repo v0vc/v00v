@@ -16,6 +16,7 @@ using v00v.Model.Entities.Instance;
 using v00v.Model.Enums;
 using v00v.Model.Extensions;
 using v00v.Model.SyncEntities;
+using v00v.Services.Backup;
 
 namespace v00v.Services.ContentProvider
 {
@@ -31,15 +32,19 @@ namespace v00v.Services.ContentProvider
 
         private const string HrefRegex = @"<a\s+(?:[^>]*?\s+)?href=([""'])(.*?)\1>";
         private const int ItemsPerPage = 50;
-
-        private const string Key = "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI";
-
-        //private const string Key = "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc";
         private const string PrintType = "prettyPrint=false";
         private const string Url = "https://www.googleapis.com/youtube/v3/";
         private const string YouChannel = "channel";
         private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
+
+        #endregion
+
+        #region Fields
+
+        private bool _inited;
+
+        private string _key;
 
         #endregion
 
@@ -78,15 +83,6 @@ namespace v00v.Services.ContentProvider
             return res;
         }
 
-        private static async Task<string> GetChannelIdByUserNameNetAsync(string username)
-        {
-            return (await
-                    GetJsonObjectAsync(new
-                                           Uri($"{Url}channels?&forUsername={username}&key={Key}&part=snippet&fields=items(id)&{PrintType}"))
-                )
-                ?.SelectToken("items[0].id")?.Value<string>();
-        }
-
         private static string GetCommentText(JToken x, string levelName, Regex hrefRegex)
         {
             return hrefRegex.Replace(x.SelectToken(levelName)?.Value<string>().Replace("&quot;", @"""").Replace("<br />", " ")
@@ -118,23 +114,6 @@ namespace v00v.Services.ContentProvider
                 default:
                     return SyncState.Notset;
             }
-        }
-
-        private static async Task GetTrueDeleted(ChannelDiff diff)
-        {
-            var nonPlunl = diff.DeletedItems.Split()
-                .Select(id =>
-                            GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", id)}&key={Key}&part=id&fields=items(id)&{PrintType}")))
-                .ToHashSet();
-
-            await Task.WhenAll(nonPlunl);
-
-            diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
-                                            .SelectMany(x => x.Result.SelectTokens("items.[*]")
-                                                            .Select(z => z.SelectToken("id")?.Value<string>())));
-
-            diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
         }
 
         private static Item MakeItem(JToken x, string channelId, string cTitle)
@@ -179,6 +158,8 @@ namespace v00v.Services.ContentProvider
 
         public async Task AddPlaylists(Channel channel)
         {
+            InitKey();
+
             if (channel.Playlists.Count != 1)
             {
                 return;
@@ -187,7 +168,7 @@ namespace v00v.Services.ContentProvider
             var plu = channel.Playlists.First();
 
             channel.Items.AddRange((await
-                                       GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}")
+                                       GetAll($"{Url}playlistItems?&key={_key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}")
                                    ).SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)).Skip(ItemsPerPage));
 
             plu.Items.Clear();
@@ -200,12 +181,12 @@ namespace v00v.Services.ContentProvider
 
             var playlists =
                 (await
-                    GetAll($"{Url}playlists?&channelId={channel.Id}&key={Key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
+                    GetAll($"{Url}playlists?&channelId={channel.Id}&key={_key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
                 ).SelectTokens("$..items.[*]").ToHashSet();
 
             var plTasks = playlists.Select(x => x.SelectToken("id")?.Value<string>())
                 .Select(pid => new Tuple<string, Task<JArray>>(pid,
-                                                               GetAll($"{Url}playlistItems?&key={Key}&playlistId={pid}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")))
+                                                               GetAll($"{Url}playlistItems?&key={_key}&playlistId={pid}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(plTasks.Select(x => x.Item2));
@@ -241,7 +222,7 @@ namespace v00v.Services.ContentProvider
                 .ToList().Split()
                 .Select(vid =>
                             GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
+                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(unlistedTasks);
@@ -261,7 +242,7 @@ namespace v00v.Services.ContentProvider
                 var tasks = unlisted.Split()
                     .Select(vid =>
                                 GetJsonObjectAsync(new
-                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
                     .ToHashSet();
 
                 await Task.WhenAll(tasks);
@@ -308,9 +289,11 @@ namespace v00v.Services.ContentProvider
 
         public async Task<Channel> GetChannelAsync(string channelId, bool withoutPl, string channelTitle = null)
         {
+            InitKey();
+
             var record = await GetJsonObjectAsync(new Uri(channelTitle == null
-                                                              ? $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(title,description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"
-                                                              : $"{Url}channels?&id={channelId}&key={Key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"));
+                                                              ? $"{Url}channels?&id={channelId}&key={_key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(title,description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"
+                                                              : $"{Url}channels?&id={channelId}&key={_key}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description,thumbnails(default(url))),statistics(viewCount,subscriberCount))&{PrintType}"));
 
             if (record == null || !record.SelectToken("items").Any())
             {
@@ -335,7 +318,7 @@ namespace v00v.Services.ContentProvider
             var upload =
                 await
                     GetJsonObjectAsync(new
-                                           Uri($"{Url}playlists?&id={record.SelectToken("items[0].contentDetails.relatedPlaylists").SelectToken("uploads")?.Value<string>()}&key={Key}&part=snippet&fields=items(id,snippet(title,thumbnails(default(url))))&{PrintType}"));
+                                           Uri($"{Url}playlists?&id={record.SelectToken("items[0].contentDetails.relatedPlaylists").SelectToken("uploads")?.Value<string>()}&key={_key}&part=snippet&fields=items(id,snippet(title,thumbnails(default(url))))&{PrintType}"));
 
             var plu = new Playlist
             {
@@ -350,10 +333,10 @@ namespace v00v.Services.ContentProvider
                 {
                     await
                         GetJsonObjectAsync(new
-                                               Uri($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}"))
+                                               Uri($"{Url}playlistItems?&key={_key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}"))
                 }
                 : await
-                    GetAll($"{Url}playlistItems?&key={Key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
+                    GetAll($"{Url}playlistItems?&key={_key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
 
             channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)));
 
@@ -373,12 +356,12 @@ namespace v00v.Services.ContentProvider
 
             var playlists =
                 (await
-                    GetAll($"{Url}playlists?&channelId={channel.Id}&key={Key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
+                    GetAll($"{Url}playlists?&channelId={channel.Id}&key={_key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
                 ).SelectTokens("$..items.[*]").ToHashSet();
 
             var plTasks = playlists.Select(x => x.SelectToken("id")?.Value<string>())
                 .Select(pid => new Tuple<string, Task<JArray>>(pid,
-                                                               GetAll($"{Url}playlistItems?&key={Key}&playlistId={pid}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")))
+                                                               GetAll($"{Url}playlistItems?&key={_key}&playlistId={pid}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(plTasks.Select(x => x.Item2));
@@ -414,7 +397,7 @@ namespace v00v.Services.ContentProvider
                 .ToList().Split()
                 .Select(vid =>
                             GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
+                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(unlistedTasks);
@@ -436,7 +419,7 @@ namespace v00v.Services.ContentProvider
                 var tasks = unlisted.Split()
                     .Select(vid =>
                                 GetJsonObjectAsync(new
-                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
                     .ToHashSet();
 
                 await Task.WhenAll(tasks);
@@ -473,11 +456,13 @@ namespace v00v.Services.ContentProvider
 
         public async Task<ChannelDiff> GetChannelDiffAsync(ChannelStruct cs, bool syncPls, Action<string> setLog)
         {
+            InitKey();
+
             var diff = new ChannelDiff(cs.ChannelId, cs.ChannelTitle, syncPls);
 
             var record = await GetJsonObjectAsync(new Uri(syncPls
-                                                              ? $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description),statistics(viewCount,subscriberCount))&{PrintType}"
-                                                              : $"{Url}channels?&key={Key}&id={cs.ChannelId}&part=contentDetails,statistics&fields=items(contentDetails(relatedPlaylists),statistics(viewCount,subscriberCount))&{PrintType}"));
+                                                              ? $"{Url}channels?&key={_key}&id={cs.ChannelId}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description),statistics(viewCount,subscriberCount))&{PrintType}"
+                                                              : $"{Url}channels?&key={_key}&id={cs.ChannelId}&part=contentDetails,statistics&fields=items(contentDetails(relatedPlaylists),statistics(viewCount,subscriberCount))&{PrintType}"));
 
             if (record == null || !record.SelectToken("items").Any())
             {
@@ -498,7 +483,7 @@ namespace v00v.Services.ContentProvider
 
             var uploadvids =
                 (await
-                    GetAll($"{Url}playlistItems?&key={Key}&playlistId={upId}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")
+                    GetAll($"{Url}playlistItems?&key={_key}&playlistId={upId}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}")
                 ).SelectTokens("$..items.[*]").Select(rec => rec.SelectToken("snippet.resourceId.videoId")?.Value<string>())
                 .Where(x => x != null).Distinct().ToHashSet();
 
@@ -521,12 +506,12 @@ namespace v00v.Services.ContentProvider
 
             var playlists =
                 (await
-                    GetAll($"{Url}playlists?&channelId={cs.ChannelId}&key={Key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
+                    GetAll($"{Url}playlists?&channelId={cs.ChannelId}&key={_key}&part=snippet&fields=nextPageToken,items(id,snippet(title,channelId,thumbnails(default(url))))&maxResults={ItemsPerPage}&{PrintType}")
                 ).SelectTokens("$..items.[*]").ToHashSet();
 
             var plTasks = playlists.Select(x => x.SelectToken("id")?.Value<string>())
                 .Select(pid => new Tuple<string, Task<JArray>>(pid,
-                                                               GetAll($"{Url}playlistItems?&key={Key}&playlistId={pid}&part=snippet,status&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)),status(privacyStatus))&maxResults={ItemsPerPage}&{PrintType}")))
+                                                               GetAll($"{Url}playlistItems?&key={_key}&playlistId={pid}&part=snippet,status&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)),status(privacyStatus))&maxResults={ItemsPerPage}&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(plTasks.Select(x => x.Item2));
@@ -577,7 +562,7 @@ namespace v00v.Services.ContentProvider
                 .Except(diff.AddedItems.Select(x => x.Id).Union(cs.Items.Select(x => x.Item1))).ToList().Split()
                 .Select(vid =>
                             GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
+                                                   Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet&fields=items(id,snippet(channelId))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(unlistedTasks);
@@ -628,6 +613,8 @@ namespace v00v.Services.ContentProvider
 
         public async Task<string> GetChannelId(string inputChannelLink)
         {
+            InitKey();
+
             var sp = inputChannelLink.Split('/');
             if (sp.Length <= 1)
             {
@@ -651,7 +638,7 @@ namespace v00v.Services.ContentProvider
                 return IsYoutubeLink(inputChannelLink, out var videoId)
                     ? (await
                         GetJsonObjectAsync(new
-                                               Uri($"{Url}videos?&id={videoId}&key={Key}&part=snippet&fields=items(snippet(channelId))&{PrintType}"))
+                                               Uri($"{Url}videos?&id={videoId}&key={_key}&part=snippet&fields=items(snippet(channelId))&{PrintType}"))
                     )?.SelectToken("items[0].snippet.channelId")?.Value<string>()
                     : string.Empty;
             }
@@ -670,7 +657,7 @@ namespace v00v.Services.ContentProvider
         {
             var tasks = privacyItems.Select(x => x.Key).ToList().Split()
                 .Select(vid =>
-                            $"{Url}videos?id={string.Join(",", vid)}&key={Key}&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")
+                            $"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")
                 .Select(zap => GetJsonObjectAsync(new Uri(zap))).ToHashSet();
 
             await Task.WhenAll(tasks);
@@ -703,10 +690,12 @@ namespace v00v.Services.ContentProvider
 
         public async Task<List<Item>> GetPopularItems(string country, IEnumerable<string> existChannelsIds)
         {
+            InitKey();
+
             var ids =
                 (await
                     GetJsonObjectAsync(new
-                                           Uri($"{Url}videos?chart=mostPopular&key={Key}&maxResults={ItemsPerPage}&regionCode={country}&safeSearch=none&part=snippet&fields=items(id,snippet(channelId))&{PrintType}"))
+                                           Uri($"{Url}videos?chart=mostPopular&key={_key}&maxResults={ItemsPerPage}&regionCode={country}&safeSearch=none&part=snippet&fields=items(id,snippet(channelId))&{PrintType}"))
                 )?.SelectTokens("items.[*]").Where(x => x.SelectToken("id")?.Value<string>() != null)
                 .ToDictionary(y => y.SelectToken("id")?.Value<string>(),
                               y => new SyncPrivacy
@@ -727,10 +716,12 @@ namespace v00v.Services.ContentProvider
 
         public async Task<Channel[]> GetRelatedChannelsAsync(string channelId, IEnumerable<string> existChannels)
         {
+            InitKey();
+
             var res =
                 await
                     GetJsonObjectAsync(new
-                                           Uri($"{Url}channels?id={channelId}&key={Key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{PrintType}"));
+                                           Uri($"{Url}channels?id={channelId}&key={_key}&part=brandingSettings&fields=items(brandingSettings(channel(featuredChannelsUrls)))&{PrintType}"));
 
             if (res == null || !res.SelectToken("items").Any())
             {
@@ -744,9 +735,11 @@ namespace v00v.Services.ContentProvider
 
         public async Task<HashSet<Comment>> GetReplyCommentsAsync(string commentId, string channelId)
         {
+            InitKey();
+
             var record =
                 await
-                    GetAll($"{Url}comments?parentId={commentId}&key={Key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}");
+                    GetAll($"{Url}comments?parentId={commentId}&key={_key}&part=snippet,id&fields=nextPageToken,items(id,snippet(authorDisplayName,textDisplay,likeCount,publishedAt,authorChannelId))&maxResults={ItemsPerPage}&{PrintType}");
 
             if (record.Count == 0)
             {
@@ -777,10 +770,12 @@ namespace v00v.Services.ContentProvider
 
         public async Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region)
         {
+            InitKey();
+
             var ids =
                 (await
                     GetJsonObjectAsync(new
-                                           Uri($"{Url}search?&q={searchText}&key={Key}&maxResults={ItemsPerPage}&regionCode={region}&safeSearch=none&part=snippet&fields=items(id(videoId),snippet(channelId))&{PrintType}"))
+                                           Uri($"{Url}search?&q={searchText}&key={_key}&maxResults={ItemsPerPage}&regionCode={region}&safeSearch=none&part=snippet&fields=items(id(videoId),snippet(channelId))&{PrintType}"))
                 )?.SelectTokens("items.[*]").Where(x => x.SelectToken("id.videoId")?.Value<string>() != null)
                 .ToDictionary(y => y.SelectToken("id.videoId")?.Value<string>(),
                               y => new SyncPrivacy
@@ -821,9 +816,11 @@ namespace v00v.Services.ContentProvider
 
         public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId)
         {
+            InitKey();
+
             var record =
                 await
-                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={Key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}");
+                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={_key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}");
 
             if (record.Count == 0)
             {
@@ -891,14 +888,16 @@ namespace v00v.Services.ContentProvider
 
         public async Task SetItemsStatistic(Channel channel, bool isDur, IEnumerable<string> ids = null)
         {
+            InitKey();
+
             if (ids == null)
             {
                 ids = channel.Items.Select(x => x.Id);
             }
 
             var uploadTasks = ids.ToList().Split().Select(s => GetJsonObjectAsync(new Uri(isDur
-                                                                                              ? $"{Url}videos?id={string.Join(",", s)}&key={Key}&part=contentDetails,statistics&fields=items(id,contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}"
-                                                                                              : $"{Url}videos?id={string.Join(",", s)}&key={Key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                                                              ? $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=contentDetails,statistics&fields=items(id,contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}"
+                                                                                              : $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(uploadTasks);
@@ -925,10 +924,12 @@ namespace v00v.Services.ContentProvider
 
         public async Task SetItemsStatistic(List<Item> items)
         {
+            InitKey();
+
             var uploadTasks = items.Select(x => x.Id).ToList().Split()
                 .Select(s =>
                             GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", s)}&key={Key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                   Uri($"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(uploadTasks);
@@ -962,9 +963,42 @@ namespace v00v.Services.ContentProvider
                              });
         }
 
-        #endregion
+        private async Task<string> GetChannelIdByUserNameNetAsync(string username)
+        {
+            return (await
+                    GetJsonObjectAsync(new
+                                           Uri($"{Url}channels?&forUsername={username}&key={_key}&part=snippet&fields=items(id)&{PrintType}"))
+                )?.SelectToken("items[0].id")?.Value<string>();
+        }
 
-        //private string Key => _keys[new Random().Next(0, _keys.Length)];
-        //private readonly string[] _keys = { "AIzaSyDfdgAVDXbepYVGivfbgkknu0kYRbC2XwI", "AIzaSyATbiQHQc5byekwpTWuUKbDdIsSURiYhZc" };
+        private async Task GetTrueDeleted(ChannelDiff diff)
+        {
+            var nonPlunl = diff.DeletedItems.Split()
+                .Select(id =>
+                            GetJsonObjectAsync(new
+                                                   Uri($"{Url}videos?id={string.Join(",", id)}&key={_key}&part=id&fields=items(id)&{PrintType}")))
+                .ToHashSet();
+
+            await Task.WhenAll(nonPlunl);
+
+            diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
+                                            .SelectMany(x => x.Result.SelectTokens("items.[*]")
+                                                            .Select(z => z.SelectToken("id")?.Value<string>())));
+
+            diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
+        }
+
+        private void InitKey()
+        {
+            if (_inited)
+            {
+                return;
+            }
+
+            _key = AvaloniaLocator.Current.GetService<IBackupService>().YouApiKey;
+            _inited = true;
+        }
+
+        #endregion
     }
 }

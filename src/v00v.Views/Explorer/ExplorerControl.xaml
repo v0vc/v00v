@@ -1,5 +1,6 @@
 ﻿<UserControl
     x:Class="v00v.Views.Explorer.ExplorerControl"
+    x:Name="explorer"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:explorer="clr-namespace:v00v.Views.Explorer"
@@ -12,6 +13,7 @@
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Watched}" Gesture="w"/>
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Notset}" Gesture="e"/>
     </UserControl.KeyBindings>
+    
     <ListBox Grid.Row="0" Name="ItemList" BorderThickness="0"
              Items="{Binding Items, Mode=OneWay}"
              SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
