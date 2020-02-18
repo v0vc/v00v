@@ -7,20 +7,19 @@
     <Border BorderThickness="1" BorderBrush="#bdacd1">
         <Panel>
             <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="25,*,25,25,25,25,10">
-                <StackPanel Grid.Column="1" Grid.Row="0" Margin="3,5,0,0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,5,0,0" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Panel>
                         <Ellipse />
                         <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp" />
                     </Panel>
                     <TextBlock Text="Add" Margin="10,0,0,0"/>
-                    <Panel Margin="45,0,0,0">
+                    <Panel Margin="48,0,0,0">
                         <Ellipse />
                         <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp" />
                     </Panel>
                     <TextBlock Text="Synchronize" Margin="10,0,0,0"/>
-                    <CheckBox IsChecked="{Binding ShowSettings, Mode=TwoWay}" Margin="110,0,0,0" Content="Show settings"/>
                 </StackPanel>
-                <Grid Grid.Column="1" Grid.Row="1" RowDefinitions="15,25,2,25,2,25,2,25,30,25,2,25,2,25,2,25,25,25,4,25" IsVisible="{Binding ShowSettings, Mode=OneWay}">
+                <Grid Grid.Column="1" Grid.Row="1" RowDefinitions="15,25,2,25,2,25,2,25,30,25,2,25,2,25,2,25,25,25,4,25">
                     <StackPanel Orientation="Horizontal" Grid.Row="1">
                         <TextBlock Text="YouTube api key:" ToolTip.Tip="Restart required"/>
                         <TextBox Width="312" Margin="11,0,0,0" Watermark="Insert key..." Text="{Binding YouApiKey, Mode=TwoWay}" ToolTip.Tip="Restart required"/>

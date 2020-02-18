@@ -44,7 +44,6 @@ namespace v00v.ViewModel.Startup
         private string _selectedParserMinute;
         private string _selectedSyncHour;
         private string _selectedSyncMinute;
-        private bool _showSettings;
         private bool _subsEnabled;
         private string _watchApp;
         private bool _withSubs;
@@ -518,12 +517,6 @@ namespace v00v.ViewModel.Startup
         {
             get => _selectedSyncMinute;
             set => Update(ref _selectedSyncMinute, value);
-        }
-
-        public bool ShowSettings
-        {
-            get => _showSettings;
-            set => Update(ref _showSettings, value);
         }
 
         public bool SubsEnabled

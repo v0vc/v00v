@@ -54,8 +54,7 @@ namespace v00v
         {
             if (needMigrate)
             {
-                var db = AvaloniaLocator.Current.GetService<IContextFactory>();
-                using (var context = db.CreateVideoContext())
+                using (var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext())
                 {
                     context.Database.Migrate();
                 }
