@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace v00v.Model.BackupEntities
 {
@@ -6,7 +7,7 @@ namespace v00v.Model.BackupEntities
     {
         #region Properties
 
-        public IEnumerable<BackupItem> Items { get; set; }
+        public ConcurrentBag<BackupItem> Items { get; set; }
 
         public Dictionary<string, byte> ItemsState { get; set; }
 

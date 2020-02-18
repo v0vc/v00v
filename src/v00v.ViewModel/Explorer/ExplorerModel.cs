@@ -240,29 +240,27 @@ namespace v00v.ViewModel.Explorer
         public async Task DeleteItem(Item item)
         {
             item.Downloaded = false;
-            await Task.WhenAll(_itemRepository.UpdateItemFileName(item.Id, null)).ContinueWith(done =>
+            await _itemRepository.UpdateItemFileName(item.Id, null);
+            if (item.FileName == null)
             {
-                if (item.FileName == null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var fn = new FileInfo(Path.Combine(_settings.DownloadDir, item.ChannelId, item.FileName));
-                if (!fn.Exists)
-                {
-                    return;
-                }
+            var fn = new FileInfo(Path.Combine(_settings.DownloadDir, item.ChannelId, item.FileName));
+            if (!fn.Exists)
+            {
+                return;
+            }
 
-                try
-                {
-                    fn.Delete();
-                    SetLog($"{fn.FullName} deleted");
-                }
-                catch (Exception e)
-                {
-                    SetLog($"Error {e.Message}");
-                }
-            });
+            try
+            {
+                fn.Delete();
+                SetLog($"{fn.FullName} deleted");
+            }
+            catch (Exception e)
+            {
+                SetLog($"Error {e.Message}");
+            }
         }
 
         public async Task Download(string par, Item item)
@@ -270,13 +268,11 @@ namespace v00v.ViewModel.Explorer
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
             var task = item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task;
+            if (task.Result && !skip)
             {
-                if (task.Result && !skip)
-                {
-                    _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-                }
-            });
+                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+            }
         }
 
         public async Task SetItemState(WatchState par)

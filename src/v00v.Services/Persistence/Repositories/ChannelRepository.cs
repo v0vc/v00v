@@ -60,7 +60,7 @@ namespace v00v.Services.Persistence.Repositories
             }
         }
 
-        public async Task<int> AddChannels(List<Channel> channels)
+        public async Task<int> AddChannels(IReadOnlyCollection<Channel> channels)
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
@@ -68,7 +68,11 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        channels.ForEach(x => x.Playlists.RemoveAll(y => y.Id == x.Id || y.Id == x.ExCache || y.Id == x.PlCache));
+                        Parallel.ForEach(channels,
+                                         x =>
+                                         {
+                                             x.Playlists.RemoveAll(y => y.Id == x.Id || y.Id == x.ExCache || y.Id == x.PlCache);
+                                         });
                         await context.Channels.AddRangeAsync(channels.Select(x => _mapper.Map<Database.Models.Channel>(x)))
                             .ConfigureAwait(false);
                         var res = await context.SaveChangesAsync().ConfigureAwait(false);
@@ -223,8 +227,8 @@ namespace v00v.Services.Persistence.Repositories
         {
             using (var context = _contextFactory.CreateVideoContext())
             {
-                return await context.Items.AsNoTracking().GroupBy(x => x.ChannelId)
-                    .ToDictionaryAsync(x => x.Key, y => y.Count(x => x.WatchState == (byte)watchState)).ConfigureAwait(false);
+                return await context.Items.AsNoTracking().Where(y => y.WatchState == (byte)watchState).GroupBy(x => x.ChannelId)
+                    .Select(x => new { x.Key, Count = x.Count() }).ToDictionaryAsync(x => x.Key, y => y.Count);
             }
         }
 

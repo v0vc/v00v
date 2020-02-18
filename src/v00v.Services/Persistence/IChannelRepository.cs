@@ -12,7 +12,7 @@ namespace v00v.Services.Persistence
 
         Task<int> AddChannel(Channel channel);
 
-        Task<int> AddChannels(List<Channel> channels);
+        Task<int> AddChannels(IReadOnlyCollection<Channel> channels);
 
         Task<int> DeleteChannel(string channelId);
 

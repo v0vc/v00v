@@ -15,7 +15,6 @@ namespace v00v.Services.Persistence.Repositories
         #region Static and Readonly Fields
 
         private readonly IContextFactory _contextFactory;
-
         private readonly ICommonMapper _mapper;
 
         #endregion
@@ -40,8 +39,7 @@ namespace v00v.Services.Persistence.Repositories
                 {
                     try
                     {
-                        var tag = new Database.Models.Tag { Text = text };
-                        var res = context.Tags.AddAsync(tag);
+                        var res = context.Tags.AddAsync(new Database.Models.Tag { Text = text });
                         context.SaveChanges();
                         transaction.Commit();
                         return Task.FromResult(res.Result.Entity.Id);

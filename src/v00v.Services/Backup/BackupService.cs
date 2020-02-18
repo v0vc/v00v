@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -105,23 +106,22 @@ namespace v00v.Services.Backup
 
             var bcp = new BackupAll
             {
-                Items = entries.Select(channel => new BackupItem
+                Items = new ConcurrentBag<BackupItem>(entries.Select(channel => new BackupItem
                 {
                     ChannelId = channel.Id,
                     ChannelTitle = channel.Title.Trim(),
                     Tags = channel.Tags.Select(x => x.Id)
-                }),
+                })),
                 ItemsState = await _itemRepository.GetItemsState()
             };
-            setLog?.Invoke($"Start backup {bcp.Items.Count()} channels..");
+            setLog?.Invoke($"Start backup {bcp.Items.Count} channels..");
             var fileName = GetBackupName();
             var tempFileName = fileName + ".new";
             var res = string.Empty;
-            var ss = Task.Factory.StartNew(() =>
+            await Task.Factory.StartNew(() =>
             {
                 res = JsonConvert.SerializeObject(bcp, Formatting.Indented);
             });
-            await ss;
             File.WriteAllText(tempFileName, res);
             if (File.Exists(fileName))
             {
@@ -130,7 +130,7 @@ namespace v00v.Services.Backup
 
             File.Move(tempFileName, fileName);
             setLog?.Invoke($"Done, saved to {fileName}");
-            return bcp.Items.Count();
+            return bcp.Items.Count;
         }
 
         public async Task<RestoreResult> Restore(IEnumerable<string> existChannels,
@@ -163,35 +163,39 @@ namespace v00v.Services.Backup
                 setTitle?.Invoke("Working..");
                 setLog?.Invoke("Parallel mode: ON");
 
-                var tasks = backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
-                    .Select(item => _youtubeService.GetChannelAsync(item.ChannelId, false, item.ChannelTitle)).ToList();
-
-                setLog?.Invoke($"Total channels: {tasks.Count}, working..");
-
-                var channels = new List<Channel>();
-                await Task.WhenAll(tasks).ContinueWith(done =>
+                var tasks = new ConcurrentBag<Task<Channel>>(backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
+                                                                 .Select(item => _youtubeService.GetChannelAsync(item.ChannelId,
+                                                                                                                 false,
+                                                                                                                 item.ChannelTitle)));
+                if (tasks.Count > 0)
                 {
-                    foreach (var task in tasks)
-                    {
-                        var rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
-                        if (rr == null)
-                        {
-                            continue;
-                        }
+                    setLog?.Invoke($"Total channels: {tasks.Count}, working..");
 
-                        task.Result.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
-                        channels.Add(task.Result);
-                        //setLog?.Invoke($"Error channel {task.Result.Title}: {task.Exception.Message}");
-                    }
+                    var channels = new ConcurrentBag<Channel>();
+                    await Task.WhenAll(tasks);
+                    Parallel.ForEach(tasks.AsParallel(),
+                                     task =>
+                                     {
+                                         var rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
+                                         if (rr != null)
+                                         {
+                                             task.Result.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
+                                             channels.Add(task.Result);
+                                         }
+                                     });
 
                     var rows = _channelRepository.AddChannels(channels);
-                    Task.WhenAll(rows).ContinueWith(r =>
+                    await rows.ContinueWith(r =>
                     {
                         setLog?.Invoke($"Saved {rows.Result} rows!");
                     });
-                });
-                res.ChannelsCount = channels.Count;
-                channels.ForEach(updateList.Invoke);
+                    res.ChannelsCount = channels.Count;
+                    Parallel.ForEach(channels, updateList.Invoke);
+                }
+                else
+                {
+                    setLog?.Invoke("All channels exits");
+                }
             }
             else
             {
@@ -202,21 +206,25 @@ namespace v00v.Services.Backup
                                                           setLog);
             }
 
-            await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
+            if (backup.ItemsState.Count > 0)
+            {
+                await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
 
-            var planned = _channelRepository.GetChannelStateCount(WatchState.Planned);
-            var watched = _channelRepository.GetChannelStateCount(WatchState.Watched);
-            await Task.WhenAll(planned, watched);
+                var planned = _channelRepository.GetChannelStateCount(WatchState.Planned);
+                var watched = _channelRepository.GetChannelStateCount(WatchState.Watched);
+                await Task.WhenAll(planned, watched);
 
-            var uplanned = planned.Result.Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value));
-            var uwatched = watched.Result.Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value));
+                var uplanned = planned.Result.Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value));
+                var uwatched = watched.Result.Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value));
 
-            await Task.WhenAll(uplanned.Union(uwatched));
+                await Task.WhenAll(uplanned.Union(uwatched));
 
-            res.PlannedCount = planned.Result.Sum(x => x.Value);
-            res.WatchedCount = watched.Result.Sum(x => x.Value);
-            setLog?.Invoke($"Total planned: {res.PlannedCount}");
-            setLog?.Invoke($"Total watched: {res.WatchedCount}");
+                res.PlannedCount = planned.Result.Sum(x => x.Value);
+                res.WatchedCount = watched.Result.Sum(x => x.Value);
+                setLog?.Invoke($"Total planned: {res.PlannedCount}");
+                setLog?.Invoke($"Total watched: {res.WatchedCount}");
+            }
+
             return res;
         }
 

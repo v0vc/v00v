@@ -217,7 +217,7 @@ namespace v00v.ViewModel.Popup.Channel
             }
 
             var task = _youtubeService.GetChannelAsync(parsedId, false, ChannelTitle);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -279,8 +279,7 @@ namespace v00v.ViewModel.Popup.Channel
             var isNew = channel.IsNew;
             if (isNew)
             {
-                var task = _youtubeService.AddPlaylists(channel);
-                await Task.WhenAll(task).ContinueWith(done =>
+                await _youtubeService.AddPlaylists(channel).ContinueWith(done =>
                 {
                     channel.IsNew = false;
                 });

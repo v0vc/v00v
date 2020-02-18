@@ -306,8 +306,7 @@ namespace v00v.ViewModel.Playlists
             var sw = Stopwatch.StartNew();
             await _youtubeService.SetItemsStatistic(stPl);
             var task = _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id);
-
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 _setTitle?.Invoke(string.Empty.MakeTitle(stPl.Count, sw));
             });

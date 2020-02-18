@@ -13,7 +13,6 @@ namespace v00v.Services.Persistence.Repositories
         #region Static and Readonly Fields
 
         private readonly IContextFactory _contextFactory;
-
         private readonly ICommonMapper _mapper;
 
         #endregion

@@ -366,20 +366,6 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        private static void MarkUnlisted(Channel channel, IEnumerable<string> allUnlisted)
-        {
-            Parallel.ForEach(channel.Items.Where(y => allUnlisted.Contains(y.Id) && y.SyncState != SyncState.Unlisted),
-                             x =>
-                             {
-                                 x.SyncState = SyncState.Unlisted;
-                             });
-            var unlistpl = channel.Playlists?.FirstOrDefault(x => x.Id == channel.Id);
-            if (unlistpl == null)
-            {
-                return;
-            }
-        }
-
         #endregion
 
         #region Methods
@@ -465,7 +451,7 @@ namespace v00v.ViewModel.Catalog
             var sw = Stopwatch.StartNew();
             _setTitle.Invoke($"Backup {_entries.Count - 1} channels..");
             var task = _backupService.Backup(_entries.Where(x => !x.IsNew && !x.IsStateChannel), SetLog);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -616,7 +602,7 @@ namespace v00v.ViewModel.Catalog
 
             SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
             var task = _channelRepository.DeleteChannel(deletedId);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -715,7 +701,7 @@ namespace v00v.ViewModel.Catalog
             var channel = _entries.First(x => x.Id == oldId);
             _setTitle.Invoke($"Search related to {channel.Title}..");
             var task = _youtubeService.GetRelatedChannelsAsync(channel.Id, _entries.Where(x => !x.IsStateChannel).Select(x => x.Id));
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -811,9 +797,9 @@ namespace v00v.ViewModel.Catalog
             var ch = _entries.First(x => x.Id == oldId);
             await _youtubeService.SetItemsStatistic(ch, false);
             var chId = ch.IsStateChannel ? null : ch.Id;
-            var task = _itemRepository.UpdateItemsStats(ch.Items, chId);
 
-            await Task.WhenAll(task).ContinueWith(done =>
+            var task = _itemRepository.UpdateItemsStats(ch.Items, chId);
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -872,7 +858,7 @@ namespace v00v.ViewModel.Catalog
                                               UpdateList,
                                               SetLog);
 
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -909,7 +895,7 @@ namespace v00v.ViewModel.Catalog
 
             await _youtubeService.AddPlaylists(channel);
             var task = _channelRepository.AddChannel(channel);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -1061,7 +1047,7 @@ namespace v00v.ViewModel.Catalog
 
             var lst = new List<Channel> { _baseChannel, channel };
             var task = _syncService.Sync(true, true, lst, SetLog);
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
@@ -1161,7 +1147,7 @@ namespace v00v.ViewModel.Catalog
 
             var task = _syncService.Sync(MassSync, syncPls, _entries.Where(x => !x.IsNew).ToList(), SetLog);
 
-            await Task.WhenAll(task).ContinueWith(done =>
+            await task.ContinueWith(done =>
             {
                 IsWorking = false;
             });
