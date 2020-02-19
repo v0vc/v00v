@@ -7,7 +7,7 @@
     <Border BorderThickness="1" BorderBrush="#bdacd1">
         <Panel>
             <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="25,*,25,25,25,25,10">
-                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,5,0,0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,8,0,0" Orientation="Horizontal">
                     <Panel>
                         <Ellipse />
                         <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp" />

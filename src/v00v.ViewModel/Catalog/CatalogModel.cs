@@ -486,31 +486,22 @@ namespace v00v.ViewModel.Catalog
                 }
 
                 _baseChannel.Items.Clear();
-                _baseExplorerModel.Tags.Clear();
+                _baseExplorerModel.Tags.RemoveAll(x => x.Key != 0);
+                _baseChannel.Count = 0;
+                ExplorerModel.All.Clear();
+                ExplorerModel.EnableLog = false;
 
-                Parallel.ForEach(_entries.Where(x => x.Count > 0),
+                Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && x.Count > 0 && x.Items.Count > 0),
                                  channel =>
                                  {
-                                     channel.Count = 0;
-                                     if (channel.IsStateChannel)
+                                     var cmodel = GetCachedExplorerModel(channel.ExCache);
+                                     if (cmodel != null)
                                      {
-                                         ExplorerModel.All.Clear();
-                                         ExplorerModel.EnableLog = false;
-                                     }
-                                     else
-                                     {
-                                         if (channel.Items.Count > 0)
-                                         {
-                                             var cmodel = GetCachedExplorerModel(channel.ExCache);
-                                             if (cmodel != null)
-                                             {
-                                                 Parallel.ForEach(cmodel.All.Items.Where(x => x.SyncState == SyncState.Added),
-                                                                  item =>
-                                                                  {
-                                                                      item.SyncState = SyncState.Notset;
-                                                                  });
-                                             }
-                                         }
+                                         Parallel.ForEach(cmodel.All.Items.Where(x => x.SyncState == SyncState.Added),
+                                                          item =>
+                                                          {
+                                                              item.SyncState = SyncState.Notset;
+                                                          });
                                      }
                                  });
                 _setPageIndex.Invoke(1);
@@ -532,10 +523,11 @@ namespace v00v.ViewModel.Catalog
 
             var task1 = _channelRepository.UpdateChannelSyncState(chId, 0);
             var task2 = _channelRepository.UpdateItemsCount(chId, 0);
+
             await Task.WhenAll(task1, task2).ContinueWith(done =>
             {
                 IsWorking = false;
-            });
+            }).ConfigureAwait(false);
 
             if (task1.Status != TaskStatus.Faulted && task2.Status != TaskStatus.Faulted)
             {
