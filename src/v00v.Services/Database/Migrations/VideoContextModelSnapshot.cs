@@ -14,7 +14,7 @@ namespace v00v.Services.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.0.0");
+                .HasAnnotation("ProductVersion", "3.1.2");
 
             modelBuilder.Entity("v00v.Services.Database.Models.AppLog", b =>
                 {
@@ -31,7 +31,7 @@ namespace v00v.Services.Database.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("Timestamp")
+                    b.Property<DateTime>("Timestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now','localtime')");
@@ -52,7 +52,7 @@ namespace v00v.Services.Database.Migrations
                     b.Property<long>("ItemsCount")
                         .HasColumnType("INTEGER");
 
-					b.Property<long>("PlannedCount")
+                    b.Property<long>("PlannedCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("SiteId")
@@ -73,7 +73,7 @@ namespace v00v.Services.Database.Migrations
                     b.Property<byte[]>("Thumbnail")
                         .HasColumnType("BLOB");
 
-                    b.Property<DateTimeOffset>("Timestamp")
+                    b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
@@ -84,10 +84,9 @@ namespace v00v.Services.Database.Migrations
 
                     b.Property<long>("ViewCountDiff")
                         .HasColumnType("INTEGER");
-                        
-					b.Property<long>("WatchedCount")
-                        .HasColumnType("INTEGER");
 
+                    b.Property<long>("WatchedCount")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -143,7 +142,7 @@ namespace v00v.Services.Database.Migrations
                     b.Property<byte[]>("Thumbnail")
                         .HasColumnType("BLOB");
 
-                    b.Property<DateTimeOffset>("Timestamp")
+                    b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
