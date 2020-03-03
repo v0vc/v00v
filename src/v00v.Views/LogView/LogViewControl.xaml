@@ -11,7 +11,8 @@
                   Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}"
                   IsEnabled="{Binding EnableLog, Mode=OneWay}">
                 <StackPanel Orientation="Horizontal" Height="29">
-                    <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left"/>
+                    <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left" 
+                             Height="25" Width="150" Margin="10,3,0,0"/>
                     <ComboBox Width="90" Height="25" Margin="10,3,0,0" BorderThickness="1" 
                               IsVisible="{Binding EnableTags, Mode=OneWay}"
                               ToolTip.Tip="Tags"
@@ -75,16 +76,13 @@
                 <TextBlock Grid.Column="2" Text="{Binding Items.Count}" Margin="0,0,40,0" VerticalAlignment="Center" Foreground="#92a3b3"/>
             </Grid>
         </Expander.Header>
-        <TextBox Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}" Height="150" Margin="1,2,0,0"
+        <TextBox Width="{Binding $parent[Expander].Bounds.Width, Mode=OneWay}" Height="150" Margin="1,0,1,0"
                  Text="{Binding LogText, Mode=OneWay}" 
                  TextWrapping="Wrap" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
     </Expander>
     
     <UserControl.Styles>
         <Style Selector="TextBox">
-            <Setter Property="Height" Value="25" />
-            <Setter Property="Width" Value="150" />
-            <Setter Property="Margin" Value="10,3,0,0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#ffffff" />
             <Setter Property="Background" Value="#1b2333" />

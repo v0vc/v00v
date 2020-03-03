@@ -39,7 +39,7 @@ namespace v00v.Services.Persistence.Repositories
                 try
                 {
                     var res = await context.Items.AsNoTracking().Where(x => x.Id == itemId).FirstOrDefaultAsync().ConfigureAwait(false);
-                    return res.Description?.Trim();
+                    return res?.Description?.Trim();
                 }
                 catch (Exception exception)
                 {

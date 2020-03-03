@@ -10,7 +10,7 @@ namespace v00v.Services.Synchronization
     {
         #region Methods
 
-        Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog);
+        Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog, Action<string> setTitle = null);
 
         #endregion
     }

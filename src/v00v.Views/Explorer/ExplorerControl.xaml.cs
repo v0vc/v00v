@@ -42,7 +42,7 @@ namespace v00v.Views.Explorer
                 }
                 if (this.FindControl<ExplorerControl>("explorer")?.DataContext is ExplorerModel expModel)
                 {
-                    expModel.SetItemState(WatchState.Watched).GetAwaiter().GetResult();
+                    expModel.SetItemState(WatchState.Watched);
                 }
             }
         }

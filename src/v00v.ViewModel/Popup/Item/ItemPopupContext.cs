@@ -160,29 +160,28 @@ namespace v00v.ViewModel.Popup.Item
 
         #region Methods
 
-        private async Task CopyItem(string par)
+        private Task CopyItem(string par)
         {
-            if (SelectedComment != null)
+            if (SelectedComment == null)
             {
-                string res = null;
-                switch (par)
-                {
-                    case "link":
-                        res = $"{_youtubeService.ChannelLink}{SelectedComment.AuthorChannelId}";
-                        break;
-                    case "text":
-                        res = SelectedComment.Text;
-                        break;
-                    case "url":
-                        res = SelectedComment.TextUrl;
-                        break;
-                }
-
-                if (!string.IsNullOrEmpty(res))
-                {
-                    await Application.Current.Clipboard.SetTextAsync(res);
-                }
+                return Task.CompletedTask;
             }
+
+            string res = null;
+            switch (par)
+            {
+                case "link":
+                    res = $"{_youtubeService.ChannelLink}{SelectedComment.AuthorChannelId}";
+                    break;
+                case "text":
+                    res = SelectedComment.Text;
+                    break;
+                case "url":
+                    res = SelectedComment.TextUrl;
+                    break;
+            }
+
+            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private IObservable<SortExpressionComparer<Comment>> GetCommentSorter()
@@ -230,77 +229,82 @@ namespace v00v.ViewModel.Popup.Item
             comment.IsExpanded = true;
         }
 
-        private async Task LoadComments(byte selectedTab)
+        private Task LoadComments(byte selectedTab)
         {
             if (selectedTab == 0)
             {
                 CanExpanded = false;
-                return;
+                return Task.CompletedTask;
             }
 
             if (_comments.Count > 0)
             {
                 CanExpanded = true;
-                return;
+                return Task.CompletedTask;
             }
 
             CanExpanded = true;
             Working = true;
             var oldTitle = Title;
             Title += ", loading comments..";
-            All.AddRange(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
-            Title = oldTitle;
-            if (!_comments.Any())
+            return _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId).ContinueWith(x =>
             {
-                Watermark = " No comments...";
-                return;
-            }
+                All.AddRange(x.Result);
+                Title = oldTitle;
+                if (!_comments.Any())
+                {
+                    Watermark = " No comments...";
+                    return;
+                }
 
-            SetOrder();
+                SetOrder();
 
-            if (_item.Comments != _comments.Count)
-            {
-                _item.Comments = _comments.Count;
-                await _itemRepository.SetItemCommentsCount(_item.Id, _comments.Count);
-            }
+                if (_item.Comments != _comments.Count)
+                {
+                    _item.Comments = _comments.Count;
+                    _itemRepository.SetItemCommentsCount(_item.Id, _comments.Count);
+                }
 
-            Working = false;
+                Working = false;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private async Task LoadReplies(Comment comment)
+        private Task LoadReplies(Comment comment)
         {
             if (comment.IsReply)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (comment.Replies == null)
             {
-                comment.Replies = await _youtubeService.GetReplyCommentsAsync(comment.CommentId, _item.ChannelId);
-                InsertReplies(comment);
+                return _youtubeService.GetReplyCommentsAsync(comment.CommentId, _item.ChannelId).ContinueWith(x =>
+                {
+                    comment.Replies = x.Result;
+                    InsertReplies(comment);
+                });
+            }
+
+            if (comment.IsExpanded)
+            {
+                foreach (var comm in _comments.Skip(comment.Order + comment.Replies.Count + 1))
+                {
+                    comm.Order -= comment.Replies.Count;
+                }
+
+                All.RemoveMany(comment.Replies);
+                if (CommentSort != CommentSort.Order)
+                {
+                    CommentSort = CommentSort.Order;
+                }
+
+                comment.IsExpanded = false;
             }
             else
             {
-                if (comment.IsExpanded)
-                {
-                    foreach (var comm in _comments.Skip(comment.Order + comment.Replies.Count + 1))
-                    {
-                        comm.Order -= comment.Replies.Count;
-                    }
-
-                    All.RemoveMany(comment.Replies);
-                    if (CommentSort != CommentSort.Order)
-                    {
-                        CommentSort = CommentSort.Order;
-                    }
-
-                    comment.IsExpanded = false;
-                }
-                else
-                {
-                    InsertReplies(comment);
-                }
+                InsertReplies(comment);
             }
+            return Task.CompletedTask;
         }
 
         private void SetOrder()

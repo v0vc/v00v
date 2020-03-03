@@ -31,20 +31,15 @@ namespace v00v.Services.Synchronization
 
         #region Methods
 
-        public async Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog)
+        public async Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog, Action<string> setTitle)
         {
+            var chCount = channels.Count - 1;
             setLog?.Invoke(channels.Count <= 2
                                ? $"Working: {channels.Last().Title}.."
-                               : $"Working channels: {channels.Count - 1}, parallel: {parallel}");
+                               : $"Working channels: {chCount}, parallel: {parallel}, playlist: {syncPls}");
 
+            var channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
             var unl = new List<string>();
-            IEnumerable<ChannelStruct> channelStructs = null;
-            await Task.Run(() =>
-            {
-                channelStructs = _channelRepository.GetChannelsStructYield(syncPls, channels.Count == 2 ? channels.Last().Id : null);
-                unl.AddRange(channelStructs.SelectMany(x => x.Items.Where(y => y.Item2 == 2 || y.Item2 == 3).Select(z => z.Item1)));
-            });
-
             var diffs = new List<ChannelDiff>();
             if (parallel)
             {
@@ -60,6 +55,7 @@ namespace v00v.Services.Synchronization
                     else
                     {
                         diffs.AddRange(pdiff.Select(diff => diff.Result));
+                        unl.AddRange(diffs.SelectMany(y => y.UnlistedItems).Distinct());
                     }
                 });
             }
@@ -72,7 +68,9 @@ namespace v00v.Services.Synchronization
                     {
                         var diff = await _youtubeService.GetChannelDiffAsync(x, syncPls, setLog);
                         diffs.Add(diff);
-                        setLog?.Invoke($"{diff.ChannelId} ok, {cur} of {channels.Count - 1}");
+                        unl.AddRange(diff.UnlistedItems);
+                        setLog?.Invoke($"{diff.ChannelId} ok, {cur} of {chCount}");
+                        setTitle?.Invoke($"Working channels...{cur} of {chCount}");
                         cur++;
                     }
                     catch (Exception e)
@@ -114,11 +112,14 @@ namespace v00v.Services.Synchronization
                                                   });
                              });
 
-            res.NoUnlistedAgain.AddRange(diffs.SelectMany(x => x.UploadedIds).Where(x => unl.Contains(x)));
+            if (unl.Count > 0)
+            {
+                res.NoUnlistedAgain.AddRange(diffs.SelectMany(y => y.UploadedIds).Where(z => unl.Contains(z)));
+            }
 
             res.DeletedItems.AddRange(diffs.SelectMany(x => x.DeletedItems));
 
-            res.UnlistedItems.AddRange(diffs.SelectMany(x => x.UnlistedItems));
+            res.UnlistedItems.AddRange(diffs.SelectMany(x => x.UnlistedItems).Except(res.NoUnlistedAgain));
 
             if (res.Items.Count > 0)
             {
@@ -180,6 +181,7 @@ namespace v00v.Services.Synchronization
                              });
 
             setLog?.Invoke("Saving to db..");
+            
             var rows = _channelRepository.StoreDiff(res);
             await Task.WhenAll(rows).ContinueWith(x =>
             {

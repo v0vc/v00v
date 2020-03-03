@@ -571,14 +571,14 @@ namespace v00v.ViewModel.Startup
             }
         }
 
-        private async Task DownloadItem()
+        private Task DownloadItem()
         {
             if (string.IsNullOrWhiteSpace(DownloadUrl) || !DownloadUrl.CheckUrlValid())
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
                 using (var process = Process.Start(YouParser,
                                                    IsYoutubeLink
@@ -587,7 +587,11 @@ namespace v00v.ViewModel.Startup
                 {
                     process?.Close();
                 }
-            }).ContinueWith(x => DownloadUrl = null);
+            }).ContinueWith(x =>
+                            {
+                                return DownloadUrl = null;
+                            },
+                            TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private string MakeParam(string par)

@@ -187,11 +187,11 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Methods
 
-        private async Task AddChannel()
+        private Task AddChannel()
         {
             if (string.IsNullOrEmpty(ChannelId))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             IsWorking = true;
@@ -201,56 +201,47 @@ namespace v00v.ViewModel.Popup.Channel
             if (SetExisted(ChannelId))
             {
                 IsWorking = false;
-                return;
+                return Task.CompletedTask;
             }
 
-            var parsedId = await _youtubeService.GetChannelId(ChannelId);
-            if (parsedId == null)
+            return _youtubeService.GetChannelId(ChannelId).ContinueWith(x =>
             {
-                IsWorking = false;
-                return;
-            }
-
-            if (SetExisted(parsedId))
-            {
-                return;
-            }
-
-            var task = _youtubeService.GetChannelAsync(parsedId, false, ChannelTitle);
-            await task.ContinueWith(done =>
-            {
-                IsWorking = false;
-            });
-
-            if (task.Result == null)
-            {
-                _popupController.Hide();
-                _setTitle?.Invoke("Banned channel: " + parsedId);
-                return;
-            }
-
-            if (task.Status == TaskStatus.Faulted)
-            {
-                _popupController.Hide();
-                _setTitle?.Invoke($"{task.Exception.Message}");
-                return;
-            }
-
-            task.Result.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
-            task.Result.Order = _getMinOrder.Invoke() - 1;
-            _updateList?.Invoke(task.Result);
-            _setSelect?.Invoke(task.Result.Id);
-            _popupController.Hide();
-
-            var task1 = _channelRepository.AddChannel(task.Result);
-            var task2 = _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{task.Result.Id}:{task.Result.Title}");
-            await Task.WhenAll(task1, task2).ContinueWith(done =>
-            {
-                if (task.Status != TaskStatus.Faulted && task.Result != null)
+                if (string.IsNullOrEmpty(x.Result) || SetExisted(x.Result))
                 {
-                    _setTitle?.Invoke($"New channel: {task.Result.Title}. Saved {task1.Result} rows");
+                    IsWorking = false;
+                    return;
                 }
-            });
+
+                _youtubeService.GetChannelAsync(x.Result, false, ChannelTitle).ContinueWith(y =>
+                {
+                    IsWorking = false;
+                    if (y.Exception != null)
+                    {
+                        _popupController.Hide();
+                        _setTitle?.Invoke($"{y.Exception.Message}");
+                        return;
+                    }
+
+                    if (y.Result == null)
+                    {
+                        _popupController.Hide();
+                        _setTitle?.Invoke("Banned channel: " + x.Result);
+                        return;
+                    }
+
+                    y.Result.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
+                    y.Result.Order = _getMinOrder.Invoke() - 1;
+                    _updateList?.Invoke(y.Result);
+                    _popupController.Hide();
+                    _setSelect?.Invoke(y.Result.Id);
+                    Task.WhenAll(_channelRepository.AddChannel(y.Result),
+                                 _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{y.Result.Id}:{y.Result.Title}"))
+                        .ContinueWith(done =>
+                        {
+                            _setTitle?.Invoke($"New channel: {y.Result.Title}. Saved {done.Result[0]} rows");
+                        });
+                });
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void AddTag()
@@ -266,7 +257,7 @@ namespace v00v.ViewModel.Popup.Channel
             SelectedTag = tag;
         }
 
-        private async Task EditChannel(Model.Entities.Channel channel)
+        private Task EditChannel(Model.Entities.Channel channel)
         {
             IsWorking = true;
             CloseText = "Working...";
@@ -276,43 +267,55 @@ namespace v00v.ViewModel.Popup.Channel
             channel.Tags.Clear();
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
 
-            var isNew = channel.IsNew;
-            if (isNew)
+            if (channel.IsNew)
             {
-                await _youtubeService.AddPlaylists(channel).ContinueWith(done =>
+                return _youtubeService.AddPlaylists(channel).ContinueWith(done =>
                 {
                     channel.IsNew = false;
+                    Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)),
+                                 _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}"))
+                        .ContinueWith(x =>
+                        {
+                            if (x.Status != TaskStatus.Faulted)
+                            {
+                                _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.Result[0]} rows");
+                            }
+
+                            _updateList?.Invoke(channel);
+                            _updatePlList?.Invoke(channel);
+                            _resortList?.Invoke(x.Result[0]);
+                            _popupController.Hide();
+                        }).ContinueWith(x => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
                 });
             }
 
-            _popupController.Hide();
-
-            var task1 = _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
-            var task2 = _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}");
-            await Task.WhenAll(task1, task2).ContinueWith(x =>
-            {
-                if (task1.Status != TaskStatus.Faulted)
+            return Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)),
+                                _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}"))
+                .ContinueWith(x =>
                 {
-                    _setTitle?.Invoke($"Done: {channel.Title}. Saved {task1.Result} rows");
-                }
-            });
-            _updateList?.Invoke(channel);
-            _updatePlList?.Invoke(channel);
-            _setSelect?.Invoke(channel.Id);
-            if (isNew)
-            {
-                _resortList?.Invoke(task1.Result);
-            }
+                    if (x.Status != TaskStatus.Faulted)
+                    {
+                        _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.Result[0]} rows");
+                    }
+
+                    _updateList?.Invoke(channel);
+                    _updatePlList?.Invoke(channel);
+                    _popupController.Hide();
+                }).ContinueWith(x => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        private async Task RemoveTag(Tag tag)
+        private Task RemoveTag(Tag tag)
         {
             All.Remove(tag);
             if (tag.IsSaved && !string.IsNullOrEmpty(tag.Text))
             {
-                await _tagRepository.DeleteTag(tag.Text);
-                _deleteNewTag?.Invoke(tag.Id);
+                return _tagRepository.DeleteTag(tag.Text).ContinueWith(x =>
+                                                                       {
+                                                                           _deleteNewTag?.Invoke(tag.Id);
+                                                                       },
+                                                                       TaskScheduler.FromCurrentSynchronizationContext());
             }
+            return Task.CompletedTask;
         }
 
         private void SaveTag()

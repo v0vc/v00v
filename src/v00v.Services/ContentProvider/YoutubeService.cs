@@ -460,6 +460,8 @@ namespace v00v.Services.ContentProvider
 
             var diff = new ChannelDiff(cs.ChannelId, cs.ChannelTitle, syncPls);
 
+            diff.UnlistedItems.AddRange(cs.Items.Where(y => y.Item2 == 2 || y.Item2 == 3).Select(k => k.Item1));
+
             var record = await GetJsonObjectAsync(new Uri(syncPls
                                                               ? $"{Url}channels?&key={_key}&id={cs.ChannelId}&part=contentDetails,snippet,statistics&fields=items(contentDetails(relatedPlaylists),snippet(description),statistics(viewCount,subscriberCount))&{PrintType}"
                                                               : $"{Url}channels?&key={_key}&id={cs.ChannelId}&part=contentDetails,statistics&fields=items(contentDetails(relatedPlaylists),statistics(viewCount,subscriberCount))&{PrintType}"));

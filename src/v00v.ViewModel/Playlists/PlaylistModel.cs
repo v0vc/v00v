@@ -214,11 +214,11 @@ namespace v00v.ViewModel.Playlists
 
         #region Methods
 
-        private async Task CopyItem(string par)
+        private Task CopyItem(string par)
         {
             if (SelectedEntry == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             string res = null;
@@ -232,10 +232,7 @@ namespace v00v.ViewModel.Playlists
                     break;
             }
 
-            if (!string.IsNullOrEmpty(res))
-            {
-                await Application.Current.Clipboard.SetTextAsync(res);
-            }
+            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private IObservable<Unit> DeleteFiles()
@@ -267,9 +264,9 @@ namespace v00v.ViewModel.Playlists
 
                 Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
                                  new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                                 async x =>
+                                 x =>
                                  {
-                                     await _explorerModel.Download(par, x);
+                                     _explorerModel.Download(par, x);
                                  });
             });
         }
@@ -293,48 +290,45 @@ namespace v00v.ViewModel.Playlists
             playlist.StateItems = newItems?.ToList();
         }
 
-        private async Task ReloadStatistics()
+        private Task ReloadStatistics()
         {
             if (SelectedEntry == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var statePl = SelectedEntry.IsStatePlaylist;
             var stPl = statePl ? SelectedEntry.StateItems : _explorerModel.Items.ToList();
             _setTitle.Invoke($"Update statistics for {SelectedEntry.Title}..");
             var sw = Stopwatch.StartNew();
-            await _youtubeService.SetItemsStatistic(stPl);
-            var task = _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id);
-            await task.ContinueWith(done =>
+            return _youtubeService.SetItemsStatistic(stPl).ContinueWith(x =>
             {
-                _setTitle?.Invoke(string.Empty.MakeTitle(stPl.Count, sw));
+                _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id).ContinueWith(done =>
+                {
+                    _setTitle?.Invoke(done.Status == TaskStatus.Faulted
+                                          ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
+                                          : string.Empty.MakeTitle(stPl.Count, sw));
+
+                    if (done.Result?.Count > 0)
+                    {
+                        Parallel.ForEach(stPl,
+                                         z =>
+                                         {
+                                             z.ViewDiff = done.Result.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                         });
+                    }
+                    else
+                    {
+                        Parallel.ForEach(stPl,
+                                         z =>
+                                         {
+                                             z.ViewDiff = 0;
+                                         });
+                    }
+
+                    _explorerModel?.All.AddOrUpdate(stPl);
+                });
             });
-
-            if (task.Status == TaskStatus.Faulted)
-            {
-                _setTitle?.Invoke(task.Exception == null ? "Faulted" : $"{task.Exception.Message}");
-                return;
-            }
-
-            if (task.Result.Count > 0)
-            {
-                Parallel.ForEach(stPl,
-                                 x =>
-                                 {
-                                     x.ViewDiff = task.Result.TryGetValue(x.Id, out var vdiff) ? vdiff : 0;
-                                 });
-            }
-            else
-            {
-                Parallel.ForEach(stPl,
-                                 x =>
-                                 {
-                                     x.ViewDiff = 0;
-                                 });
-            }
-
-            _explorerModel?.All.AddOrUpdate(stPl);
         }
 
         private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)

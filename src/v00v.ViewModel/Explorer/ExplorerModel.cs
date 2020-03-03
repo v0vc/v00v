@@ -237,74 +237,83 @@ namespace v00v.ViewModel.Explorer
             EnableTags = true;
         }
 
-        public async Task DeleteItem(Item item)
+        public Task DeleteItem(Item item)
         {
             item.Downloaded = false;
-            await _itemRepository.UpdateItemFileName(item.Id, null);
-            if (item.FileName == null)
+            return _itemRepository.UpdateItemFileName(item.Id, null).ContinueWith(x =>
             {
-                return;
-            }
+                if (item.FileName == null)
+                {
+                    return;
+                }
 
-            var fn = new FileInfo(Path.Combine(_settings.DownloadDir, item.ChannelId, item.FileName));
-            if (!fn.Exists)
-            {
-                return;
-            }
+                var fn = new FileInfo(Path.Combine(_settings.DownloadDir, item.ChannelId, item.FileName));
+                if (!fn.Exists)
+                {
+                    return;
+                }
 
-            try
-            {
-                fn.Delete();
-                SetLog($"{fn.FullName} deleted");
-            }
-            catch (Exception e)
-            {
-                SetLog($"Error {e.Message}");
-            }
+                try
+                {
+                    fn.Delete();
+                    SetLog($"{fn.FullName} deleted");
+                }
+                catch (Exception e)
+                {
+                    SetLog($"Error {e.Message}");
+                }
+            });
         }
 
-        public async Task Download(string par, Item item)
+        public Task Download(string par, Item item)
         {
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
-            var task = item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog);
-            await task;
-            if (task.Result && !skip)
-            {
-                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-            }
+            return item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog)
+                .ContinueWith(x =>
+                {
+                    if (x.Result && !skip)
+                    {
+                        _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+                    }
+                });
         }
 
-        public async Task SetItemState(WatchState par)
+        public Task SetItemState(WatchState par)
         {
             if (SelectedEntry == null || par == SelectedEntry.WatchState)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var id = SelectedEntry.Id;
             var item = _items.First(x => x.Id == id);
             var oldState = item.WatchState;
             item.WatchState = par;
-            await _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId);
-            var bitem = _catalogModel.GetBaseItems.FirstOrDefault(x => x.Id == id);
-            if (bitem != null && bitem.WatchState != par)
+
+            return _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId).ContinueWith(x =>
             {
-                bitem.WatchState = par;
-            }
+                var bitem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
+                if (bitem != null && bitem.WatchState != par)
+                {
+                    bitem.WatchState = par;
+                }
 
-            var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null, true)
-                ?.All.Items.FirstOrDefault(x => x.Id == id);
-            if (citem != null && citem.WatchState != par)
-            {
-                citem.WatchState = par;
-            }
+                var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null, true)
+                    ?.All.Items.FirstOrDefault(y => y.Id == id);
+                if (citem != null && citem.WatchState != par)
+                {
+                    citem.WatchState = par;
+                }
 
-            PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
-            PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
-
-            All.AddOrUpdate(item);
-            SelectedEntry = _items.First(x => x.Id == id);
+                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
+                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
+            }).ContinueWith(y =>
+                            {
+                                All.AddOrUpdate(item);
+                                SelectedEntry = _items.FirstOrDefault(x => x.Id == id);
+                            },
+                            TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         public void SetLog(string log)
@@ -379,39 +388,35 @@ namespace v00v.ViewModel.Explorer
             return x => x.Tags.Contains(tag.Key);
         }
 
-        private async Task CopyItem(string par)
+        private Task CopyItem(string par)
         {
-            if (SelectedEntry != null)
+            if (SelectedEntry == null)
             {
-                string res = null;
-                switch (par)
-                {
-                    case "link":
-                        res = $"{_youtubeService.ItemLink}{SelectedEntry.Id}";
-                        break;
-                    case "title":
-                        res = SelectedEntry.Title;
-                        break;
-                }
-
-                if (!string.IsNullOrEmpty(res))
-                {
-                    await Application.Current.Clipboard.SetTextAsync(res);
-                }
+                return Task.CompletedTask;
             }
+
+            string res = null;
+            switch (par)
+            {
+                case "link":
+                    res = $"{_youtubeService.ItemLink}{SelectedEntry.Id}";
+                    break;
+                case "title":
+                    res = SelectedEntry.Title;
+                    break;
+            }
+
+            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
         }
 
-        private async Task DeleteItem()
+        private Task DeleteItem()
         {
-            if (SelectedEntry != null && SelectedEntry.Downloaded)
-            {
-                await DeleteItem(SelectedEntry);
-            }
+            return SelectedEntry != null && SelectedEntry.Downloaded ? DeleteItem(SelectedEntry) : Task.CompletedTask;
         }
 
-        private async Task DownloadItem(string par, Item item)
+        private Task DownloadItem(string par, Item item)
         {
-            await Download(par, item);
+            return Download(par, item);
         }
 
         private IObservable<SortExpressionComparer<Item>> GetSorter()
@@ -565,23 +570,23 @@ namespace v00v.ViewModel.Explorer
             }
         }
 
-        private async Task RunItem()
+        private Task RunItem()
         {
             if (string.IsNullOrEmpty(_settings.WatchApp))
             {
                 SetLog("Please select media player in setting");
-                return;
+                return Task.CompletedTask;
             }
 
             SelectedEntry?.RunItem(_settings.WatchApp, _settings.DownloadDir, $"{_youtubeService.ItemLink}{SelectedEntry.Id}");
-            await SetItemState(WatchState.Watched);
+            return SetItemState(WatchState.Watched);
         }
 
-        private async Task SelectChannel()
+        private Task SelectChannel()
         {
             if (SelectedEntry == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var oldId = SelectedEntry.ChannelId;
@@ -589,24 +594,26 @@ namespace v00v.ViewModel.Explorer
             if (ch == null)
             {
                 _setTitle?.Invoke($"Working: {oldId}..");
-                var chh = await _youtubeService.GetChannelAsync(oldId, true);
-                if (chh.Items.Count > 0)
+                return _youtubeService.GetChannelAsync(oldId, true).ContinueWith(x =>
                 {
-                    _catalogModel.AddChannelToList(chh, false);
-                    _setTitle?.Invoke($"Ready: {chh.Title}");
-                }
-                else
-                {
-                    SetLog($"Empty channel: {chh.Title}");
-                }
+                    if (x.Result.Items.Count > 0)
+                    {
+                        _catalogModel.AddChannelToList(x.Result, false);
+                        _setTitle?.Invoke($"Ready: {x.Result.Title}");
+                    }
+                    else
+                    {
+                        SetLog($"Empty channel: {x.Result.Title}");
+                    }
+                });
             }
-            else
+
+            if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
             {
-                if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
-                {
-                    _catalogModel.SelectedEntry = ch;
-                }
+                _catalogModel.SelectedEntry = ch;
             }
+
+            return Task.CompletedTask;
         }
 
         private void SelectPlaylist()
