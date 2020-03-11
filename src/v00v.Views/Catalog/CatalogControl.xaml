@@ -93,7 +93,7 @@
                             <Image Source="resm:v00v.MainApp.Icons.Light.Plus32.png?assembly=v00v.MainApp"/>
                         </Panel>
                     </Button>
-                    <ComboBox Height="25" Width="90" ToolTip.Tip="Tags"
+                    <ComboBox Height="27" Width="90" ToolTip.Tip="Tags"
                               VerticalAlignment="Bottom" 
                               VirtualizationMode="Simple" 
                               Items="{Binding Tags, Mode=OneTime}" 

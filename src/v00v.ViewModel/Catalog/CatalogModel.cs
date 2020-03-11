@@ -1106,7 +1106,7 @@ namespace v00v.ViewModel.Catalog
                 }).ContinueWith(d =>
                                 {
                                     SelectedEntry = null;
-                                    SelectedEntry = _entries.First(x => x.Id == oldId);
+                                    SelectedEntry = _entries.FirstOrDefault(x => x.Id == oldId);
                                 },
                                 TaskScheduler.Current);
             });

@@ -12,8 +12,8 @@
                   IsEnabled="{Binding EnableLog, Mode=OneWay}">
                 <StackPanel Orientation="Horizontal" Height="29">
                     <TextBox Text="{Binding SearchText, Mode=TwoWay}" HorizontalAlignment="Left" 
-                             Height="25" Width="150" Margin="10,3,0,0"/>
-                    <ComboBox Width="90" Height="25" Margin="10,3,0,0" BorderThickness="1" 
+                             Width="150" Margin="10,3,0,0"/>
+                    <ComboBox Width="90" Margin="10,3,0,0" BorderThickness="1" 
                               IsVisible="{Binding EnableTags, Mode=OneWay}"
                               ToolTip.Tip="Tags"
                               VirtualizationMode="Simple" 
