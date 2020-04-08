@@ -1,0 +1,27 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\Light\Plus32.png" />
+    <EmbeddedResource Include="Icons\Light\Settings32.png" />
+    <EmbeddedResource Include="Icons\Dark\Edit32.png" />
+    <EmbeddedResource Include="Icons\Dark\Network32.png" />
+    <EmbeddedResource Include="Icons\Dark\Refresh32.png" />
+    <EmbeddedResource Include="Icons\Dark\Trash32.png" />
+    <EmbeddedResource Include="Icons\Dark\Xmark32.png" />
+    <EmbeddedResource Include="Icons\Dark\Backup32.png" />
+    <EmbeddedResource Include="Icons\Dark\Restore32.png" />
+    <EmbeddedResource Include="Icons\Dark\VideoPlay32.png" />
+    <EmbeddedResource Include="Icons\Dark\Copy32.png" />
+    <EmbeddedResource Include="Icons\Dark\LeftArrow32.png" />
+    <EmbeddedResource Include="Icons\Dark\RightArrow32.png" />
+    <EmbeddedResource Include="Icons\Dark\Download32.png" />
+    <EmbeddedResource Include="Icons\Dark\VideoHd32.png" />
+    <EmbeddedResource Include="Icons\Dark\Audio32.png" />
+    <EmbeddedResource Include="Icons\Dark\VideoOnly32.png" />
+    <EmbeddedResource Include="Icons\Dark\Sub32.png" />
+    <EmbeddedResource Include="Icons\Dark\X32.png" />
+    <EmbeddedResource Include="Icons\Dark\Checkmark32.png" />
+    <EmbeddedResource Include="Icons\Dark\Time32.png" />
+    <EmbeddedResource Include="Icons\Dark\Save32.png" />
+    <EmbeddedResource Include="Icons\Dark\Book32.png" />
+  </ItemGroup>
+</Project>

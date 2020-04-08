@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Nullable>disable</Nullable>
+    <IsPackable>False</IsPackable>
+  </PropertyGroup>
+
+  <Import Project="..\..\build\EntityFramework.props" />
+  <Import Project="..\..\build\NewtonSoft.props" />
+  <Import Project="..\..\build\Quartz.props" />
+  
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="obj\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\v00v.Model\v00v.Model.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Nullable>disable</Nullable>
+    <IsPackable>False</IsPackable>
+  </PropertyGroup>
+  
+  <Import Project="..\..\build\Avalonia.props" />
+  <Import Project="..\..\build\EmbedXaml.props" />
+  <Import Project="..\..\build\DynamicData.props" />
+  <Import Project="..\..\build\LazyCache.props" />
+  <Import Project="..\..\build\ReactiveUI.props" />
+  
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\v00v.Model\v00v.Model.csproj" />
+    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
+  </ItemGroup>
+
+</Project>
