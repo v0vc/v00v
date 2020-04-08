@@ -22,22 +22,22 @@
                 <Grid Grid.Column="1" Grid.Row="1" RowDefinitions="15,25,2,25,2,25,2,25,30,25,2,25,2,25,2,25,25,25,4,25">
                     <StackPanel Orientation="Horizontal" Grid.Row="1">
                         <TextBlock Text="YouTube api key:" ToolTip.Tip="Restart required"/>
-                        <TextBox Width="312" Margin="11,0,0,0" Watermark="Insert key..." Text="{Binding YouApiKey, Mode=TwoWay}" ToolTip.Tip="Restart required"/>
+                        <TextBox Width="312" Margin="10,0,0,0" Watermark="Insert key..." Text="{Binding YouApiKey, Mode=TwoWay}" ToolTip.Tip="Restart required" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="3">
                         <TextBlock Text="Database folder:" ToolTip.Tip="For db location" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}"/>
-                        <TextBox Width="279" Margin="15,0,0,0" Watermark="Use internal location..." Text="{Binding DbDir, Mode=TwoWay}" IsReadOnly="True" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}" ToolTip.Tip="Restart required"/>
-                        <Button Width="30" Content=">>" Margin="2,0,0,0" Name="SelectDbFolder" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}"/>
-                        <CheckBox Margin="8,0,0,0" IsChecked="{Binding EnableCustomDb, Mode=TwoWay}" ToolTip.Tip="Enable custom db location"/>
+                        <TextBox Width="279" Margin="14,0,0,0" Watermark="Use internal location..." Text="{Binding DbDir, Mode=TwoWay}" IsReadOnly="True" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}" ToolTip.Tip="Restart required"/>
+                        <Button Width="30" Content=">>" Margin="3,0,0,0" Name="SelectDbFolder" IsEnabled="{Binding EnableCustomDb, Mode=OneWay}"/>
+                        <CheckBox Margin="7,0,0,0" IsChecked="{Binding EnableCustomDb, Mode=TwoWay}" ToolTip.Tip="Enable custom db location"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="5">
                         <TextBlock Text="Download folder:" ToolTip.Tip="For downloaded files"/>
-                        <TextBox Width="312" Margin="10,0,0,0" Watermark="Select..." Text="{Binding DownloadDir, Mode=TwoWay}" IsReadOnly="True"/>
+                        <TextBox Width="312" Margin="9,0,0,0" Watermark="Select..." Text="{Binding DownloadDir, Mode=TwoWay}" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                         <Button Width="30" Content=">>" Margin="2,0,0,0" Name="SelectFolder"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="7">
                         <TextBlock Text="Media player:"/>
-                        <TextBox Width="312" Margin="30,0,0,0" Watermark="Select path to mpc-be..." Text="{Binding WatchApp, Mode=TwoWay}" IsReadOnly="True"/>
+                        <TextBox Width="312" Margin="30,0,0,0" Watermark="Select path to mpc-be..." Text="{Binding WatchApp, Mode=TwoWay}" IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                         <Button Width="30" Content=">>" Margin="2,0,0,0" Name="OpenFile"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="9">
@@ -67,7 +67,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="15">
                         <TextBlock Text="Backup data" ToolTip.Tip="To database folder (restart required)"/>
-                        <CheckBox Margin="37,0,5,0" IsChecked="{Binding EnableRepeatBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical data backup (to database folder)"/>
+                        <CheckBox Margin="36,0,5,0" IsChecked="{Binding EnableRepeatBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable periodical data backup (to database folder)"/>
                         <TextBlock Text="Every (min):" ToolTip.Tip="Minutes"/>
                         <TextBox Width="40" Margin="5,0,0,0" IsEnabled="{Binding EnableRepeatBackupSchedule, Mode=OneWay}" Text="{Binding RepeatBackupMin, Mode=TwoWay}" ToolTip.Tip="Minutes"/>
                         <CheckBox Margin="62,0,5,0" IsChecked="{Binding EnableDailyBackupSchedule, Mode=TwoWay}" ToolTip.Tip="Enable daily data backup (to database folder)"/>
@@ -88,19 +88,19 @@
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://chocolatey.org/docs/installation"/>
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://chocolatey.org/docs/installation" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                     <TextBlock Text="Install chocolatey" Margin="10,0,0,0"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install ffmpeg" />
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install ffmpeg" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                     <TextBlock Text="Install ffmpeg" Margin="10,0,0,0"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install youtube-dl" />
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install youtube-dl" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                     <TextBlock Text="Install youtube-dl" Margin="10,0,0,0"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" />
+                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="https://www.videohelp.com/software/MPC-BE" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
                     <TextBlock Text="Install mpc-be" Margin="10,0,0,0"/>
                 </StackPanel>
             </Grid>
