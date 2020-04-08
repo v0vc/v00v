@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
-    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Nullable>disable</Nullable>
     <IsPackable>False</IsPackable>
   </PropertyGroup>
-
   
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\EmbedXaml.props" />

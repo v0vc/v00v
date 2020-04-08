@@ -1,9 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-    <PublishTrimmed>true</PublishTrimmed>
+    <OutputType>WinExe</OutputType>
+    <EnableDefaultCompileItems>False</EnableDefaultCompileItems>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Nullable>disable</Nullable>
     <IsPackable>False</IsPackable>
   </PropertyGroup>
 
@@ -11,6 +13,10 @@
   <Import Project="..\..\build\Avalonia.props" />
   <Import Project="..\..\build\Avalonia.Desktop.props" />
   <Import Project="..\..\build\Avalonia.ReactiveUI.props" />
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\v00v.MainApp\v00v.MainApp.csproj" />
