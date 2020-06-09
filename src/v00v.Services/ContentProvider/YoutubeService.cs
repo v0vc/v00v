@@ -252,8 +252,8 @@ namespace v00v.Services.ContentProvider
                                            .SelectMany(i => i.Result.SelectTokens("items.[*]").Select(x => MakeItem(x, cId, cTitle))));
             }
 
-            await FillThumbs(channel.Playlists.Where(x => x.Thumb == null).ToHashSet());
-            await FillThumbs(channel.Items.Where(x => x.Thumb == null).ToHashSet());
+            await Task.WhenAll(FillThumbs(channel.Items.Where(x => x.Thumb == null).ToHashSet()),
+                               FillThumbs(channel.Playlists.Where(x => x.Thumb == null).ToHashSet()));
 
             channel.ItemsCount = channel.Items.Count;
             Parallel.ForEach(channel.Playlists,
@@ -348,8 +348,7 @@ namespace v00v.Services.ContentProvider
 
             if (withoutPl)
             {
-                await FillThumbs(channel.Items);
-                await FillThumbs(channel.Playlists);
+                await Task.WhenAll(FillThumbs(channel.Items), FillThumbs(channel.Playlists));
                 return channel;
             }
             // end uploads
@@ -430,8 +429,7 @@ namespace v00v.Services.ContentProvider
                                                            .Select(x => MakeItem(x, channelId, chTitle))));
             }
 
-            await FillThumbs(channel.Playlists);
-            await FillThumbs(channel.Items);
+            await Task.WhenAll(FillThumbs(channel.Items), FillThumbs(channel.Playlists));
 
             channel.ItemsCount = channel.Items.Count;
             Parallel.ForEach(channel.Playlists,
@@ -570,7 +568,7 @@ namespace v00v.Services.ContentProvider
             await Task.WhenAll(unlistedTasks);
 
             var cId = cs.ChannelId;
-            var unlisted = unlistedTasks.AsParallel().SelectMany(x => x.Result.SelectTokens("items.[*]")
+            var unlisted = unlistedTasks.AsParallel().SelectMany(x => x.Result?.SelectTokens("items.[*]")
                                                                      .Where(y => y.SelectToken("snippet.channelId")?.Value<string>()
                                                                                  == cId).Select(z => z.SelectToken("id")?.Value<string>())
                                                                      .Where(k => k != null)).ToHashSet();
@@ -984,7 +982,7 @@ namespace v00v.Services.ContentProvider
             await Task.WhenAll(nonPlunl);
 
             diff.UnlistedItems.AddRange(nonPlunl.AsParallel()
-                                            .SelectMany(x => x.Result.SelectTokens("items.[*]")
+                                            .SelectMany(x => x.Result?.SelectTokens("items.[*]")
                                                             .Select(z => z.SelectToken("id")?.Value<string>())));
 
             diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
