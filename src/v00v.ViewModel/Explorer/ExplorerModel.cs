@@ -400,6 +400,7 @@ namespace v00v.ViewModel.Explorer
             {
                 case "link":
                     res = $"{_youtubeService.ItemLink}{SelectedEntry.Id}";
+                    SetItemState(WatchState.Watched);
                     break;
                 case "title":
                     res = SelectedEntry.Title;
@@ -455,10 +456,7 @@ namespace v00v.ViewModel.Explorer
 
         private async Task OpenItem(Item item)
         {
-            if (item.Description == null)
-            {
-                item.Description = await _itemRepository.GetItemDescription(item.Id);
-            }
+            item.Description ??= await _itemRepository.GetItemDescription(item.Id);
 
             if (item.LargeThumb == null)
             {
@@ -481,10 +479,7 @@ namespace v00v.ViewModel.Explorer
                 }
             }
 
-            if (item.ChannelTitle == null)
-            {
-                item.ChannelTitle = _catalogModel.Entries.FirstOrDefault(x => x.Id == item.ChannelId)?.Title;
-            }
+            item.ChannelTitle ??= _catalogModel.Entries.FirstOrDefault(x => x.Id == item.ChannelId)?.Title;
 
             _popupController.Show(new ItemPopupContext(item));
         }
@@ -550,24 +545,28 @@ namespace v00v.ViewModel.Explorer
                 ? plmodel.Entries.Single(x => x.State == oldState)
                 : plmodel.Entries.FirstOrDefault(x => x.State == oldState);
 
-            if (pl != null)
+            if (pl == null)
             {
-                pl.Count -= 1;
-                if (isState)
-                {
-                    pl.StateItems?.RemoveAll(x => x.Id == item.Id);
-                }
-                else
-                {
-                    pl.Items.RemoveAll(x => x == item.Id);
-                }
-
-                if (!isState && pl.Count == 0)
-                {
-                    _channel.Playlists.Remove(pl);
-                    plmodel.All.RemoveKey(pl.Id);
-                }
+                return;
             }
+
+            pl.Count -= 1;
+            if (isState)
+            {
+                pl.StateItems?.RemoveAll(x => x.Id == item.Id);
+            }
+            else
+            {
+                pl.Items.RemoveAll(x => x == item.Id);
+            }
+
+            if (isState || pl.Count != 0)
+            {
+                return;
+            }
+
+            _channel.Playlists.Remove(pl);
+            plmodel.All.RemoveKey(pl.Id);
         }
 
         private Task RunItem()

@@ -355,11 +355,7 @@ namespace v00v.ViewModel.Playlists
                         if (entry.Id == "-4")
                         {
                             entry.IsPopularPlaylist = true;
-                            if (entry.SelectedCountry == null)
-                            {
-                                entry.SelectedCountry = entry.Countries.Skip(1).First();
-                            }
-
+                            entry.SelectedCountry ??= entry.Countries.Skip(1).First();
                             _explorerModel.SetMenu(true);
                         }
                         else
