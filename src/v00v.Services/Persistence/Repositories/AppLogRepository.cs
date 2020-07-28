@@ -75,13 +75,13 @@ namespace v00v.Services.Persistence.Repositories
                     {
                         await context.AppLogs.AddAsync(new AppLog { AppId = AppId, AppStatus = (byte)status, Comment = comment });
                         var res = await context.SaveChangesAsync().ConfigureAwait(false);
-                        transaction.Commit();
+                        await transaction.CommitAsync();
                         return res;
                     }
                     catch (Exception exception)
                     {
                         Console.WriteLine(exception);
-                        transaction.Rollback();
+                        await transaction.RollbackAsync();
                         throw;
                     }
                 }
