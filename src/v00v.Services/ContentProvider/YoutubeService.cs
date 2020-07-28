@@ -94,13 +94,9 @@ namespace v00v.Services.ContentProvider
 
         private static async Task<JObject> GetJsonObjectAsync(Uri uri)
         {
-            using (var client = new HttpClient())
-            {
-                using (var response = await client.GetAsync(uri))
-                {
-                    return !response.IsSuccessStatusCode ? null : JObject.Parse(await response.Content.ReadAsStringAsync());
-                }
-            }
+            using var client = new HttpClient();
+            using var response = await client.GetAsync(uri);
+            return !response.IsSuccessStatusCode ? null : JObject.Parse(await response.Content.ReadAsStringAsync());
         }
 
         private static SyncState GetState(string res)
@@ -796,21 +792,17 @@ namespace v00v.Services.ContentProvider
                 return new byte[0];
             }
 
-            using (var wc = new WebClient())
+            using var wc = new WebClient();
+            var res = await wc.DownloadDataTaskAsync(dataurl);
+            await using var ms = new MemoryStream(res);
+            try
             {
-                var res = await wc.DownloadDataTaskAsync(dataurl);
-                using (var ms = new MemoryStream(res))
-                {
-                    try
-                    {
-                        var bitmap = new Bitmap(ms);
-                        return bitmap.Size != Size.Empty ? res : new byte[0];
-                    }
-                    catch
-                    {
-                        return new byte[0];
-                    }
-                }
+                var bitmap = new Bitmap(ms);
+                return bitmap.Size != Size.Empty ? res : new byte[0];
+            }
+            catch
+            {
+                return new byte[0];
             }
         }
 

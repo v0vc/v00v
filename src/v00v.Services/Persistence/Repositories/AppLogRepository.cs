@@ -36,28 +36,24 @@ namespace v00v.Services.Persistence.Repositories
 
         public async Task<AppStatus> GetAppSyncStatus(string appId)
         {
-            using (var context = _contextFactory.CreateVideoContext())
-            {
-                var log = await context.AppLogs.AsNoTracking()
-                    .Where(x => x.AppId == appId && (x.AppStatus == (byte)AppStatus.PeriodicSyncStarted
-                                                     || x.AppStatus == (byte)AppStatus.PeriodicSyncFinished
-                                                     || x.AppStatus == (byte)AppStatus.DailySyncStarted
-                                                     || x.AppStatus == (byte)AppStatus.DailySyncFinished
-                                                     || x.AppStatus == (byte)AppStatus.SyncPlaylistStarted
-                                                     || x.AppStatus == (byte)AppStatus.SyncPlaylistFinished
-                                                     || x.AppStatus == (byte)AppStatus.SyncWithoutPlaylistStarted
-                                                     || x.AppStatus == (byte)AppStatus.SyncWithoutPlaylistFinished))
-                    .OrderByDescending(x => x.Timestamp).FirstOrDefaultAsync();
-                return log != null ? (AppStatus)log.AppStatus : AppStatus.NoSync;
-            }
+            await using var context = _contextFactory.CreateVideoContext();
+            var log = await context.AppLogs.AsNoTracking()
+                .Where(x => x.AppId == appId && (x.AppStatus == (byte)AppStatus.PeriodicSyncStarted
+                                                 || x.AppStatus == (byte)AppStatus.PeriodicSyncFinished
+                                                 || x.AppStatus == (byte)AppStatus.DailySyncStarted
+                                                 || x.AppStatus == (byte)AppStatus.DailySyncFinished
+                                                 || x.AppStatus == (byte)AppStatus.SyncPlaylistStarted
+                                                 || x.AppStatus == (byte)AppStatus.SyncPlaylistFinished
+                                                 || x.AppStatus == (byte)AppStatus.SyncWithoutPlaylistStarted
+                                                 || x.AppStatus == (byte)AppStatus.SyncWithoutPlaylistFinished))
+                .OrderByDescending(x => x.Timestamp).FirstOrDefaultAsync();
+            return log != null ? (AppStatus)log.AppStatus : AppStatus.NoSync;
         }
 
         public int GetStatusCount(AppStatus status)
         {
-            using (var context = _contextFactory.CreateVideoContext())
-            {
-                return context.AppLogs.AsNoTracking().Count(x => x.AppStatus == (byte)status);
-            }
+            using var context = _contextFactory.CreateVideoContext();
+            return context.AppLogs.AsNoTracking().Count(x => x.AppStatus == (byte)status);
         }
 
         public async Task<int> SetStatus(AppStatus status, string comment = null)
@@ -67,24 +63,20 @@ namespace v00v.Services.Persistence.Repositories
                 return -1;
             }
 
-            using (var context = _contextFactory.CreateVideoContext())
+            await using var context = _contextFactory.CreateVideoContext();
+            await using var transaction = await TransactionHelper.Get(context);
+            try
             {
-                using (var transaction = TransactionHelper.Get(context))
-                {
-                    try
-                    {
-                        await context.AppLogs.AddAsync(new AppLog { AppId = AppId, AppStatus = (byte)status, Comment = comment });
-                        var res = await context.SaveChangesAsync().ConfigureAwait(false);
-                        await transaction.CommitAsync();
-                        return res;
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception);
-                        await transaction.RollbackAsync();
-                        throw;
-                    }
-                }
+                await context.AppLogs.AddAsync(new AppLog { AppId = AppId, AppStatus = (byte)status, Comment = comment });
+                var res = await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return res;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 

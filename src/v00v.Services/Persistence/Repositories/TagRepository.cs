@@ -31,101 +31,87 @@ namespace v00v.Services.Persistence.Repositories
 
         #region Methods
 
-        public Task<int> Add(string text)
+        public async Task<int> Add(string text)
         {
-            using (var context = _contextFactory.CreateVideoContext())
+            await using var context = _contextFactory.CreateVideoContext();
+            await using var transaction = await TransactionHelper.Get(context);
+            try
             {
-                using (var transaction = TransactionHelper.Get(context))
-                {
-                    try
-                    {
-                        var res = context.Tags.AddAsync(new Database.Models.Tag { Text = text });
-                        context.SaveChanges();
-                        transaction.Commit();
-                        return Task.FromResult(res.Result.Entity.Id);
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception);
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
+                var res = context.Tags.AddAsync(new Database.Models.Tag { Text = text });
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return (await res).Entity.Id;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
         public async Task<int> DeleteTag(string text)
         {
-            using (var context = _contextFactory.CreateVideoContext())
+            await using var context = _contextFactory.CreateVideoContext();
+            await using var transaction = await TransactionHelper.Get(context);
+            try
             {
-                using (var transaction = TransactionHelper.Get(context))
-                {
-                    try
-                    {
-                        var tag = await context.Tags.AsNoTracking()
-                            .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase))
-                            .ConfigureAwait(false);
-                        if (tag != null)
-                        {
-                            context.Tags.Remove(tag);
-                            var res = await context.SaveChangesAsync().ConfigureAwait(false);
-                            transaction.Commit();
-                            return res;
-                        }
+                var tag = await context.Tags.AsNoTracking()
+                    .FirstOrDefaultAsync(x => string.Equals(x.Text, text, StringComparison.CurrentCultureIgnoreCase));
 
-                        transaction.Rollback();
-                        return -1;
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception);
-                        transaction.Rollback();
-                        throw;
-                    }
+                if (tag != null)
+                {
+                    context.Tags.Remove(tag);
+                    var res = await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return res;
                 }
+
+                await transaction.RollbackAsync();
+                return -1;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
         public List<int> GetOrder()
         {
-            using (var context = _contextFactory.CreateVideoContext())
+            using var context = _contextFactory.CreateVideoContext();
+            try
             {
-                try
-                {
-                    var res = context.ChannelTags.AsNoTracking().ToHashSet().GroupBy(x => x.TagId)
-                        .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
+                var res = context.ChannelTags.AsNoTracking().ToHashSet().GroupBy(x => x.TagId)
+                    .Select(x => new Tuple<int, int>(x.Key, x.Count())).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
 
-                    res.AddRange(context.Tags.AsNoTracking().Select(x => x.Id).Where(y => !res.Contains(y)));
+                res.AddRange(context.Tags.AsNoTracking().Select(x => x.Id).Where(y => !res.Contains(y)));
 
-                    return res;
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    throw;
-                }
+                return res;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                throw;
             }
         }
 
         public IEnumerable<Tag> GetTags()
         {
-            using (var context = _contextFactory.CreateVideoContext())
+            using var context = _contextFactory.CreateVideoContext();
+            foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text))
             {
-                foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text))
-                {
-                    yield return _mapper.Map<Tag>(tag);
-                }
+                yield return _mapper.Map<Tag>(tag);
             }
         }
 
         public IEnumerable<KeyValuePair<int, string>> GetTagsByIds(IEnumerable<int> tagIds)
         {
-            using (var context = _contextFactory.CreateVideoContext())
+            using var context = _contextFactory.CreateVideoContext();
+            foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text).Where(x => tagIds.Contains(x.Id)))
             {
-                foreach (var tag in context.Tags.AsNoTracking().OrderBy(x => x.Text).Where(x => tagIds.Contains(x.Id)))
-                {
-                    yield return new KeyValuePair<int, string>(tag.Id, tag.Text);
-                }
+                yield return new KeyValuePair<int, string>(tag.Id, tag.Text);
             }
         }
 

@@ -122,7 +122,7 @@ namespace v00v.Services.Backup
             {
                 res = JsonConvert.SerializeObject(bcp, Formatting.Indented);
             });
-            File.WriteAllText(tempFileName, res);
+            await File.WriteAllTextAsync(tempFileName, res);
             if (File.Exists(fileName))
             {
                 File.Delete(fileName);
@@ -149,7 +149,7 @@ namespace v00v.Services.Backup
             BackupAll backup;
             using (var r = new StreamReader(fileName))
             {
-                backup = JsonConvert.DeserializeObject<BackupAll>(r.ReadToEnd());
+                backup = JsonConvert.DeserializeObject<BackupAll>(await r.ReadToEndAsync());
             }
 
             if (backup == null)
