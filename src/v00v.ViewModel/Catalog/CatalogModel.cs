@@ -180,6 +180,7 @@ namespace v00v.ViewModel.Catalog
 
             AddChannelCommand = ReactiveCommand.Create(AddChannel, null, RxApp.MainThreadScheduler);
             EditChannelCommand = ReactiveCommand.Create(EditChannel, null, RxApp.MainThreadScheduler);
+            CopyChannelLinkCommand = ReactiveCommand.CreateFromTask(CopyItem, null, RxApp.MainThreadScheduler);
             SyncChannelCommand = ReactiveCommand.CreateFromTask(SyncChannel, null, RxApp.MainThreadScheduler);
             SyncChannelsCommand = ReactiveCommand.CreateFromTask(SyncChannels, null, RxApp.MainThreadScheduler);
             SaveChannelCommand = ReactiveCommand.CreateFromTask(SaveChannel, null, RxApp.MainThreadScheduler);
@@ -242,6 +243,7 @@ namespace v00v.ViewModel.Catalog
         public ICommand ClearAddedCommand { get; }
         public ICommand DeleteChannelCommand { get; }
         public ICommand EditChannelCommand { get; }
+        public ICommand CopyChannelLinkCommand { get; }
         public IReadOnlyCollection<Channel> Entries => _entries;
 
         public ExplorerModel ExplorerModel
@@ -444,6 +446,18 @@ namespace v00v.ViewModel.Catalog
             Tags.Add(tag);
             _tagOrder.Add(tag.Id);
             _tags.Add(tag);
+        }
+
+        private Task CopyItem()
+        {
+            if (SelectedEntry == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var res =  $"{_youtubeService.ChannelLink}{SelectedEntry.Id}";
+
+            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private Task BackupChannels()

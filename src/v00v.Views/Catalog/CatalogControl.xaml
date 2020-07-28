@@ -38,6 +38,11 @@
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Edit32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="Copy" Command="{Binding CopyChannelLinkCommand, Mode=OneWay}" >
+                        <MenuItem.Icon>
+                            <Image Source="resm:v00v.MainApp.Icons.Dark.Copy32.png?assembly=v00v.MainApp"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Sync" Command="{Binding SyncChannelCommand, Mode=OneWay}" 
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}" 
                               IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
