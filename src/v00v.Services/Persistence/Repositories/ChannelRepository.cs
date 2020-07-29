@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -382,7 +383,8 @@ namespace v00v.Services.Persistence.Repositories
                 // channels
                 if (fdiff.Channels.Count > 0)
                 {
-                    var chs = context.Channels.AsNoTracking().AsEnumerable()?.Where(x => fdiff.Channels.ContainsKey(x.Id));
+                    var chs = context.Channels.AsNoTracking().AsEnumerable()?.Where(x => fdiff.Channels.ContainsKey(x.Id))
+                        .ToImmutableHashSet();
 
                     Parallel.ForEach(fdiff.Channels,
                                      pair =>
