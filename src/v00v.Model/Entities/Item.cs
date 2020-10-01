@@ -207,14 +207,14 @@ namespace v00v.Model.Entities
                         $"{Title.RemoveInvalidChars().Replace('"', ' ').Replace('\'', ' ').Replace('?', ' ').Replace('/', ' ').Trim()}{fn.Extension}"
                             .FilterWhiteSpaces();
 
-                    var fulname = Path.Combine(SaveDir, fileName);
+                    var fullname = Path.Combine(SaveDir, fileName);
 
-                    if (File.Exists(fulname))
+                    if (File.Exists(fullname))
                     {
-                        File.Delete(fulname);
+                        File.Delete(fullname);
                     }
 
-                    File.Move(fn.FullName, fulname);
+                    File.Move(fn.FullName, fullname);
                     if (!skip)
                     {
                         FileName = fileName;
