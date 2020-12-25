@@ -127,7 +127,8 @@ namespace v00v.Services.Persistence.Repositories
             {
                 // one channel
                 var channel = syncPls
-                    ? await context.Channels.AsNoTracking().Include(x => x.Playlists).Include(x => x.Items).FirstAsync(x => x.Id == channelId)
+                    ? await context.Channels.AsNoTracking().Include(x => x.Playlists).Include(x => x.Items)
+                        .FirstAsync(x => x.Id == channelId)
                     : await context.Channels.AsNoTracking().Include(x => x.Items).FirstAsync(x => x.Id == channelId);
 
                 return new List<ChannelStruct>
@@ -167,7 +168,8 @@ namespace v00v.Services.Persistence.Repositories
             {
                 // one channel
                 var channel = syncPls
-                    ? context.Channels.AsNoTracking().Include(x => x.Playlists).Include(x => x.Items).FirstOrDefault(x => x.Id == channelId)
+                    ? context.Channels.AsNoTracking().Include(x => x.Playlists).Include(x => x.Items)
+                        .FirstOrDefault(x => x.Id == channelId)
                     : context.Channels.AsNoTracking().Include(x => x.Items).FirstOrDefault(x => x.Id == channelId);
 
                 if (channel != null)
@@ -395,6 +397,7 @@ namespace v00v.Services.Persistence.Repositories
                                          {
                                              return;
                                          }
+
                                          ch.ViewCount = value.ViewCount;
                                          ch.SubsCount = value.SubsCount;
                                          if (!string.IsNullOrEmpty(value.Description))
@@ -412,6 +415,7 @@ namespace v00v.Services.Persistence.Repositories
                                          {
                                              ch.Timestamp = value.Timestamp;
                                          }
+
                                          ch.ViewCount = value.ViewCount;
                                          ch.SubsCount = value.SubsCount;
                                          if (!string.IsNullOrEmpty(value.Description))

@@ -563,12 +563,10 @@ namespace v00v.ViewModel.Startup
                 CreateNoWindow = true
             };
 
-            using (var process = new Process { StartInfo = pInfo })
-            {
-                process.Start();
-                process.WaitForExit();
-                process.Close();
-            }
+            using var process = new Process { StartInfo = pInfo };
+            process.Start();
+            process.WaitForExit();
+            process.Close();
         }
 
         private Task DownloadItem()
@@ -580,13 +578,11 @@ namespace v00v.ViewModel.Startup
 
             return Task.Run(() =>
             {
-                using (var process = Process.Start(YouParser,
-                                                   IsYoutubeLink
-                                                       ? MakeParam(SelectedFormat)
-                                                       : $"-o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}"))
-                {
-                    process?.Close();
-                }
+                using var process = Process.Start(YouParser,
+                                                  IsYoutubeLink
+                                                      ? MakeParam(SelectedFormat)
+                                                      : $"-o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}");
+                process?.Close();
             }).ContinueWith(x =>
                             {
                                 return DownloadUrl = null;

@@ -233,6 +233,10 @@ namespace v00v.Services.Backup
             var prov = (FileConfigurationProvider)_configuration.Providers.First();
             var file = Path.Combine(((PhysicalFileProvider)prov.Source.FileProvider).Root, prov.Source.Path);
             dynamic jsonObj = JsonConvert.DeserializeObject(File.ReadAllText(file));
+            if (jsonObj == null)
+            {
+                return;
+            }
             jsonObj[AppSettings][key] = value;
             File.WriteAllText(file, JsonConvert.SerializeObject(jsonObj, Formatting.Indented));
         }

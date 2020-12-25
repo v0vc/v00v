@@ -8,7 +8,6 @@ namespace v00v.Model.BackupEntities
         #region Properties
 
         public ConcurrentBag<BackupItem> Items { get; set; }
-
         public Dictionary<string, byte> ItemsState { get; set; }
 
         #endregion

@@ -54,10 +54,8 @@ namespace v00v
         {
             if (needMigrate)
             {
-                using (var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext())
-                {
-                    context.Database.Migrate();
-                }
+                using var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
+                context.Database.Migrate();
             }
 
             var appLog = AvaloniaLocator.Current.GetService<IAppLogRepository>();

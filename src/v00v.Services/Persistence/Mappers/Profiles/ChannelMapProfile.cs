@@ -22,17 +22,11 @@ namespace v00v.Services.Persistence.Mappers.Profiles
                 .ForMember(dto => dto.Items, o => o.MapFrom(src => src.Items)).ForMember(dto => dto.Site, o => o.Ignore())
                 .ForMember(dto => dto.SiteId, opt => opt.MapFrom(src => 1)).ForMember(dto => dto.Tags,
                                                                                       o => o.MapFrom(src =>
-                                                                                                         src.Tags.Select(x =>
-                                                                                                                             new
-                                                                                                                                 ChannelTag
-                                                                                                                                 {
-                                                                                                                                     ChannelId
-                                                                                                                                         = src
-                                                                                                                                             .Id,
-                                                                                                                                     TagId
-                                                                                                                                         = x
-                                                                                                                                             .Id
-                                                                                                                                 })));
+                                                                                          src.Tags.Select(x => new ChannelTag
+                                                                                          {
+                                                                                              ChannelId = src.Id,
+                                                                                              TagId = x.Id
+                                                                                          })));
         }
 
         #endregion

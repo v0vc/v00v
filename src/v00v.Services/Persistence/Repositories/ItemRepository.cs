@@ -258,8 +258,7 @@ namespace v00v.Services.Persistence.Repositories
                 var ids = items.Select(y => y.Id);
 
                 return channelId != null
-                    ? await context.Items.AsNoTracking()
-                        .Where(x => x.ChannelId == channelId && x.ViewDiff > 0 && ids.Contains(x.Id))
+                    ? await context.Items.AsNoTracking().Where(x => x.ChannelId == channelId && x.ViewDiff > 0 && ids.Contains(x.Id))
                         .ToDictionaryAsync(id => id.Id, v => v.ViewDiff)
                     : await context.Items.AsNoTracking().Where(x => x.ViewDiff > 0 && ids.Contains(x.Id))
                         .ToDictionaryAsync(id => id.Id, v => v.ViewDiff);

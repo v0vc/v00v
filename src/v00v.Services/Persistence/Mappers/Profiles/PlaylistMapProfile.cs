@@ -23,9 +23,7 @@ namespace v00v.Services.Persistence.Mappers.Profiles
                 .ForMember(dto => dto.Channel, o => o.Ignore()).ForMember(dto => dto.Items,
                                                                           o => o.MapFrom(src => src.Items.Select(x => new ItemPlaylist
                                                                           {
-                                                                              ItemId = x,
-                                                                              PlaylistId = src
-                                                                                  .Id
+                                                                              ItemId = x, PlaylistId = src.Id
                                                                           })));
         }
 

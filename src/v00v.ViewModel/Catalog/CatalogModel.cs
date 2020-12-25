@@ -882,10 +882,9 @@ namespace v00v.ViewModel.Catalog
                                                                           {
                                                                               IsWorking = false;
                                                                               _setTitle?.Invoke(done.Status == TaskStatus.Faulted
-                                                                                                    ? done.Exception == null ? "Faulted" :
-                                                                                                    $"{done.Exception.Message}"
-                                                                                                    : string.Empty.MakeTitle(done.Result,
-                                                                                                                             sw));
+                                                                                  ? done.Exception == null ? "Faulted" :
+                                                                                  $"{done.Exception.Message}"
+                                                                                  : string.Empty.MakeTitle(done.Result, sw));
                                                                           });
 
                                                                           channel.IsNew = false;
@@ -896,11 +895,10 @@ namespace v00v.ViewModel.Catalog
                                                                           UpdatePlaylist(channel);
                                                                       },
                                                                       TaskContinuationOptions.OnlyOnRanToCompletion).ContinueWith(x =>
-                                                                                                                                  {
-                                                                                                                                      SetSelected(oldId);
-                                                                                                                                  },
-                                                                                                                                  TaskScheduler
-                                                                                                                                      .FromCurrentSynchronizationContext());
+             {
+                 SetSelected(oldId);
+             },
+             TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void SetLog(string log)

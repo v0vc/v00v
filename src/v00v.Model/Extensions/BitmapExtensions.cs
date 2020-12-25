@@ -14,10 +14,8 @@ namespace v00v.Model.Extensions
                 return null;
             }
 
-            using (var ms = new MemoryStream(thumbnail))
-            {
-                return new Bitmap(ms);
-            }
+            using var ms = new MemoryStream(thumbnail);
+            return new Bitmap(ms);
         }
 
         #endregion

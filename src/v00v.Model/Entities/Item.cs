@@ -109,15 +109,9 @@ namespace v00v.Model.Entities
 
         public async Task<bool> Download(string youdl, string youparam, string par, string link, bool skip, Action<string> setLog)
         {
-            if (_numRegex == null)
-            {
-                _numRegex = new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
-            }
+            _numRegex ??= new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
 
-            if (_setLog == null)
-            {
-                _setLog = setLog;
-            }
+            _setLog ??= setLog;
 
             IsWorking = true;
             var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam, link))
@@ -164,11 +158,9 @@ namespace v00v.Model.Entities
                 CreateNoWindow = true,
             };
 
-            using (var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = false })
-            {
-                proc.Start();
-                proc.Close();
-            }
+            using var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = false };
+            proc.Start();
+            proc.Close();
         }
 
         private double GetPercentFromYoudlOutput(string input)

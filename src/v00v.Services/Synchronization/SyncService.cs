@@ -31,7 +31,11 @@ namespace v00v.Services.Synchronization
 
         #region Methods
 
-        public async Task<SyncDiff> Sync(bool parallel, bool syncPls, List<Channel> channels, Action<string> setLog, Action<string> setTitle)
+        public async Task<SyncDiff> Sync(bool parallel,
+            bool syncPls,
+            List<Channel> channels,
+            Action<string> setLog,
+            Action<string> setTitle)
         {
             var chCount = channels.Count - 1;
             setLog?.Invoke(channels.Count <= 2
@@ -181,7 +185,7 @@ namespace v00v.Services.Synchronization
                              });
 
             setLog?.Invoke("Saving to db..");
-            
+
             var rows = _channelRepository.StoreDiff(res);
             await Task.WhenAll(rows).ContinueWith(x =>
             {
