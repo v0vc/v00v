@@ -11,12 +11,12 @@ namespace v00v.Services.Database.Migrations
                 name: "AppLogs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    AppId = table.Column<string>(nullable: true),
-                    AppStatus = table.Column<byte>(nullable: false),
-                    Comment = table.Column<string>(nullable: true),
-                    Timestamp = table.Column<DateTimeOffset>(nullable: false, defaultValueSql: "datetime('now','localtime')")
+                    AppId = table.Column<string>(type: "TEXT", nullable: true),
+                    AppStatus = table.Column<byte>(type: "INTEGER", nullable: false),
+                    Comment = table.Column<string>(type: "TEXT", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "datetime('now','localtime')")
                 },
                 constraints: table =>
                 {
@@ -27,12 +27,12 @@ namespace v00v.Services.Database.Migrations
                 name: "Sites",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Cookie = table.Column<string>(nullable: true),
-                    Login = table.Column<string>(nullable: true),
-                    Pass = table.Column<string>(nullable: true),
-                    Title = table.Column<string>(nullable: true)
+                    Cookie = table.Column<string>(type: "TEXT", nullable: true),
+                    Login = table.Column<string>(type: "TEXT", nullable: true),
+                    Pass = table.Column<string>(type: "TEXT", nullable: true),
+                    Title = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -43,9 +43,9 @@ namespace v00v.Services.Database.Migrations
                 name: "Tags",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Text = table.Column<string>(nullable: true)
+                    Text = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -56,21 +56,21 @@ namespace v00v.Services.Database.Migrations
                 name: "Channels",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
-                    Count = table.Column<int>(nullable: false),
-                    ItemsCount = table.Column<long>(nullable: false),
-                    PlannedCount = table.Column<long>(nullable: false),
-                    SiteId = table.Column<int>(nullable: false),
-                    SubsCount = table.Column<long>(nullable: false),
-                    SubsCountDiff = table.Column<long>(nullable: false),
-                    SubTitle = table.Column<string>(nullable: true),
-                    Sync = table.Column<byte>(nullable: false),
-                    Thumbnail = table.Column<byte[]>(nullable: true),
-                    Timestamp = table.Column<DateTimeOffset>(nullable: false),
-                    Title = table.Column<string>(nullable: true),
-                    ViewCount = table.Column<long>(nullable: false),
-                    ViewCountDiff = table.Column<long>(nullable: false),
-                    WatchedCount = table.Column<long>(nullable: false)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    Count = table.Column<int>(type: "INTEGER", nullable: false),
+                    ItemsCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    PlannedCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    SiteId = table.Column<int>(type: "INTEGER", nullable: false),
+                    SubsCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    SubsCountDiff = table.Column<long>(type: "INTEGER", nullable: false),
+                    SubTitle = table.Column<string>(type: "TEXT", nullable: true),
+                    Sync = table.Column<byte>(type: "INTEGER", nullable: false),
+                    Thumbnail = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: true),
+                    ViewCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    ViewCountDiff = table.Column<long>(type: "INTEGER", nullable: false),
+                    WatchedCount = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,8 +87,8 @@ namespace v00v.Services.Database.Migrations
                 name: "ChannelTags",
                 columns: table => new
                 {
-                    ChannelId = table.Column<string>(nullable: false),
-                    TagId = table.Column<int>(nullable: false)
+                    ChannelId = table.Column<string>(type: "TEXT", nullable: false),
+                    TagId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -111,21 +111,21 @@ namespace v00v.Services.Database.Migrations
                 name: "Items",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
-                    ChannelId = table.Column<string>(nullable: true),
-                    Comments = table.Column<long>(nullable: false),
-                    Description = table.Column<string>(nullable: true),
-                    DislikeCount = table.Column<long>(nullable: false),
-                    Duration = table.Column<int>(nullable: false),
-                    FileName = table.Column<string>(nullable: true),
-                    LikeCount = table.Column<long>(nullable: false),
-                    SyncState = table.Column<byte>(nullable: false),
-                    Thumbnail = table.Column<byte[]>(nullable: true),
-                    Timestamp = table.Column<DateTimeOffset>(nullable: false),
-                    Title = table.Column<string>(nullable: true),
-                    ViewCount = table.Column<long>(nullable: false),
-                    ViewDiff = table.Column<long>(nullable: false),
-                    WatchState = table.Column<byte>(nullable: false)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    ChannelId = table.Column<string>(type: "TEXT", nullable: true),
+                    Comments = table.Column<long>(type: "INTEGER", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    DislikeCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    Duration = table.Column<int>(type: "INTEGER", nullable: false),
+                    FileName = table.Column<string>(type: "TEXT", nullable: true),
+                    LikeCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    SyncState = table.Column<byte>(type: "INTEGER", nullable: false),
+                    Thumbnail = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: true),
+                    ViewCount = table.Column<long>(type: "INTEGER", nullable: false),
+                    ViewDiff = table.Column<long>(type: "INTEGER", nullable: false),
+                    WatchState = table.Column<byte>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -142,13 +142,13 @@ namespace v00v.Services.Database.Migrations
                 name: "Playlists",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
-                    ChannelId = table.Column<string>(nullable: true),
-                    Count = table.Column<int>(nullable: false),
-                    SubTitle = table.Column<string>(nullable: true),
-                    SyncState = table.Column<byte>(nullable: false),
-                    Thumbnail = table.Column<byte[]>(nullable: true),
-                    Title = table.Column<string>(nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    ChannelId = table.Column<string>(type: "TEXT", nullable: true),
+                    Count = table.Column<int>(type: "INTEGER", nullable: false),
+                    SubTitle = table.Column<string>(type: "TEXT", nullable: true),
+                    SyncState = table.Column<byte>(type: "INTEGER", nullable: false),
+                    Thumbnail = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    Title = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -165,8 +165,8 @@ namespace v00v.Services.Database.Migrations
                 name: "ItemPlaylists",
                 columns: table => new
                 {
-                    ItemId = table.Column<string>(nullable: false),
-                    PlaylistId = table.Column<string>(nullable: false)
+                    ItemId = table.Column<string>(type: "TEXT", nullable: false),
+                    PlaylistId = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -190,7 +190,7 @@ namespace v00v.Services.Database.Migrations
                 columns: new[] { "Id", "Cookie", "Login", "Pass", "Title" },
                 values: new object[] { 1, null, null, null, "youtube.com" });
 
-			migrationBuilder.InsertData(
+            migrationBuilder.InsertData(
                 table: "Tags",
                 columns: new[] { "Id", "Text" },
                 values: new object[] { 27, "мультики" });
@@ -359,7 +359,7 @@ namespace v00v.Services.Database.Migrations
                 name: "IX_Playlists_ChannelId",
                 table: "Playlists",
                 column: "ChannelId");
-                
+			
 			migrationBuilder.Sql("CREATE TRIGGER IF NOT EXISTS trig_viewdiff BEFORE UPDATE ON Items BEGIN UPDATE Items SET ViewDiff = (NEW.ViewCount - OLD.ViewCount) WHERE Id = NEW.Id;END");
             migrationBuilder.Sql("CREATE TRIGGER IF NOT EXISTS trig_subdiff BEFORE UPDATE ON Channels BEGIN UPDATE Channels SET SubsCountDiff = (NEW.SubsCount - OLD.SubsCount) WHERE Id = NEW.Id;UPDATE Channels SET ViewCountDiff = (NEW.ViewCount - OLD.ViewCount) WHERE Id = NEW.Id;END");
         }

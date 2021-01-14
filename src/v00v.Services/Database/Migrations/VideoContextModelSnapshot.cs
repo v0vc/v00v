@@ -14,7 +14,7 @@ namespace v00v.Services.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.2");
+                .HasAnnotation("ProductVersion", "5.0.2");
 
             modelBuilder.Entity("v00v.Services.Database.Models.AppLog", b =>
                 {
@@ -407,6 +407,8 @@ namespace v00v.Services.Database.Migrations
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("v00v.Services.Database.Models.ChannelTag", b =>
@@ -429,6 +431,8 @@ namespace v00v.Services.Database.Migrations
                     b.HasOne("v00v.Services.Database.Models.Channel", "Channel")
                         .WithMany("Items")
                         .HasForeignKey("ChannelId");
+
+                    b.Navigation("Channel");
                 });
 
             modelBuilder.Entity("v00v.Services.Database.Models.ItemPlaylist", b =>
@@ -451,6 +455,37 @@ namespace v00v.Services.Database.Migrations
                     b.HasOne("v00v.Services.Database.Models.Channel", "Channel")
                         .WithMany("Playlists")
                         .HasForeignKey("ChannelId");
+
+                    b.Navigation("Channel");
+                });
+
+            modelBuilder.Entity("v00v.Services.Database.Models.Channel", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Playlists");
+
+                    b.Navigation("Tags");
+                });
+
+            modelBuilder.Entity("v00v.Services.Database.Models.Item", b =>
+                {
+                    b.Navigation("Playlists");
+                });
+
+            modelBuilder.Entity("v00v.Services.Database.Models.Playlist", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("v00v.Services.Database.Models.Site", b =>
+                {
+                    b.Navigation("Channels");
+                });
+
+            modelBuilder.Entity("v00v.Services.Database.Models.Tag", b =>
+                {
+                    b.Navigation("Channels");
                 });
 #pragma warning restore 612, 618
         }
