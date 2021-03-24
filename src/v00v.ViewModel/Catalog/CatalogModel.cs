@@ -310,7 +310,7 @@ namespace v00v.ViewModel.Catalog
             set => Update(ref _syncPls, value);
         }
 
-        public List<Tag> Tags { get; } = new() { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
+        public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
         private IAppCache ViewModelCache { get; } = new CachingService();
 
         #endregion
