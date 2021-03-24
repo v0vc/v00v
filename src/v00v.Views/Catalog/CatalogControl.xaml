@@ -116,10 +116,10 @@
                         </Panel>
                     </Button>
                     <StackPanel Orientation="Vertical">
-                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
-                                     IsChecked="{Binding !MassSync, Mode=TwoWay}"/>
                         <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: on" Classes="dot"
                                      IsChecked="{Binding MassSync, Mode=TwoWay}"/>
+                        <RadioButton GroupName="SyncType" ToolTip.Tip="Parallel sync: off" Classes="dot"
+                                     IsChecked="{Binding !MassSync, Mode=TwoWay}"/>
                     </StackPanel>
                     <StackPanel Orientation="Vertical">
                         <RadioButton GroupName="SyncPl" ToolTip.Tip="Sync playlists: on" Classes="dot"

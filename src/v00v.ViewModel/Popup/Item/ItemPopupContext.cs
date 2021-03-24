@@ -249,7 +249,7 @@ namespace v00v.ViewModel.Popup.Item
             Title += ", loading comments..";
             return _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId).ContinueWith(x =>
             {
-                All.AddRange(x.Result);
+                All.AddRange(x.GetAwaiter().GetResult());
                 Title = oldTitle;
                 if (!_comments.Any())
                 {
@@ -280,7 +280,7 @@ namespace v00v.ViewModel.Popup.Item
             {
                 return _youtubeService.GetReplyCommentsAsync(comment.CommentId, _item.ChannelId).ContinueWith(x =>
                 {
-                    comment.Replies = x.Result;
+                    comment.Replies = x.GetAwaiter().GetResult();
                     InsertReplies(comment);
                 });
             }

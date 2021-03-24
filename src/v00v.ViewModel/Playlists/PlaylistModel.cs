@@ -301,7 +301,7 @@ namespace v00v.ViewModel.Playlists
             var stPl = statePl ? SelectedEntry.StateItems : _explorerModel.Items.ToList();
             _setTitle.Invoke($"Update statistics for {SelectedEntry.Title}..");
             var sw = Stopwatch.StartNew();
-            return _youtubeService.SetItemsStatistic(stPl).ContinueWith(x =>
+            return _youtubeService.SetItemsStatistic(stPl).ContinueWith(_ =>
             {
                 _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id).ContinueWith(done =>
                 {
@@ -309,12 +309,13 @@ namespace v00v.ViewModel.Playlists
                                           ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
                                           : string.Empty.MakeTitle(stPl.Count, sw));
 
-                    if (done.Result?.Count > 0)
+                    var res = done.GetAwaiter().GetResult();
+                    if (res?.Count > 0)
                     {
                         Parallel.ForEach(stPl,
                                          z =>
                                          {
-                                             z.ViewDiff = done.Result.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                             z.ViewDiff = res.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
                                          });
                     }
                     else

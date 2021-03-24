@@ -177,7 +177,7 @@ namespace v00v.ViewModel.Popup.Channel
         {
             if (string.IsNullOrEmpty(searchText))
             {
-                return x => true;
+                return _ => true;
             }
 
             return x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase);
@@ -206,13 +206,14 @@ namespace v00v.ViewModel.Popup.Channel
 
             return _youtubeService.GetChannelId(ChannelId).ContinueWith(x =>
             {
-                if (string.IsNullOrEmpty(x.Result) || SetExisted(x.Result))
+                var res = x.GetAwaiter().GetResult();
+                if (string.IsNullOrEmpty(res) || SetExisted(res))
                 {
                     IsWorking = false;
                     return;
                 }
 
-                _youtubeService.GetChannelAsync(x.Result, false, ChannelTitle).ContinueWith(y =>
+                _youtubeService.GetChannelAsync(res, false, ChannelTitle).ContinueWith(y =>
                 {
                     IsWorking = false;
                     if (y.Exception != null)
@@ -222,23 +223,24 @@ namespace v00v.ViewModel.Popup.Channel
                         return;
                     }
 
-                    if (y.Result == null)
+                    var re = y.GetAwaiter().GetResult();
+                    if (re == null)
                     {
                         _popupController.Hide();
-                        _setTitle?.Invoke("Banned channel: " + x.Result);
+                        _setTitle?.Invoke($"Banned channel: {res}");
                         return;
                     }
 
-                    y.Result.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
-                    y.Result.Order = _getMinOrder.Invoke() - 1;
-                    _updateList?.Invoke(y.Result);
+                    re.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
+                    re.Order = _getMinOrder.Invoke() - 1;
+                    _updateList?.Invoke(re);
                     _popupController.Hide();
-                    _setSelect?.Invoke(y.Result.Id);
-                    Task.WhenAll(_channelRepository.AddChannel(y.Result),
-                                 _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{y.Result.Id}:{y.Result.Title}"))
+                    _setSelect?.Invoke(re.Id);
+                    Task.WhenAll(_channelRepository.AddChannel(re),
+                                 _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{re.Id}:{re.Title}"))
                         .ContinueWith(done =>
                         {
-                            _setTitle?.Invoke($"New channel: {y.Result.Title}. Saved {done.Result[0]} rows");
+                            _setTitle?.Invoke($"New channel: {re.Title}. Saved {done.GetAwaiter().GetResult()[0]} rows");
                         });
                 });
             }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -269,21 +271,22 @@ namespace v00v.ViewModel.Popup.Channel
 
             if (channel.IsNew)
             {
-                return _youtubeService.AddPlaylists(channel).ContinueWith(done =>
+                return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
                 {
                     channel.IsNew = false;
                     Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)),
                                  _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}"))
                         .ContinueWith(x =>
                         {
+                            var res = x.GetAwaiter().GetResult();
                             if (x.Status != TaskStatus.Faulted)
                             {
-                                _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.Result[0]} rows");
+                                _setTitle?.Invoke($"Done: {channel.Title}. Saved {res[0]} rows");
                             }
 
                             _updateList?.Invoke(channel);
                             _updatePlList?.Invoke(channel);
-                            _resortList?.Invoke(x.Result[0]);
+                            _resortList?.Invoke(res[0]);
                             _popupController.Hide();
                         }).ContinueWith(x => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
                 });
@@ -295,7 +298,7 @@ namespace v00v.ViewModel.Popup.Channel
                 {
                     if (x.Status != TaskStatus.Faulted)
                     {
-                        _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.Result[0]} rows");
+                        _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.GetAwaiter().GetResult()[0]} rows");
                     }
 
                     _updateList?.Invoke(channel);
@@ -309,7 +312,7 @@ namespace v00v.ViewModel.Popup.Channel
             All.Remove(tag);
             if (tag.IsSaved && !string.IsNullOrEmpty(tag.Text))
             {
-                return _tagRepository.DeleteTag(tag.Text).ContinueWith(x =>
+                return _tagRepository.DeleteTag(tag.Text).ContinueWith(_ =>
                                                                        {
                                                                            _deleteNewTag?.Invoke(tag.Id);
                                                                        },

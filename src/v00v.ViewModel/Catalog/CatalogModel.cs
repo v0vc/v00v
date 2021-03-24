@@ -62,7 +62,7 @@ namespace v00v.ViewModel.Catalog
         private ChannelSort _channelSort;
         private ExplorerModel _explorerModel;
         private bool _isWorking;
-        private bool _massSync = true;
+        private bool _massSync;
         private PlaylistModel _playlistModel;
         private string _searchText;
         private Channel _selectedEntry;
@@ -310,7 +310,7 @@ namespace v00v.ViewModel.Catalog
             set => Update(ref _syncPls, value);
         }
 
-        public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
+        public List<Tag> Tags { get; } = new() { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
         private IAppCache ViewModelCache { get; } = new CachingService();
 
         #endregion
@@ -470,7 +470,7 @@ namespace v00v.ViewModel.Catalog
                 IsWorking = false;
                 _setTitle?.Invoke(x.Status == TaskStatus.Faulted
                                       ? x.Exception == null ? "Faulted" : $"{x.Exception.Message}"
-                                      : string.Empty.MakeTitle(x.Result, sw));
+                                      : string.Empty.MakeTitle(x.GetAwaiter().GetResult(), sw));
             });
         }
 
@@ -604,7 +604,7 @@ namespace v00v.ViewModel.Catalog
             return _channelRepository.DeleteChannel(deletedId).ContinueWith(x =>
             {
                 IsWorking = false;
-                _setTitle?.Invoke(string.Empty.MakeTitle(x.Result, sw));
+                _setTitle?.Invoke(string.Empty.MakeTitle(x.GetAwaiter().GetResult(), sw));
                 _baseExplorerModel?.SetLog($"Deleted: {deletedId} - {title}");
                 _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel: {deletedId} - {title}");
             });
@@ -701,15 +701,16 @@ namespace v00v.ViewModel.Catalog
                     }
                     else
                     {
-                        if (x.Result != null)
+                        var chs = x.GetAwaiter().GetResult();
+                        if (chs != null)
                         {
-                            _setTitle?.Invoke(string.Empty.MakeTitle(x.Result.Length, sw));
-                            foreach (var ch in x.Result)
+                            _setTitle?.Invoke(string.Empty.MakeTitle(chs.Length, sw));
+                            foreach (var ch in chs)
                             {
                                 AddChannelToList(ch, false);
                             }
 
-                            All.AddOrUpdate(x.Result);
+                            All.AddOrUpdate(chs);
                             SetSelected(_baseChannel.Id);
                         }
                         else
@@ -802,12 +803,13 @@ namespace v00v.ViewModel.Catalog
                                           ? y.Exception == null ? "Faulted" : $"{y.Exception.Message}"
                                           : string.Empty.MakeTitle(ch.Items.Count, sw));
 
-                    if (y.Result?.Count > 0)
+                    var csd = y.GetAwaiter().GetResult();
+                    if (csd?.Count > 0)
                     {
                         Parallel.ForEach(ch.Items,
                                          z =>
                                          {
-                                             z.ViewDiff = y.Result.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                             z.ViewDiff = csd.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
                                          });
                     }
                     else
@@ -850,14 +852,15 @@ namespace v00v.ViewModel.Catalog
                                           SetLog).ContinueWith(done =>
             {
                 IsWorking = false;
+                var res = done.GetAwaiter().GetResult();
                 _setTitle?.Invoke(done.Status == TaskStatus.Faulted
                                       ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
-                                      : string.Empty.MakeTitle(done.Result.ChannelsCount, sw));
+                                      : string.Empty.MakeTitle(res.ChannelsCount, sw));
 
                 var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
-                pl.Count += done.Result.PlannedCount;
+                pl.Count += res.PlannedCount;
                 var wl = _baseChannel.Playlists.First(x => x.Id == "0");
-                wl.Count += done.Result.WatchedCount;
+                wl.Count += res.WatchedCount;
                 _basePlaylistModel?.All.AddOrUpdate(new[] { pl, wl });
             });
         }
@@ -876,7 +879,7 @@ namespace v00v.ViewModel.Catalog
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            return _youtubeService.AddPlaylists(channel).ContinueWith(x =>
+            return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
                                                                       {
                                                                           _channelRepository.AddChannel(channel).ContinueWith(done =>
                                                                           {
@@ -884,7 +887,7 @@ namespace v00v.ViewModel.Catalog
                                                                               _setTitle?.Invoke(done.Status == TaskStatus.Faulted
                                                                                   ? done.Exception == null ? "Faulted" :
                                                                                   $"{done.Exception.Message}"
-                                                                                  : string.Empty.MakeTitle(done.Result, sw));
+                                                                                  : string.Empty.MakeTitle(done.GetAwaiter().GetResult(), sw));
                                                                           });
 
                                                                           channel.IsNew = false;
@@ -1042,25 +1045,26 @@ namespace v00v.ViewModel.Catalog
                     }
                     else
                     {
-                        _setTitle?.Invoke(string.Empty.MakeTitle(task.Result.NewItems.Count, sw));
+                        var res = task.GetAwaiter().GetResult();
+                        _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
 
                         var plmodel = GetCachedPlaylistModel(channel.PlCache);
 
                         if (plmodel != null)
                         {
-                            if (task.Result.NewPlaylists.Count > 0)
+                            if (res.NewPlaylists.Count > 0)
                             {
-                                channel.Playlists.AddRange(task.Result.NewPlaylists);
-                                plmodel.All.AddOrUpdate(task.Result.NewPlaylists);
+                                channel.Playlists.AddRange(res.NewPlaylists);
+                                plmodel.All.AddOrUpdate(res.NewPlaylists);
                             }
 
-                            if (task.Result.DeletedPlaylists.Count > 0)
+                            if (res.DeletedPlaylists.Count > 0)
                             {
-                                channel.Playlists.RemoveAll(x => task.Result.DeletedPlaylists.Contains(x.Id));
-                                plmodel.All.RemoveKeys(task.Result.DeletedPlaylists);
+                                channel.Playlists.RemoveAll(x => res.DeletedPlaylists.Contains(x.Id));
+                                plmodel.All.RemoveKeys(res.DeletedPlaylists);
                             }
 
-                            Parallel.ForEach(task.Result.ExistPlaylists,
+                            Parallel.ForEach(res.ExistPlaylists,
                                              pair =>
                                              {
                                                  var (key, value) = pair;
@@ -1073,19 +1077,19 @@ namespace v00v.ViewModel.Catalog
                                                  }
                                              });
 
-                            if (task.Result.NoUnlistedAgain.Count > 0)
+                            if (res.NoUnlistedAgain.Count > 0)
                             {
                                 var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-                                unlistedpl.StateItems?.RemoveAll(x => task.Result.NoUnlistedAgain.Contains(x.Id));
-                                unlistedpl.Count -= task.Result.NoUnlistedAgain.Count;
-                                MarkNoUnlisted(channel, task.Result.NoUnlistedAgain, plmodel);
+                                unlistedpl.StateItems?.RemoveAll(x => res.NoUnlistedAgain.Contains(x.Id));
+                                unlistedpl.Count -= res.NoUnlistedAgain.Count;
+                                MarkNoUnlisted(channel, res.NoUnlistedAgain, plmodel);
                             }
                         }
 
-                        var allUnlisted = task.Result.UnlistedItems
-                            .Union(task.Result.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id))
-                            .Union(task.Result.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted)
-                                       .Select(x => x.Id)).Except(task.Result.NoUnlistedAgain).Distinct().ToHashSet();
+                        var allUnlisted = res.UnlistedItems
+                            .Union(res.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id))
+                            .Union(res.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted)
+                                       .Select(x => x.Id)).Except(res.NoUnlistedAgain).Distinct().ToHashSet();
 
                         var hiddenDic = new ConcurrentDictionary<string, Item>();
                         if (allUnlisted.Count > 0)
@@ -1093,9 +1097,9 @@ namespace v00v.ViewModel.Catalog
                             MarkHidden(channel, allUnlisted, SyncState.Unlisted, hiddenDic);
                         }
 
-                        if (task.Result.DeletedItems.Count > 0)
+                        if (res.DeletedItems.Count > 0)
                         {
-                            MarkHidden(channel, task.Result.DeletedItems, SyncState.Deleted, hiddenDic);
+                            MarkHidden(channel, res.DeletedItems, SyncState.Deleted, hiddenDic);
                         }
 
                         if (hiddenDic.Count > 0)
@@ -1107,15 +1111,15 @@ namespace v00v.ViewModel.Catalog
                         }
 
                         All.AddOrUpdate(lst);
-                        if (task.Result.NewItems.Count > 0)
+                        if (res.NewItems.Count > 0)
                         {
-                            GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(task.Result.NewItems);
-                            UpdateTags(task.Result.NewItems.SelectMany(x => x.Tags).Distinct());
+                            GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(res.NewItems);
+                            UpdateTags(res.NewItems.SelectMany(x => x.Tags).Distinct());
                         }
 
                         _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
                     }
-                }).ContinueWith(d =>
+                }).ContinueWith(_ =>
                                 {
                                     SelectedEntry = null;
                                     SelectedEntry = _entries.FirstOrDefault(x => x.Id == oldId);
@@ -1131,7 +1135,7 @@ namespace v00v.ViewModel.Catalog
             var syncPls = SyncPls;
             var sw = Stopwatch.StartNew();
             return _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistStarted : AppStatus.SyncWithoutPlaylistStarted,
-                                               $"Start sync: {_entries.Count(x => !x.IsNew) - 1}").ContinueWith(res =>
+                                               $"Start sync: {_entries.Count(x => !x.IsNew) - 1}").ContinueWith(_ =>
             {
                 _syncService.Sync(MassSync, syncPls, _entries.Where(x => !x.IsNew).ToList(), SetLog, _setTitle).ContinueWith(done =>
                 {
@@ -1146,19 +1150,20 @@ namespace v00v.ViewModel.Catalog
                     }
                     else
                     {
-                        _setTitle?.Invoke(string.Empty.MakeTitle(done.Result.NewItems.Count, sw));
+                        var res = done.GetAwaiter().GetResult();
+                        _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
 
-                        UpdateChannels(done.Result);
+                        UpdateChannels(res);
 
                         _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
                                                     $"Finished sync: {sw.Elapsed.Duration()}");
 
-                        foreach (var channel in _entries.Where(x => done.Result.ErrorSyncChannels.Contains(x.Id)))
+                        foreach (var channel in _entries.Where(x => res.ErrorSyncChannels.Contains(x.Id)))
                         {
                             channel.FontStyle = "Italic";
                         }
                     }
-                }).ContinueWith(r =>
+                }).ContinueWith(_ =>
                                 {
                                     SelectedEntry = null;
                                     SelectedEntry = _baseChannel;

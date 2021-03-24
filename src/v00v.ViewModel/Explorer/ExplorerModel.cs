@@ -215,7 +215,7 @@ namespace v00v.ViewModel.Explorer
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
-                return x => true;
+                return _ => true;
             }
 
             return x => x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase);
@@ -272,7 +272,7 @@ namespace v00v.ViewModel.Explorer
             return item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog)
                 .ContinueWith(x =>
                 {
-                    if (x.Result && !skip)
+                    if (x.GetAwaiter().GetResult() && !skip)
                     {
                         _itemRepository.UpdateItemFileName(item.Id, item.FileName);
                     }
@@ -291,7 +291,7 @@ namespace v00v.ViewModel.Explorer
             var oldState = item.WatchState;
             item.WatchState = par;
 
-            return _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId).ContinueWith(x =>
+            return _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId).ContinueWith(_ =>
             {
                 var bitem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
                 if (bitem != null && bitem.WatchState != par)
@@ -308,7 +308,7 @@ namespace v00v.ViewModel.Explorer
 
                 PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
                 PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
-            }).ContinueWith(y =>
+            }).ContinueWith(_ =>
                             {
                                 All.AddOrUpdate(item);
                                 SelectedEntry = _items.FirstOrDefault(x => x.Id == id);
@@ -593,14 +593,15 @@ namespace v00v.ViewModel.Explorer
                 _setTitle?.Invoke($"Working: {oldId}..");
                 return _youtubeService.GetChannelAsync(oldId, true).ContinueWith(x =>
                 {
-                    if (x.Result.Items.Count > 0)
+                    var channel = x.GetAwaiter().GetResult();
+                    if (channel.Items.Count > 0)
                     {
-                        _catalogModel.AddChannelToList(x.Result, false);
-                        _setTitle?.Invoke($"Ready: {x.Result.Title}");
+                        _catalogModel.AddChannelToList(channel, false);
+                        _setTitle?.Invoke($"Ready: {channel.Title}");
                     }
                     else
                     {
-                        SetLog($"Empty channel: {x.Result.Title}");
+                        SetLog($"Empty channel: {channel.Title}");
                     }
                 });
             }
