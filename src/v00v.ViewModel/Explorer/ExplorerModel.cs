@@ -472,10 +472,8 @@ namespace v00v.ViewModel.Explorer
 
                 if (th.Length > 0)
                 {
-                    using (var ms = new MemoryStream(th))
-                    {
-                        item.LargeThumb = new Bitmap(ms);
-                    }
+                    await using var ms = new MemoryStream(th);
+                    item.LargeThumb = new Bitmap(ms);
                 }
             }
 
