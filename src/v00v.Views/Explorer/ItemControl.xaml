@@ -24,7 +24,7 @@
                     Command="{Binding $parent[ListBox].DataContext.OpenCommand, Mode=OneTime}" 
                     CommandParameter="{Binding}"
             >
-                <Image Source="{Binding Thumb, Mode=OneTime}" Opacity="{Binding OpacityThumb, Mode=OneWay}" Stretch="Fill"  
+                <Image Source="{Binding Thumb, Mode=OneWay}" Opacity="{Binding OpacityThumb, Mode=OneWay}" Stretch="Fill"  
                        VerticalAlignment="Center" HorizontalAlignment="Center" 
                        />
             </Button>
