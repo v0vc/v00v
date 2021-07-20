@@ -415,25 +415,6 @@ namespace v00v.Services.Persistence.Repositories
                                          {
                                              ch.Timestamp = value.Timestamp;
                                          }
-
-                                         ch.ViewCount = value.ViewCount;
-                                         ch.SubsCount = value.SubsCount;
-                                         if (!string.IsNullOrEmpty(value.Description))
-                                         {
-                                             ch.SubTitle = value.Description;
-                                         }
-
-                                         if (value.ItemsCount > 0)
-                                         {
-                                             ch.ItemsCount += value.ItemsCount;
-                                             ch.Count += (int)value.ItemsCount;
-                                         }
-
-                                         if (value.Timestamp != DateTime.MinValue)
-                                         {
-                                             ch.Timestamp = value.Timestamp;
-                                         }
-
                                      });
 
                     context.Channels?.UpdateRange(chs);

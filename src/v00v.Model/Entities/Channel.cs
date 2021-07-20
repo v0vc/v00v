@@ -13,23 +13,28 @@ namespace v00v.Model.Entities
         private int _count;
         private string _title;
         private string _fontStyle;
+        private bool _hasNew;
 
         #endregion
 
         #region Properties
 
-        public virtual List<Item> Items { get; } = new List<Item>();
+        public virtual List<Item> Items { get; } = new();
 
-        public virtual List<Playlist> Playlists { get; } = new List<Playlist>();
+        public virtual List<Playlist> Playlists { get; } = new();
 
         //public virtual Site Site { get; set; }
 
-        public virtual List<Tag> Tags { get; } = new List<Tag>();
+        public virtual List<Tag> Tags { get; } = new();
 
         public int Count
         {
             get => _count;
-            set => Update(ref _count, value);
+            set
+            {
+                HasNew = value != 0;
+                Update(ref _count, value);
+            }
         }
 
         public string ExCache => "e" + Id;
@@ -40,7 +45,11 @@ namespace v00v.Model.Entities
             set => Update(ref _fontStyle, value);
         }
 
-        public bool HasNew => Count > 0;
+        public bool HasNew
+        {
+            get => _hasNew;
+            set => Update(ref _hasNew, value);
+        }
 
         public string Id { get; set; }
 

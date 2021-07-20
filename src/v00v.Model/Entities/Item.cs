@@ -19,6 +19,7 @@ namespace v00v.Model.Entities
         private bool _downloaded;
         private bool _isWorking;
         private Regex _numRegex;
+        private double _opacityThumb = 1;
         private double _percentage;
         private Process _proc;
         private Action<string> _setLog;
@@ -55,7 +56,12 @@ namespace v00v.Model.Entities
 
         public IBitmap LargeThumb { get; set; }
         public long LikeCount { get; set; }
-        public double OpacityThumb => WatchState == WatchState.Notset ? 1 : 0.6;
+
+        public double OpacityThumb
+        {
+            get => _opacityThumb;
+            set => Update(ref _opacityThumb, value);
+        }
 
         public double Percentage
         {
@@ -87,7 +93,11 @@ namespace v00v.Model.Entities
         public WatchState WatchState
         {
             get => _watchState;
-            set => Update(ref _watchState, value);
+            set
+            {
+                OpacityThumb = value == WatchState.Notset ? 1 : 0.6;
+                Update(ref _watchState, value);
+            }
         }
 
         public bool WatchStateSet => WatchState == WatchState.Planned || WatchState == WatchState.Watched;

@@ -32,22 +32,22 @@ namespace v00v
 
             PreAppStart(false);
 
-            //BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 
-            //Shutdown();
+            Shutdown();
 
-            try
-            {
-                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            }
-            catch (Exception e)
-            {
-                AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
-            }
-            finally
-            {
-                Shutdown();
-            }
+            //try
+            //{
+            //    BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            //}
+            //catch (Exception e)
+            //{
+            //    AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
+            //}
+            //finally
+            //{
+            //    Shutdown();
+            //}
         }
 
         private static void PreAppStart(bool needMigrate)

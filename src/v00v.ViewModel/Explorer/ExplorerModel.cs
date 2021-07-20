@@ -96,10 +96,11 @@ namespace v00v.ViewModel.Explorer
             GoToParentCommand = IsParentState
                 ? ReactiveCommand.CreateFromTask(SelectChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.Create(SelectPlaylist, null, RxApp.MainThreadScheduler);
-            OpenCommand = ReactiveCommand.Create((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
-            DownloadCommand = ReactiveCommand.Create((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
+            OpenCommand = ReactiveCommand.CreateFromTask((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
+            DownloadCommand =
+                ReactiveCommand.CreateFromTask((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
-                ReactiveCommand.Create((string par) => DownloadItem(par, SelectedEntry), null, RxApp.MainThreadScheduler);
+                ReactiveCommand.CreateFromTask((string par) => DownloadItem(par, SelectedEntry), null, RxApp.MainThreadScheduler);
             RunItemCommand = ReactiveCommand.CreateFromTask(RunItem, null, RxApp.MainThreadScheduler);
             CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
             DeleteItemCommand = ReactiveCommand.CreateFromTask(DeleteItem, null, RxApp.MainThreadScheduler);
@@ -288,32 +289,27 @@ namespace v00v.ViewModel.Explorer
 
             var id = SelectedEntry.Id;
             var item = _items.First(x => x.Id == id);
+            var channelId = item.ChannelId;
             var oldState = item.WatchState;
             item.WatchState = par;
 
-            return _itemRepository.SetItemsWatchState(par, item.Id, item.ChannelId).ContinueWith(_ =>
+            var bitem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
+            if (bitem != null && bitem.WatchState != par)
             {
-                var bitem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
-                if (bitem != null && bitem.WatchState != par)
-                {
-                    bitem.WatchState = par;
-                }
+                bitem.WatchState = par;
+            }
 
-                var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? item.ChannelId : null, true)
-                    ?.All.Items.FirstOrDefault(y => y.Id == id);
-                if (citem != null && citem.WatchState != par)
-                {
-                    citem.WatchState = par;
-                }
+            var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? channelId : null, true)?.All
+                .Items.FirstOrDefault(y => y.Id == id);
+            if (citem != null && citem.WatchState != par)
+            {
+                citem.WatchState = par;
+            }
 
-                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
-                PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
-            }).ContinueWith(_ =>
-                            {
-                                All.AddOrUpdate(item);
-                                SelectedEntry = _items.FirstOrDefault(x => x.Id == id);
-                            },
-                            TaskScheduler.FromCurrentSynchronizationContext());
+            PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
+            PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
+            
+            return _itemRepository.SetItemsWatchState(par, id, channelId);
         }
 
         public void SetLog(string log)

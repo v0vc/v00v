@@ -125,7 +125,7 @@ namespace v00v.Services.Synchronization
 
             res.UnlistedItems.AddRange(diffs.SelectMany(x => x.UnlistedItems).Except(res.NoUnlistedAgain));
 
-            if (res.Items.Count > 0)
+            if (!res.Items.IsEmpty)
             {
                 res.NewItems.AddRange(await _youtubeService.GetItems(res.Items.ToDictionary(entry => entry.Key, entry => entry.Value)));
                 channels.First(x => x.IsStateChannel).Items.AddRange(res.NewItems);
@@ -187,7 +187,7 @@ namespace v00v.Services.Synchronization
             setLog?.Invoke("Saving to db..");
 
             var rows = _channelRepository.StoreDiff(res);
-            await Task.WhenAll(rows).ContinueWith(x =>
+            await Task.WhenAll(rows).ContinueWith(_ =>
             {
                 setLog?.Invoke(rows.IsCompletedSuccessfully ? $"Saved {rows.Result} rows!" :
                                rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");

@@ -227,7 +227,7 @@ namespace v00v.ViewModel.Popup.Channel
                     if (re == null)
                     {
                         _popupController.Hide();
-                        _setTitle?.Invoke($"Banned channel: {res}");
+                        _setTitle?.Invoke("Quota exceeded or banned channel");
                         return;
                     }
 

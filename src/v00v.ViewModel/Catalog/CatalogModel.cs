@@ -54,6 +54,7 @@ namespace v00v.ViewModel.Catalog
         private readonly List<Tag> _tags;
         private readonly ITaskDispatcher _taskDispatcher;
         private readonly IYoutubeService _youtubeService;
+        private readonly IAppCache _viewModelCache = new CachingService();
 
         #endregion
 
@@ -139,8 +140,8 @@ namespace v00v.ViewModel.Catalog
                 }
                 else
                 {
-                    ExplorerModel = ViewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex, setTitle));
-                    PlaylistModel = ViewModelCache.GetOrAdd(entry.PlCache,
+                    ExplorerModel = _viewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex, setTitle));
+                    PlaylistModel = _viewModelCache.GetOrAdd(entry.PlCache,
                                                             () => new PlaylistModel(entry,
                                                                                     ExplorerModel,
                                                                                     setPageIndex,
@@ -310,8 +311,8 @@ namespace v00v.ViewModel.Catalog
             set => Update(ref _syncPls, value);
         }
 
-        public List<Tag> Tags { get; } = new List<Tag> { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
-        private IAppCache ViewModelCache { get; } = new CachingService();
+        public List<Tag> Tags { get; } = new() { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
+        
 
         #endregion
 
@@ -398,11 +399,11 @@ namespace v00v.ViewModel.Catalog
 
             if (!isChannelId)
             {
-                return ViewModelCache.Get<ExplorerModel>(id);
+                return _viewModelCache.Get<ExplorerModel>(id);
             }
 
             var exc = _entries.FirstOrDefault(x => x.Id == id);
-            return exc != null ? ViewModelCache.Get<ExplorerModel>(exc.ExCache) : null;
+            return exc != null ? _viewModelCache.Get<ExplorerModel>(exc.ExCache) : null;
         }
 
         public PlaylistModel GetCachedPlaylistModel(string id, bool isChannelId = false)
@@ -414,11 +415,11 @@ namespace v00v.ViewModel.Catalog
 
             if (!isChannelId)
             {
-                return ViewModelCache.Get<PlaylistModel>(id);
+                return _viewModelCache.Get<PlaylistModel>(id);
             }
 
             var plc = _entries.FirstOrDefault(x => x.Id == id);
-            return plc != null ? ViewModelCache.Get<PlaylistModel>(plc.PlCache) : null;
+            return plc != null ? _viewModelCache.Get<PlaylistModel>(plc.PlCache) : null;
         }
 
         private void AddChannel()
@@ -536,7 +537,7 @@ namespace v00v.ViewModel.Catalog
             }
 
             return Task.WhenAll(_channelRepository.UpdateChannelSyncState(chId, 0), _channelRepository.UpdateItemsCount(chId, 0))
-                .ContinueWith(done =>
+                .ContinueWith(_ =>
                 {
                     IsWorking = false;
                     _setTitle.Invoke(string.Empty.MakeTitle(count, sw));
@@ -555,8 +556,8 @@ namespace v00v.ViewModel.Catalog
             var ch = _entries.First(x => x.Id == deletedId);
             var count = ch.Count;
             var index = All.Items.IndexOf(ch);
-            ViewModelCache.Remove(ch.ExCache);
-            ViewModelCache.Remove(ch.PlCache);
+            _viewModelCache.Remove(ch.ExCache);
+            _viewModelCache.Remove(ch.PlCache);
             if (ch.IsNew)
             {
                 _explorerModel.All.RemoveKeys(ch.Items.Select(x => x.Id));
@@ -897,7 +898,7 @@ namespace v00v.ViewModel.Catalog
                                                                           UpdateList(channel);
                                                                           UpdatePlaylist(channel);
                                                                       },
-                                                                      TaskContinuationOptions.OnlyOnRanToCompletion).ContinueWith(x =>
+                                                                      TaskContinuationOptions.OnlyOnRanToCompletion).ContinueWith(_ =>
              {
                  SetSelected(oldId);
              },
@@ -1018,11 +1019,11 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        private Task SyncChannel()
+        private async Task SyncChannel()
         {
             if (SelectedEntry == null || SelectedEntry.IsNew)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var oldId = SelectedEntry.Id;
@@ -1031,149 +1032,98 @@ namespace v00v.ViewModel.Catalog
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            return _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start sync: {oldId}").ContinueWith(r =>
+            await _appLogRepository.SetStatus(AppStatus.SyncPlaylistStarted, $"Start sync: {oldId}");
+            var lst = new List<Channel> { _baseChannel, channel };
+
+            var res = new SyncDiff(true);
+            try
             {
-                var lst = new List<Channel> { _baseChannel, channel };
-                _syncService.Sync(true, true, lst, SetLog, _setTitle).ContinueWith(task =>
+                res = await _syncService.Sync(true, true, lst, SetLog, _setTitle);
+                _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
+                await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
+                var playlistModel = GetCachedPlaylistModel(channel.PlCache);
+
+                if (playlistModel != null)
                 {
-                    IsWorking = false;
-                    if (task.Status == TaskStatus.Faulted)
+                    if (res.NewPlaylists.Count > 0)
                     {
-                        var str = task.Exception == null ? "Faulted" : $"{task.Exception.Message}";
-                        _setTitle?.Invoke(str);
-                        _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, str);
+                        channel.Playlists.AddRange(res.NewPlaylists);
+                        playlistModel.All.AddOrUpdate(res.NewPlaylists);
                     }
-                    else
+
+                    if (res.DeletedPlaylists.Count > 0)
                     {
-                        var res = task.GetAwaiter().GetResult();
-                        _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
-
-                        var plmodel = GetCachedPlaylistModel(channel.PlCache);
-
-                        if (plmodel != null)
-                        {
-                            if (res.NewPlaylists.Count > 0)
-                            {
-                                channel.Playlists.AddRange(res.NewPlaylists);
-                                plmodel.All.AddOrUpdate(res.NewPlaylists);
-                            }
-
-                            if (res.DeletedPlaylists.Count > 0)
-                            {
-                                channel.Playlists.RemoveAll(x => res.DeletedPlaylists.Contains(x.Id));
-                                plmodel.All.RemoveKeys(res.DeletedPlaylists);
-                            }
-
-                            Parallel.ForEach(res.ExistPlaylists,
-                                             pair =>
-                                             {
-                                                 var (key, value) = pair;
-                                                 var pl = plmodel.All.Items.FirstOrDefault(x => x.Id == key);
-                                                 if (pl != null)
-                                                 {
-                                                     pl.Count = value.Count;
-                                                     pl.Items.Clear();
-                                                     pl.Items.AddRange(value.Select(x => x.Id));
-                                                 }
-                                             });
-
-                            if (res.NoUnlistedAgain.Count > 0)
-                            {
-                                var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-                                unlistedpl.StateItems?.RemoveAll(x => res.NoUnlistedAgain.Contains(x.Id));
-                                unlistedpl.Count -= res.NoUnlistedAgain.Count;
-                                MarkNoUnlisted(channel, res.NoUnlistedAgain, plmodel);
-                            }
-                        }
-
-                        var allUnlisted = res.UnlistedItems
-                            .Union(res.NewItems.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id))
-                            .Union(res.ExistPlaylists.SelectMany(x => x.Value).Where(x => x.Status == SyncState.Unlisted)
-                                       .Select(x => x.Id)).Except(res.NoUnlistedAgain).Distinct().ToHashSet();
-
-                        var hiddenDic = new ConcurrentDictionary<string, Item>();
-                        if (allUnlisted.Count > 0)
-                        {
-                            MarkHidden(channel, allUnlisted, SyncState.Unlisted, hiddenDic);
-                        }
-
-                        if (res.DeletedItems.Count > 0)
-                        {
-                            MarkHidden(channel, res.DeletedItems, SyncState.Deleted, hiddenDic);
-                        }
-
-                        if (hiddenDic.Count > 0)
-                        {
-                            var baseUnlisted = _baseChannel.Playlists.First(x => x.Id == "-2");
-                            baseUnlisted.StateItems?.AddRange(hiddenDic.Select(x => x.Value));
-                            baseUnlisted.Count += hiddenDic.Count;
-                            GetCachedPlaylistModel(null)?.All.AddOrUpdate(baseUnlisted);
-                        }
-
-                        All.AddOrUpdate(lst);
-                        if (res.NewItems.Count > 0)
-                        {
-                            GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(res.NewItems);
-                            UpdateTags(res.NewItems.SelectMany(x => x.Tags).Distinct());
-                        }
-
-                        _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, $"Finish sync: {sw.Elapsed.Duration()}");
+                        channel.Playlists.RemoveAll(x => res.DeletedPlaylists.Contains(x.Id));
+                        playlistModel.All.RemoveKeys(res.DeletedPlaylists);
                     }
-                }).ContinueWith(_ =>
-                                {
-                                    SelectedEntry = null;
-                                    SelectedEntry = _entries.FirstOrDefault(x => x.Id == oldId);
-                                },
-                                TaskScheduler.Current);
-            });
+
+                    Parallel.ForEach(res.ExistPlaylists,
+                                     pair =>
+                                     {
+                                         var (key, value) = pair;
+                                         var pl = playlistModel.All.Items.FirstOrDefault(x => x.Id == key);
+                                         if (pl != null)
+                                         {
+                                             pl.Count = value.Count;
+                                             pl.Items.Clear();
+                                             pl.Items.AddRange(value.Select(x => x.Id));
+                                         }
+                                     });
+                }
+            }
+            catch (Exception e)
+            {
+                _setTitle?.Invoke(e.Message);
+                await _appLogRepository.SetStatus(AppStatus.SyncPlaylistFinished, e.Message);
+            }
+            finally
+            {
+                IsWorking = false;
+                SelectedEntry = channel;
+                UpdateChannels(res);
+            }
         }
 
-        private Task SyncChannels()
+        private async Task SyncChannels()
         {
             _setTitle?.Invoke("Working channels...");
             IsWorking = true;
             var syncPls = SyncPls;
             var sw = Stopwatch.StartNew();
-            return _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistStarted : AppStatus.SyncWithoutPlaylistStarted,
-                                               $"Start sync: {_entries.Count(x => !x.IsNew) - 1}").ContinueWith(_ =>
+            await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistStarted : AppStatus.SyncWithoutPlaylistStarted,
+                                        $"Start sync: {_entries.Count(x => !x.IsNew) - 1}");
+
+            var res = new SyncDiff(syncPls);
+            try
             {
-                _syncService.Sync(MassSync, syncPls, _entries.Where(x => !x.IsNew).ToList(), SetLog, _setTitle).ContinueWith(done =>
+                res = await _syncService.Sync(MassSync, syncPls, _entries.Where(x => !x.IsNew).ToList(), SetLog, _setTitle);
+                _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
+                await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
+                                                  $"Finished sync: {sw.Elapsed.Duration()}");
+            }
+
+            catch (Exception e)
+            {
+                await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
+                                                  e.Message);
+                _setTitle?.Invoke(e.Message);
+            }
+
+            finally
+            {
+                IsWorking = false;
+                foreach (var channel in _entries.Where(x => res.ErrorSyncChannels.Contains(x.Id)))
                 {
-                    IsWorking = false;
-                    if (done.Status == TaskStatus.Faulted)
-                    {
-                        var str = done.Exception == null ? "Faulted" : $"{done.Exception.Message}";
+                    channel.FontStyle = "Italic";
+                }
 
-                        _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
-                                                    str);
-                        _setTitle?.Invoke(str);
-                    }
-                    else
-                    {
-                        var res = done.GetAwaiter().GetResult();
-                        _setTitle?.Invoke(string.Empty.MakeTitle(res.NewItems.Count, sw));
-
-                        UpdateChannels(res);
-
-                        _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistFinished : AppStatus.SyncWithoutPlaylistFinished,
-                                                    $"Finished sync: {sw.Elapsed.Duration()}");
-
-                        foreach (var channel in _entries.Where(x => res.ErrorSyncChannels.Contains(x.Id)))
-                        {
-                            channel.FontStyle = "Italic";
-                        }
-                    }
-                }).ContinueWith(_ =>
-                                {
-                                    SelectedEntry = null;
-                                    SelectedEntry = _baseChannel;
-                                    if (_baseChannel.Count > 0)
-                                    {
-                                        _setPageIndex?.Invoke(0);
-                                    }
-                                },
-                                TaskScheduler.Current);
-            });
+                if (_baseChannel.Count > 0)
+                {
+                    _setPageIndex?.Invoke(0);
+                }
+                SelectedEntry = _baseChannel;
+                UpdateChannels(res);
+            }
         }
 
         private void UpdateChannels(SyncDiff diff)
@@ -1216,7 +1166,7 @@ namespace v00v.ViewModel.Catalog
                                  });
             }
 
-            if (hiddenDic.Count > 0)
+            if (!hiddenDic.IsEmpty)
             {
                 var baseUnlisted = _baseChannel.Playlists.First(x => x.Id == "-2");
                 baseUnlisted.StateItems?.AddRange(hiddenDic.Select(x => x.Value));
@@ -1224,12 +1174,14 @@ namespace v00v.ViewModel.Catalog
                 GetCachedPlaylistModel(null)?.All.AddOrUpdate(baseUnlisted);
             }
 
-            All.AddOrUpdate(_entries.Where(x => !x.IsNew));
             if (diff.NewItems.Count > 0)
             {
                 UpdateTags(diff.NewItems.SelectMany(x => x.Tags).Distinct());
-                _baseExplorerModel.All.AddOrUpdate(diff.NewItems);
                 _baseExplorerModel.EnableLog = _baseExplorerModel.All.Items.Any();
+                foreach (var (key, _) in diff.Channels)
+                {
+                    _explorerModel.All.AddOrUpdate(diff.NewItems.Where(x => x.ChannelId == key));
+                }
             }
         }
 

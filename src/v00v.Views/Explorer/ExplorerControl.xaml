@@ -14,7 +14,7 @@
         <KeyBinding Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" CommandParameter="{x:Static enums:WatchState.Notset}" Gesture="e"/>
     </UserControl.KeyBindings>
     
-    <ListBox Grid.Row="0" Name="ItemList" BorderThickness="0"
+    <ListBox Name="ItemList" BorderThickness="0"
              Items="{Binding Items, Mode=OneWay}"
              SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
              VirtualizationMode="Simple"
