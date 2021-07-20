@@ -24,7 +24,7 @@
                     Command="{Binding $parent[ListBox].DataContext.OpenCommand, Mode=OneTime}" 
                     CommandParameter="{Binding}"
             >
-                <Image Source="{Binding Thumb, Mode=OneWay}" Opacity="{Binding OpacityThumb, Mode=OneWay}" Stretch="Fill"  
+                <Image Source="{Binding Thumb, Mode=OneTime}" Opacity="{Binding OpacityThumb, Mode=OneWay}" Stretch="Fill"  
                        VerticalAlignment="Center" HorizontalAlignment="Center" 
                        />
             </Button>
@@ -48,7 +48,7 @@
             </StackPanel>
             <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15" IsVisible="{Binding !Downloaded, Mode=OneWay}">
                 <Button Background="#bdacd1" IsVisible="{Binding !IsWorking, Mode=OneWay}"
-                        Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneWay}" 
+                        Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneTime}" 
                         CommandParameter="{Binding}">
                     <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp"/>
                 </Button>

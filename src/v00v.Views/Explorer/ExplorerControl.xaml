@@ -27,44 +27,44 @@
         </ListBox.DataTemplates>
         <ListBox.ContextMenu>
             <ContextMenu>
-                <MenuItem Header="Run" Command="{Binding RunItemCommand, Mode=OneWay}">
+                <MenuItem Header="Run" Command="{Binding RunItemCommand, Mode=OneTime}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.VideoPlay32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="To: Watched" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}" 
+                <MenuItem Header="To: Watched" Command="{Binding SetItemWatchStateCommand, Mode=OneTime}" 
                           CommandParameter="{x:Static enums:WatchState.Watched}" 
                           IsVisible="{Binding !SelectedEntry.Watched, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Checkmark32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="To: Planned" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}"
+                <MenuItem Header="To: Planned" Command="{Binding SetItemWatchStateCommand, Mode=OneTime}"
                           CommandParameter="{x:Static enums:WatchState.Planned}"
                           IsVisible="{Binding !SelectedEntry.Planned, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Time32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Copy Link" Command="{Binding CopyItemCommand, Mode=OneWay}" 
+                <MenuItem Header="Copy Link" Command="{Binding CopyItemCommand, Mode=OneTime}" 
                           CommandParameter="link">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Edit32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Copy Title" Command="{Binding CopyItemCommand, Mode=OneWay}" 
+                <MenuItem Header="Copy Title" Command="{Binding CopyItemCommand, Mode=OneTime}" 
                           CommandParameter="title">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Copy32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{Binding GotoMenu, Mode=OneWay}" Command="{Binding GoToParentCommand, Mode=OneWay}" 
+                <MenuItem Header="{Binding GotoMenu, Mode=OneWay}" Command="{Binding GoToParentCommand, Mode=OneTime}" 
                           IsVisible="{Binding IsParentState, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.LeftArrow32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Go to Playlist" Command="{Binding GoToParentCommand, Mode=OneWay}" 
+                <MenuItem Header="Go to Playlist" Command="{Binding GoToParentCommand, Mode=OneTime}" 
                           IsVisible="{Binding !IsParentState, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.RightArrow32.png?assembly=v00v.MainApp"/>
@@ -74,39 +74,39 @@
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
-                    <MenuItem Header="HD" Command="{Binding DownloadItemCommand, Mode=OneWay}" 
+                    <MenuItem Header="HD" Command="{Binding DownloadItemCommand, Mode=OneTime}" 
                               CommandParameter="hd">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.VideoHd32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Audio Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" 
+                    <MenuItem Header="Audio Only" Command="{Binding DownloadItemCommand, Mode=OneTime}" 
                               CommandParameter="audio">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Audio32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Video Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" 
+                    <MenuItem Header="Video Only" Command="{Binding DownloadItemCommand, Mode=OneTime}" 
                               CommandParameter="video">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.VideoOnly32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Subtitles Only" Command="{Binding DownloadItemCommand, Mode=OneWay}" 
+                    <MenuItem Header="Subtitles Only" Command="{Binding DownloadItemCommand, Mode=OneTime}" 
                               CommandParameter="subs">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Sub32.png?assembly=v00v.MainApp"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}"
+                <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneTime}"
                           CommandParameter="{x:Static enums:WatchState.Notset}"
                           IsVisible="{Binding SelectedEntry.WatchStateSet, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Delete" Command="{Binding DeleteItemCommand, Mode=OneWay}" 
+                <MenuItem Header="Delete" Command="{Binding DeleteItemCommand, Mode=OneTime}" 
                           IsVisible="{Binding SelectedEntry.Downloaded, Mode=OneWay}">
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>

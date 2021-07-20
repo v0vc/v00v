@@ -120,10 +120,9 @@ namespace v00v.Model.Entities
         public async Task<bool> Download(string youdl, string youparam, string par, string link, bool skip, Action<string> setLog)
         {
             _numRegex ??= new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
-
             _setLog ??= setLog;
-
             IsWorking = true;
+
             var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam, link))
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -149,7 +148,7 @@ namespace v00v.Model.Entities
                 _proc.BeginErrorReadLine();
                 _proc.WaitForExit();
                 _proc.Close();
-            }).ContinueWith(x => HandleDownload(skip));
+            }).ContinueWith(_ => HandleDownload(skip));
 
             return Downloaded;
         }
@@ -202,7 +201,6 @@ namespace v00v.Model.Entities
             var fn = new DirectoryInfo(SaveDir).GetFiles($"{Id}.*").FirstOrDefault();
             if (fn != null)
             {
-                Downloaded = true;
                 try
                 {
                     var fileName =
@@ -227,15 +225,18 @@ namespace v00v.Model.Entities
                     FileName = fn.Name;
                     _setLog?.Invoke(e.Message);
                 }
+                finally
+                {
+                    Downloaded = true;
+                    _proc.OutputDataReceived -= OutputDataReceived;
+                    _proc.OutputDataReceived -= ErrorDataReceived;
+                    _proc.Dispose();
+                }
             }
             else
             {
                 Downloaded = false;
             }
-
-            _proc.OutputDataReceived -= OutputDataReceived;
-            _proc.OutputDataReceived -= ErrorDataReceived;
-            _proc.Dispose();
         }
 
         private string MakeParam(string par, string youParam, string link)

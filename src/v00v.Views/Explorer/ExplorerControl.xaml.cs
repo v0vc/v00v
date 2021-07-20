@@ -23,27 +23,29 @@ namespace v00v.Views.Explorer
             this.FindControl<ListBox>("ItemList").AddHandler(Gestures.DoubleTappedEvent, ItemsDoubleTapped);
         }
 
-        private void ItemsDoubleTapped(object? sender, RoutedEventArgs e)
+        private void ItemsDoubleTapped(object sender, RoutedEventArgs e)
         {
-            var litem = ((IVisual)e.Source).GetSelfAndVisualAncestors()
+            var listBoxItem = ((IVisual)e.Source).GetSelfAndVisualAncestors()
                 .OfType<ListBoxItem>()
                 .FirstOrDefault();
 
-            if (litem?.DataContext is Item item)
+            if (listBoxItem?.DataContext is not Item item)
             {
-                var settings = AvaloniaLocator.Current.GetService<IStartupModel>();
-                item.RunItem(settings.WatchApp,
-                             settings.DownloadDir,
-                             $"{AvaloniaLocator.Current.GetService<IYoutubeService>().ItemLink}{item.Id}");
+                return;
+            }
 
-                if (item.WatchState == WatchState.Watched)
-                {
-                    return;
-                }
-                if (this.FindControl<ExplorerControl>("explorer")?.DataContext is ExplorerModel expModel)
-                {
-                    expModel.SetItemState(WatchState.Watched);
-                }
+            var settings = AvaloniaLocator.Current.GetService<IStartupModel>();
+            item.RunItem(settings.WatchApp,
+                         settings.DownloadDir,
+                         $"{AvaloniaLocator.Current.GetService<IYoutubeService>().ItemLink}{item.Id}");
+
+            if (item.WatchState == WatchState.Watched)
+            {
+                return;
+            }
+            if (this.FindControl<ExplorerControl>("explorer")?.DataContext is ExplorerModel expModel)
+            {
+                expModel.SetItemState(WatchState.Watched);
             }
         }
 

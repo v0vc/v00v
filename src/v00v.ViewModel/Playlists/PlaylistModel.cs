@@ -159,7 +159,7 @@ namespace v00v.ViewModel.Playlists
             DeleteCommand = ReactiveCommand.CreateFromObservable(DeleteFiles, null, RxApp.MainThreadScheduler);
             ReloadCommand = ReactiveCommand.CreateFromTask(ReloadStatistics, null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
-                ReactiveCommand.CreateFromObservable((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
+                ReactiveCommand.CreateFromTask((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
         }
 
         private PlaylistModel(IPlaylistRepository playlistRepository, IItemRepository itemRepository, IYoutubeService youtubeService)
@@ -253,22 +253,21 @@ namespace v00v.ViewModel.Playlists
             });
         }
 
-        private IObservable<Unit> DownloadItem(string par)
+        private Task DownloadItem(string par)
         {
-            return Observable.Start(() =>
+            if (SelectedEntry == null)
             {
-                if (SelectedEntry == null)
-                {
-                    return;
-                }
+                return Task.CompletedTask;
+            }
 
-                Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
-                                 new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                                 x =>
-                                 {
-                                     _explorerModel.Download(par, x);
-                                 });
-            });
+            Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
+                             new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
+                             async x =>
+                             {
+                                 await _explorerModel.Download(par, x);
+                             });
+
+            return Task.CompletedTask;
         }
 
         private void FillPlaylistItems(Playlist playlist)

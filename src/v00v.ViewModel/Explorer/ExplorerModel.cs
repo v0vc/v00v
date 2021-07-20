@@ -97,10 +97,9 @@ namespace v00v.ViewModel.Explorer
                 ? ReactiveCommand.CreateFromTask(SelectChannel, null, RxApp.MainThreadScheduler)
                 : ReactiveCommand.Create(SelectPlaylist, null, RxApp.MainThreadScheduler);
             OpenCommand = ReactiveCommand.CreateFromTask((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
-            DownloadCommand =
-                ReactiveCommand.CreateFromTask((Item item) => DownloadItem("simple", item), null, RxApp.MainThreadScheduler);
+            DownloadCommand = ReactiveCommand.Create((Item item) => Download("simple", item), null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
-                ReactiveCommand.CreateFromTask((string par) => DownloadItem(par, SelectedEntry), null, RxApp.MainThreadScheduler);
+                ReactiveCommand.CreateFromTask((string par) => Download(par, SelectedEntry), null, RxApp.MainThreadScheduler);
             RunItemCommand = ReactiveCommand.CreateFromTask(RunItem, null, RxApp.MainThreadScheduler);
             CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
             DeleteItemCommand = ReactiveCommand.CreateFromTask(DeleteItem, null, RxApp.MainThreadScheduler);
@@ -241,7 +240,7 @@ namespace v00v.ViewModel.Explorer
         public Task DeleteItem(Item item)
         {
             item.Downloaded = false;
-            return _itemRepository.UpdateItemFileName(item.Id, null).ContinueWith(x =>
+            return _itemRepository.UpdateItemFileName(item.Id, null).ContinueWith(_ =>
             {
                 if (item.FileName == null)
                 {
@@ -266,18 +265,20 @@ namespace v00v.ViewModel.Explorer
             });
         }
 
-        public Task Download(string par, Item item)
+        public async Task Download(string par, Item item)
         {
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
-            return item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog)
-                .ContinueWith(x =>
-                {
-                    if (x.GetAwaiter().GetResult() && !skip)
-                    {
-                        _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-                    }
-                });
+            var downloaded = await item.Download(_settings.YouParser,
+                                                 _settings.YouParam,
+                                                 par,
+                                                 $"{_youtubeService.ItemLink}{item.Id}",
+                                                 skip,
+                                                 SetLog);
+            if (downloaded && !skip)
+            {
+                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+            }
         }
 
         public Task SetItemState(WatchState par)
@@ -368,7 +369,7 @@ namespace v00v.ViewModel.Explorer
             if (playlistId == null || playlistId == "0" || playlistId == "-1" || playlistId == "-2" || playlistId == "-3"
                 || playlistId == "-4")
             {
-                return x => true;
+                return _ => true;
             }
 
             return x => _catalogModel.PlaylistModel.Entries.First(y => y.Id == playlistId).Items.Contains(x.Id);
@@ -378,7 +379,7 @@ namespace v00v.ViewModel.Explorer
         {
             if (SelectedTag.Key == 0)
             {
-                return x => true;
+                return _ => true;
             }
 
             return x => x.Tags.Contains(tag.Key);
@@ -409,11 +410,6 @@ namespace v00v.ViewModel.Explorer
         private Task DeleteItem()
         {
             return SelectedEntry != null && SelectedEntry.Downloaded ? DeleteItem(SelectedEntry) : Task.CompletedTask;
-        }
-
-        private Task DownloadItem(string par, Item item)
-        {
-            return Download(par, item);
         }
 
         private IObservable<SortExpressionComparer<Item>> GetSorter()
