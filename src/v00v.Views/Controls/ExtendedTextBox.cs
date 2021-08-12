@@ -158,7 +158,7 @@ namespace v00v.Views.Controls
             Observable.FromEventPattern(ContextMenu, nameof(ContextMenu.MenuClosed)).ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(_ => Focus()).DisposeWith(Disposables);
 
-            var menuItems = (ContextMenu.Items as Avalonia.Controls.Controls);
+            var menuItems = (Avalonia.Controls.Controls)ContextMenu?.Items;
             if (IsCopyEnabled)
             {
                 menuItems?.Add(new MenuItem
@@ -217,11 +217,6 @@ namespace v00v.Views.Controls
         private async Task<string> PasteAsync()
         {
             var text = await Avalonia.Application.Current.Clipboard.GetTextAsync();
-
-            if (text is null)
-            {
-                return null;
-            }
 
             OnTextInput(new TextInputEventArgs { Text = text });
             return text;

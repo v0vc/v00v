@@ -133,7 +133,7 @@ namespace v00v.Services.Persistence.Repositories
 
                 return new List<ChannelStruct>
                 {
-                    new ChannelStruct
+                    new()
                     {
                         ChannelId = channel.Id,
                         ChannelTitle = channel.Title,

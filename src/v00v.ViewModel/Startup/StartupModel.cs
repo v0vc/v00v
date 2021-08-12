@@ -170,7 +170,7 @@ namespace v00v.ViewModel.Startup
                 }
             }
 
-            this.WhenValueChanged(x => EnableCustomDb).Subscribe(x =>
+            this.WhenValueChanged(x => EnableCustomDb).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -178,21 +178,21 @@ namespace v00v.ViewModel.Startup
                     DbDir = !EnableCustomDb ? null : backupService.CustomDbPath;
                 }
             });
-            this.WhenValueChanged(x => EnableRepeatSyncSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableRepeatSyncSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyEnableRepeatSyncSchedule, EnableRepeatSyncSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableDailySyncSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableDailySyncSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyEnableDailySyncSchedule, EnableDailySyncSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableDailyParserUpdateSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableDailyParserUpdateSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -200,7 +200,7 @@ namespace v00v.ViewModel.Startup
                                               EnableDailyParserUpdateSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableRepeatParserUpdateSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableRepeatParserUpdateSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -208,84 +208,84 @@ namespace v00v.ViewModel.Startup
                                               EnableRepeatParserUpdateSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableDailyBackupSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableDailyBackupSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyEnableDailyBackupSchedule, EnableDailyBackupSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => EnableRepeatBackupSchedule).Subscribe(x =>
+            this.WhenValueChanged(x => EnableRepeatBackupSchedule).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyEnableRepeatBackupSchedule, EnableRepeatBackupSchedule.ToString());
                 }
             });
-            this.WhenValueChanged(x => RepeatSyncMin).Subscribe(x =>
+            this.WhenValueChanged(x => RepeatSyncMin).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyRepeatSyncSchedule, RepeatSyncMin.ToString());
                 }
             });
-            this.WhenValueChanged(x => RepeatParserMin).Subscribe(x =>
+            this.WhenValueChanged(x => RepeatParserMin).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyRepeatParserUpdateSchedule, RepeatParserMin.ToString());
                 }
             });
-            this.WhenValueChanged(x => RepeatBackupMin).Subscribe(x =>
+            this.WhenValueChanged(x => RepeatBackupMin).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyRepeatBackupSchedule, RepeatBackupMin.ToString());
                 }
             });
-            this.WhenValueChanged(x => SelectedSyncHour).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedSyncHour).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedSyncHour}:{SelectedSyncMinute}");
                 }
             });
-            this.WhenValueChanged(x => SelectedSyncMinute).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedSyncMinute).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailySyncSchedule, $"{SelectedSyncHour}:{SelectedSyncMinute}");
                 }
             });
-            this.WhenValueChanged(x => SelectedParserHour).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedParserHour).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
-            this.WhenValueChanged(x => SelectedParserMinute).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedParserMinute).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailyParserUpdateSchedule, $"{SelectedParserHour}:{SelectedParserMinute}");
                 }
             });
-            this.WhenValueChanged(x => SelectedBackupHour).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedBackupHour).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailyBackupSchedule, $"{SelectedBackupHour}:{SelectedBackupMinute}");
                 }
             });
-            this.WhenValueChanged(x => SelectedBackupMinute).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedBackupMinute).Subscribe(_ =>
             {
                 if (_isInited)
                 {
                     backupService.SaveChanges(backupService.KeyDailyBackupSchedule, $"{SelectedBackupHour}:{SelectedBackupMinute}");
                 }
             });
-            this.WhenValueChanged(x => DownloadDir).Subscribe(x =>
+            this.WhenValueChanged(x => DownloadDir).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -300,7 +300,7 @@ namespace v00v.ViewModel.Startup
                     }
                 }
             });
-            this.WhenValueChanged(x => DbDir).Subscribe(x =>
+            this.WhenValueChanged(x => DbDir).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -315,7 +315,7 @@ namespace v00v.ViewModel.Startup
                     }
                 }
             });
-            this.WhenValueChanged(x => WatchApp).Subscribe(x =>
+            this.WhenValueChanged(x => WatchApp).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -341,7 +341,7 @@ namespace v00v.ViewModel.Startup
                     }
                 }
             });
-            this.WhenValueChanged(x => SelectedFormat).Subscribe(x =>
+            this.WhenValueChanged(x => SelectedFormat).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -352,7 +352,7 @@ namespace v00v.ViewModel.Startup
                     }
                 }
             });
-            this.WhenValueChanged(x => YouApiKey).Subscribe(x =>
+            this.WhenValueChanged(x => YouApiKey).Subscribe(_ =>
             {
                 if (_isInited)
                 {
@@ -571,23 +571,16 @@ namespace v00v.ViewModel.Startup
 
         private Task DownloadItem()
         {
-            if (string.IsNullOrWhiteSpace(DownloadUrl) || !DownloadUrl.CheckUrlValid())
-            {
-                return Task.CompletedTask;
-            }
-
-            return Task.Run(() =>
-            {
-                using var process = Process.Start(YouParser,
-                                                  IsYoutubeLink
-                                                      ? MakeParam(SelectedFormat)
-                                                      : $"-o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}");
-                process?.Close();
-            }).ContinueWith(x =>
-                            {
-                                return DownloadUrl = null;
-                            },
-                            TaskScheduler.FromCurrentSynchronizationContext());
+            return string.IsNullOrWhiteSpace(DownloadUrl) || !DownloadUrl.CheckUrlValid()
+                ? Task.CompletedTask
+                : Task.Run(() =>
+                {
+                    using var process = Process.Start(YouParser,
+                                                      IsYoutubeLink
+                                                          ? MakeParam(SelectedFormat)
+                                                          : $"-o \"{DownloadDir}\\%(title)s.%(ext)s\" \"{DownloadUrl}\" {YouParam}");
+                    process?.Close();
+                }).ContinueWith(_ => { return DownloadUrl = null; });
         }
 
         private string MakeParam(string par)

@@ -172,23 +172,20 @@ namespace v00v.Services.Backup
                     setLog?.Invoke($"Total channels: {tasks.Count}, working..");
 
                     var channels = new ConcurrentBag<Channel>();
-                    await Task.WhenAll(tasks);
-                    Parallel.ForEach(tasks.AsParallel(),
-                                     task =>
+                    var rowChannels = await Task.WhenAll(tasks);
+                    Parallel.ForEach(rowChannels,
+                                     row =>
                                      {
-                                         var rr = backup.Items.FirstOrDefault(x => x.ChannelId == task.Result.Id);
+                                         var rr = backup.Items.FirstOrDefault(x => x.ChannelId == row.Id);
                                          if (rr != null)
                                          {
-                                             task.Result.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
-                                             channels.Add(task.Result);
+                                             row.Tags.AddRange(rr.Tags.Select(x => new Tag { Id = x }));
+                                             channels.Add(row);
                                          }
                                      });
 
-                    var rows = _channelRepository.AddChannels(channels);
-                    await rows.ContinueWith(r =>
-                    {
-                        setLog?.Invoke($"Saved {rows.Result} rows!");
-                    });
+                    var rows = await _channelRepository.AddChannels(channels);
+                    setLog?.Invoke($"Saved {rows} rows!");
                     res.ChannelsCount = channels.Count;
                     Parallel.ForEach(channels, updateList.Invoke);
                 }
@@ -209,18 +206,10 @@ namespace v00v.Services.Backup
             if (backup.ItemsState.Count > 0)
             {
                 await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
-
-                var planned = _channelRepository.GetChannelStateCount(WatchState.Planned);
-                var watched = _channelRepository.GetChannelStateCount(WatchState.Watched);
-                await Task.WhenAll(planned, watched);
-
-                var uplanned = planned.Result.Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value));
-                var uwatched = watched.Result.Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value));
-
-                await Task.WhenAll(uplanned.Union(uwatched));
-
-                res.PlannedCount = planned.Result.Sum(x => x.Value);
-                res.WatchedCount = watched.Result.Sum(x => x.Value);
+                var counts = await Task.WhenAll(_channelRepository.GetChannelStateCount(WatchState.Planned), _channelRepository.GetChannelStateCount(WatchState.Watched));
+                await Task.WhenAll(counts[0].Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value)).Union(counts[1].Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value))));
+                res.PlannedCount = counts[0].Sum(x => x.Value);
+                res.WatchedCount = counts[1].Sum(x => x.Value);
                 setLog?.Invoke($"Total planned: {res.PlannedCount}");
                 setLog?.Invoke($"Total watched: {res.WatchedCount}");
             }
@@ -293,11 +282,8 @@ namespace v00v.Services.Backup
 
                         channel.Tags.AddRange(item.Tags.Select(x => new Tag { Id = x }));
                         setLog?.Invoke($"Restored {channel.Title}, now saving..");
-                        var rows = _channelRepository.AddChannel(channel);
-                        await Task.WhenAll(rows).ContinueWith(r =>
-                        {
-                            setLog?.Invoke($"Saved {rows.Result} rows!");
-                        });
+                        var rows = await _channelRepository.AddChannel(channel);
+                        setLog?.Invoke($"Saved {rows} rows!");
                         updateList.Invoke(channel);
                         res++;
                     }

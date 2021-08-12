@@ -147,13 +147,10 @@ namespace v00v.ViewModel.Popup.Item
 
         private static Func<Comment, bool> BuildFilter(string searchText)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                return x => true;
-            }
-
-            return x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                        || x.Author.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return string.IsNullOrWhiteSpace(searchText)
+                ? _ => true
+                : x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                       || x.Author.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -229,82 +226,78 @@ namespace v00v.ViewModel.Popup.Item
             comment.IsExpanded = true;
         }
 
-        private Task LoadComments(byte selectedTab)
+        private async Task LoadComments(byte selectedTab)
         {
             if (selectedTab == 0)
             {
                 CanExpanded = false;
-                return Task.CompletedTask;
+                return;
             }
 
             if (_comments.Count > 0)
             {
                 CanExpanded = true;
-                return Task.CompletedTask;
+                return;
             }
 
             CanExpanded = true;
             Working = true;
             var oldTitle = Title;
             Title += ", loading comments..";
-            return _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId).ContinueWith(x =>
+            
+            All.AddRange(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
+            Title = oldTitle;
+            if (!_comments.Any())
             {
-                All.AddRange(x.GetAwaiter().GetResult());
-                Title = oldTitle;
-                if (!_comments.Any())
-                {
-                    Watermark = " No comments...";
-                    return;
-                }
+                Watermark = " No comments...";
+                return;
+            }
+            SetOrder();
 
-                SetOrder();
+            if (_item.Comments != _comments.Count)
+            {
+                _item.Comments = _comments.Count;
+                await _itemRepository.SetItemCommentsCount(_item.Id, _comments.Count);
+            }
 
-                if (_item.Comments != _comments.Count)
-                {
-                    _item.Comments = _comments.Count;
-                    _itemRepository.SetItemCommentsCount(_item.Id, _comments.Count);
-                }
-
-                Working = false;
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            Working = false;
         }
 
-        private Task LoadReplies(Comment comment)
+        private async Task LoadReplies(Comment comment)
         {
             if (comment.IsReply)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             if (comment.Replies == null)
             {
-                return _youtubeService.GetReplyCommentsAsync(comment.CommentId, _item.ChannelId).ContinueWith(x =>
-                {
-                    comment.Replies = x.GetAwaiter().GetResult();
-                    InsertReplies(comment);
-                });
-            }
-
-            if (comment.IsExpanded)
-            {
-                foreach (var comm in _comments.Skip(comment.Order + comment.Replies.Count + 1))
-                {
-                    comm.Order -= comment.Replies.Count;
-                }
-
-                All.RemoveMany(comment.Replies);
-                if (CommentSort != CommentSort.Order)
-                {
-                    CommentSort = CommentSort.Order;
-                }
-
-                comment.IsExpanded = false;
-            }
-            else
-            {
+                comment.Replies = await _youtubeService.GetReplyCommentsAsync(comment.CommentId, _item.ChannelId);
                 InsertReplies(comment);
             }
-            return Task.CompletedTask;
+
+            else
+            {
+                if (comment.IsExpanded)
+                {
+                    foreach (var comm in _comments.Skip(comment.Order + comment.Replies.Count + 1))
+                    {
+                        comm.Order -= comment.Replies.Count;
+                    }
+
+                    All.RemoveMany(comment.Replies);
+                    if (CommentSort != CommentSort.Order)
+                    {
+                        CommentSort = CommentSort.Order;
+                    }
+
+                    comment.IsExpanded = false;
+                }
+                else
+                {
+                    InsertReplies(comment);
+                }
+            }
         }
 
         private void SetOrder()

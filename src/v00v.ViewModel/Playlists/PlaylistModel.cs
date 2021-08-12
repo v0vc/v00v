@@ -127,8 +127,7 @@ namespace v00v.ViewModel.Playlists
                             channel.Playlists.Add(wpl);
                         }
 
-                        var unlisted = channel.Items.Where(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted)
-                            .ToHashSet();
+                        var unlisted = channel.Items.Where(x => x.SyncState is SyncState.Unlisted or SyncState.Deleted).ToHashSet();
                         if (unlisted.Count > 0)
                         {
                             var unpl = UnlistedPlaylist.Instance;
@@ -158,8 +157,7 @@ namespace v00v.ViewModel.Playlists
             CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
             DeleteCommand = ReactiveCommand.CreateFromObservable(DeleteFiles, null, RxApp.MainThreadScheduler);
             ReloadCommand = ReactiveCommand.CreateFromTask(ReloadStatistics, null, RxApp.MainThreadScheduler);
-            DownloadItemCommand =
-                ReactiveCommand.CreateFromTask((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
+            DownloadItemCommand = ReactiveCommand.CreateFromTask((string par) => DownloadItem(par), null, RxApp.MainThreadScheduler);
         }
 
         private PlaylistModel(IPlaylistRepository playlistRepository, IItemRepository itemRepository, IYoutubeService youtubeService)
@@ -202,12 +200,9 @@ namespace v00v.ViewModel.Playlists
 
         private static Func<Playlist, bool> BuildFilter(string searchText)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                return x => true;
-            }
-
-            return x => x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return string.IsNullOrWhiteSpace(searchText)
+                ? _ => true
+                : x => x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -289,46 +284,48 @@ namespace v00v.ViewModel.Playlists
             playlist.StateItems = newItems?.ToList();
         }
 
-        private Task ReloadStatistics()
+        private async Task ReloadStatistics()
         {
             if (SelectedEntry == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var statePl = SelectedEntry.IsStatePlaylist;
             var stPl = statePl ? SelectedEntry.StateItems : _explorerModel.Items.ToList();
             _setTitle.Invoke($"Update statistics for {SelectedEntry.Title}..");
             var sw = Stopwatch.StartNew();
-            return _youtubeService.SetItemsStatistic(stPl).ContinueWith(_ =>
+            try
             {
-                _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id).ContinueWith(done =>
+                await _youtubeService.SetItemsStatistic(stPl);
+                _setTitle?.Invoke(string.Empty.MakeTitle(stPl.Count, sw));
+
+                var rows = await _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id);
+                if (rows?.Count > 0)
                 {
-                    _setTitle?.Invoke(done.Status == TaskStatus.Faulted
-                                          ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
-                                          : string.Empty.MakeTitle(stPl.Count, sw));
-
-                    var res = done.GetAwaiter().GetResult();
-                    if (res?.Count > 0)
-                    {
-                        Parallel.ForEach(stPl,
-                                         z =>
-                                         {
-                                             z.ViewDiff = res.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
-                                         });
-                    }
-                    else
-                    {
-                        Parallel.ForEach(stPl,
-                                         z =>
-                                         {
-                                             z.ViewDiff = 0;
-                                         });
-                    }
-
-                    _explorerModel?.All.AddOrUpdate(stPl);
-                });
-            });
+                    Parallel.ForEach(stPl,
+                                     z =>
+                                     {
+                                         z.ViewDiff = rows.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                     });
+                }
+                else
+                {
+                    Parallel.ForEach(stPl,
+                                     z =>
+                                     {
+                                         z.ViewDiff = 0;
+                                     });
+                }
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
+            {
+                _explorerModel?.All.AddOrUpdate(stPl);
+            }
         }
 
         private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)
@@ -416,13 +413,13 @@ namespace v00v.ViewModel.Playlists
 
         private void SubscribePopular(Action<byte> setPageIndex, Action<string> setTitle, Func<IEnumerable<string>> getExistId)
         {
-            this.WhenValueChanged(x => x.PopularPl.SelectedCountry).Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(entry =>
+            this.WhenValueChanged(x => x.PopularPl.SelectedCountry).Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(async entry =>
             {
                 if (!string.IsNullOrWhiteSpace(entry))
                 {
                     setTitle?.Invoke($"Working {PopularPl.SelectedCountry} popular..");
                     var sw = Stopwatch.StartNew();
-                    PopularPl.StateItems = _youtubeService.GetPopularItems(entry, getExistId.Invoke()).GetAwaiter().GetResult();
+                    PopularPl.StateItems = await _youtubeService.GetPopularItems(entry, getExistId.Invoke());
                     setTitle?.Invoke($"Done {PopularPl.SelectedCountry}. Elapsed: {sw.Elapsed.Hours}h {sw.Elapsed.Minutes}m {sw.Elapsed.Seconds}s {sw.Elapsed.Milliseconds}ms");
                     bool enableLog;
                     if (PopularPl.StateItems.Count > 0)
@@ -455,7 +452,7 @@ namespace v00v.ViewModel.Playlists
 
         private void SubscribeSearchChange(Action<byte> setPageIndex, Action<string> setTitle, Func<IEnumerable<string>> getExistId)
         {
-            this.WhenValueChanged(x => x.SearchedPl.SearchText).Throttle(TimeSpan.FromMilliseconds(2000)).Subscribe(entry =>
+            this.WhenValueChanged(x => x.SearchedPl.SearchText).Throttle(TimeSpan.FromMilliseconds(2000)).Subscribe(async entry =>
             {
                 if (!string.IsNullOrEmpty(entry))
                 {
@@ -469,8 +466,8 @@ namespace v00v.ViewModel.Playlists
                     bool menu;
                     if (SearchedPl.EnableGlobalSearch)
                     {
-                        SearchedPl.StateItems = _youtubeService
-                            .GetSearchedItems(term, getExistId.Invoke(), PopularPl.SelectedCountry ?? "RU").GetAwaiter().GetResult();
+                        SearchedPl.StateItems =
+                            await _youtubeService.GetSearchedItems(term, getExistId.Invoke(), PopularPl.SelectedCountry ?? "RU");
                         menu = true;
                     }
                     else

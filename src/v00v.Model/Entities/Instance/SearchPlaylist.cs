@@ -7,7 +7,7 @@ namespace v00v.Model.Entities.Instance
         #region Static Properties
 
         public static SearchPlaylist Instance =>
-            new SearchPlaylist
+            new()
             {
                 IsStatePlaylist = true,
                 ThumbSize = 25,

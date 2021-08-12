@@ -99,7 +99,7 @@
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneTime}"
+                <MenuItem Header="Clear state" Command="{Binding SetItemWatchStateCommand, Mode=OneWay}"
                           CommandParameter="{x:Static enums:WatchState.Notset}"
                           IsVisible="{Binding SelectedEntry.WatchStateSet, Mode=OneWay}">
                     <MenuItem.Icon>

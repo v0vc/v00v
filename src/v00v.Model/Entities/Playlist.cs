@@ -21,7 +21,7 @@ namespace v00v.Model.Entities
 
         public virtual Channel Channel { get; set; }
 
-        public virtual List<string> Items { get; } = new List<string>();
+        public virtual List<string> Items { get; } = new();
 
         public string ChannelId { get; set; }
 

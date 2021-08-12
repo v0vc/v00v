@@ -28,48 +28,48 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By date" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Timestamp}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Timestamp}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Timestamp"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By views" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.View}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.View}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="View"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By likes" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Like}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Like}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Like"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By dislikes" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Dislike}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Dislike}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Dislike"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By comment" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Comment}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Comment}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Comment"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By duration" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Duration}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Duration}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Duration"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By file" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.File}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.File}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="File"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By title" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Title"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By channel" Margin="0,0,3,0" 
                                  IsVisible="{Binding IsParentState, Mode=OneWay}"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Channel"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By like/dislike*view" Margin="0,0,3,0"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Quality}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Quality}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Quality"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By view diff"
-                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.Instance}, ConverterParameter={x:Static enums:ItemSort.Diff}}"
+                                 IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Diff}}"
                                  Command="{Binding SetSortCommand, Mode=OneWay}"
                                  CommandParameter="Diff"/>
                 </StackPanel>

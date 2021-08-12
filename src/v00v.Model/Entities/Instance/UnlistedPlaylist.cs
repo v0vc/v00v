@@ -7,7 +7,7 @@ namespace v00v.Model.Entities.Instance
         #region Static Properties
 
         public static UnlistedPlaylist Instance =>
-            new UnlistedPlaylist
+            new()
             {
                 IsStatePlaylist = true,
                 ThumbSize = 25,

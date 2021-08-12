@@ -9,7 +9,7 @@ namespace v00v.Model.Converters
     {
         #region Static and Readonly Fields
 
-        public static readonly EnumToBooleanConverter Instance = new EnumToBooleanConverter();
+        public static readonly EnumToBooleanConverter s_instance = new();
 
         #endregion
 

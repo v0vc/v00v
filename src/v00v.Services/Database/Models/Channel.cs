@@ -7,8 +7,8 @@ namespace v00v.Services.Database.Models
     {
         #region Properties
 
-        public virtual List<Item> Items { get; } = new List<Item>();
-        public virtual List<Playlist> Playlists { get; } = new List<Playlist>();
+        public virtual List<Item> Items { get; } = new();
+        public virtual List<Playlist> Playlists { get; } = new();
         public virtual Site Site { get; set; }
         public virtual ICollection<ChannelTag> Tags { get; } = new List<ChannelTag>();
         public int Count { get; set; }

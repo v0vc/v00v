@@ -47,21 +47,17 @@ namespace v00v.Services.Synchronization
             var diffs = new List<ChannelDiff>();
             if (parallel)
             {
-                var pdiff = new List<Task<ChannelDiff>>();
-                pdiff.AddRange(channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)));
-                var tasks = Task.WhenAll(pdiff);
-                await tasks.ContinueWith(x =>
+                try
                 {
-                    if (tasks.Exception != null)
-                    {
-                        setLog?.Invoke($"{tasks.Exception.Message}");
-                    }
-                    else
-                    {
-                        diffs.AddRange(pdiff.Select(diff => diff.Result));
-                        unl.AddRange(diffs.SelectMany(y => y.UnlistedItems).Distinct());
-                    }
-                });
+                    var resDiff = await Task.WhenAll(channelStructs.Select(x => _youtubeService.GetChannelDiffAsync(x, syncPls, setLog)));
+                    diffs.AddRange(resDiff);
+                    unl.AddRange(diffs.SelectMany(y => y.UnlistedItems).Distinct());
+                }
+                catch (Exception ex)
+                {
+                    setLog?.Invoke($"{ex.Message}");
+                    return null;
+                }
             }
             else
             {
@@ -185,14 +181,8 @@ namespace v00v.Services.Synchronization
                              });
 
             setLog?.Invoke("Saving to db..");
-
-            var rows = _channelRepository.StoreDiff(res);
-            await Task.WhenAll(rows).ContinueWith(_ =>
-            {
-                setLog?.Invoke(rows.IsCompletedSuccessfully ? $"Saved {rows.Result} rows!" :
-                               rows.Exception == null ? "Save error" : $"Save error {rows.Exception.Message}");
-            });
-
+            var rows = await _channelRepository.StoreDiff(res);
+            setLog?.Invoke($"Saved {rows} rows!");
             return res;
         }
 

@@ -7,7 +7,6 @@ namespace v00v.Model.SyncEntities
         #region Properties
 
         public string Id { get; set; }
-
         public SyncState Status { get; set; }
 
         #endregion

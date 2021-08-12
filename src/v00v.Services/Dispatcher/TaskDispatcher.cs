@@ -16,7 +16,7 @@ namespace v00v.Services.Dispatcher
     {
         #region Static and Readonly Fields
 
-        private static readonly object Locker = new object();
+        private static readonly object _locker = new();
 
         private readonly StdSchedulerFactory _factory;
 
@@ -49,7 +49,7 @@ namespace v00v.Services.Dispatcher
         {
             get
             {
-                lock (Locker)
+                lock (_locker)
                 {
                     return _scheduler ??= _factory.GetScheduler().GetAwaiter().GetResult();
                 }

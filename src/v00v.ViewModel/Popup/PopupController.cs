@@ -28,7 +28,7 @@ namespace v00v.ViewModel.Popup
         public int MinImageWidth { get; } = 120;
         public int MinWidth { get; } = 480;
 
-        public Subject<PopupContext> Trigger { get; } = new Subject<PopupContext>();
+        public Subject<PopupContext> Trigger { get; } = new();
 
         #endregion
 

@@ -8,7 +8,7 @@ namespace v00v.Services.Database.Models
 
         public virtual Channel Channel { get; set; }
 
-        public virtual List<ItemPlaylist> Items { get; } = new List<ItemPlaylist>();
+        public virtual List<ItemPlaylist> Items { get; } = new();
 
         public string ChannelId { get; set; }
 

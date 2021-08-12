@@ -55,7 +55,7 @@ namespace v00v.Model.Entities
 
         public bool IsNew { get; set; }
 
-        public bool IsStateChannel { get; set; } = false;
+        public bool IsStateChannel { get; set; }
 
         public long ItemsCount { get; set; }
 

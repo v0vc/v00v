@@ -53,8 +53,8 @@ namespace v00v.ViewModel.Catalog
         private readonly ITagRepository _tagRepository;
         private readonly List<Tag> _tags;
         private readonly ITaskDispatcher _taskDispatcher;
-        private readonly IYoutubeService _youtubeService;
         private readonly IAppCache _viewModelCache = new CachingService();
+        private readonly IYoutubeService _youtubeService;
 
         #endregion
 
@@ -142,11 +142,11 @@ namespace v00v.ViewModel.Catalog
                 {
                     ExplorerModel = _viewModelCache.GetOrAdd(entry.ExCache, () => new ExplorerModel(entry, this, setPageIndex, setTitle));
                     PlaylistModel = _viewModelCache.GetOrAdd(entry.PlCache,
-                                                            () => new PlaylistModel(entry,
-                                                                                    ExplorerModel,
-                                                                                    setPageIndex,
-                                                                                    setTitle,
-                                                                                    SetSelected));
+                                                             () => new PlaylistModel(entry,
+                                                                                     ExplorerModel,
+                                                                                     setPageIndex,
+                                                                                     setTitle,
+                                                                                     SetSelected));
                 }
 
                 if (PlaylistModel?.SelectedEntry != null)
@@ -242,9 +242,9 @@ namespace v00v.ViewModel.Catalog
         }
 
         public ICommand ClearAddedCommand { get; }
+        public ICommand CopyChannelLinkCommand { get; }
         public ICommand DeleteChannelCommand { get; }
         public ICommand EditChannelCommand { get; }
-        public ICommand CopyChannelLinkCommand { get; }
         public IReadOnlyCollection<Channel> Entries => _entries;
 
         public ExplorerModel ExplorerModel
@@ -312,7 +312,6 @@ namespace v00v.ViewModel.Catalog
         }
 
         public List<Tag> Tags { get; } = new() { new Tag { Id = -2, Text = "[no tag]" }, new Tag { Id = -1, Text = " " } };
-        
 
         #endregion
 
@@ -320,20 +319,17 @@ namespace v00v.ViewModel.Catalog
 
         private static Func<Channel, bool> BuildSearchFilter(string searchText)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                return x => true;
-            }
-
-            return x => x.Title.Contains(searchText, StringComparison.InvariantCultureIgnoreCase)
-                        || string.Equals(x.Id, searchText, StringComparison.InvariantCultureIgnoreCase);
+            return string.IsNullOrWhiteSpace(searchText)
+                ? _ => true
+                : x => x.Title.Contains(searchText, StringComparison.InvariantCultureIgnoreCase)
+                       || string.Equals(x.Id, searchText, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private static Func<Channel, bool> BuildTagFilter(Tag tag)
         {
             if (tag == null || tag.Id == -1)
             {
-                return x => true;
+                return _ => true;
             }
 
             if (tag.Id == -2)
@@ -449,30 +445,24 @@ namespace v00v.ViewModel.Catalog
             _tags.Add(tag);
         }
 
-        private Task CopyItem()
-        {
-            if (SelectedEntry == null)
-            {
-                return Task.CompletedTask;
-            }
-
-            var res =  $"{_youtubeService.ChannelLink}{SelectedEntry.Id}";
-
-            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
-        }
-
-        private Task BackupChannels()
+        private async Task BackupChannels()
         {
             IsWorking = true;
             var sw = Stopwatch.StartNew();
             _setTitle.Invoke($"Backup {_entries.Count - 1} channels..");
-            return _backupService.Backup(_entries.Where(x => !x.IsNew && !x.IsStateChannel), SetLog).ContinueWith(x =>
+            try
+            {
+                var count = await _backupService.Backup(_entries.Where(x => !x.IsNew && !x.IsStateChannel), SetLog);
+                _setTitle?.Invoke(string.Empty.MakeTitle(count, sw));
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
             {
                 IsWorking = false;
-                _setTitle?.Invoke(x.Status == TaskStatus.Faulted
-                                      ? x.Exception == null ? "Faulted" : $"{x.Exception.Message}"
-                                      : string.Empty.MakeTitle(x.GetAwaiter().GetResult(), sw));
-            });
+            }
         }
 
         private Task ClearAdded()
@@ -544,6 +534,18 @@ namespace v00v.ViewModel.Catalog
                 });
         }
 
+        private Task CopyItem()
+        {
+            if (SelectedEntry == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var res = $"{_youtubeService.ChannelLink}{SelectedEntry.Id}";
+
+            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
+        }
+
         private Task DeleteChannel()
         {
             if (SelectedEntry == null || SelectedEntry.Working)
@@ -567,13 +569,11 @@ namespace v00v.ViewModel.Catalog
             }
 
             IsWorking = true;
-            var sw = Stopwatch.StartNew();
             All.RemoveKey(ch.Id);
             _baseChannel.Count -= count;
             _baseChannel.Items.RemoveAll(x => x.ChannelId == deletedId);
             _baseExplorerModel?.All.RemoveKeys(ch.Items.Select(x => x.Id));
-            if (ch.Items.Any(x => x.WatchStateSet)
-                || ch.Items.Any(x => x.SyncState == SyncState.Unlisted || x.SyncState == SyncState.Deleted))
+            if (ch.Items.Any(x => x.WatchStateSet) || ch.Items.Any(x => x.SyncState is SyncState.Unlisted or SyncState.Deleted))
             {
                 var watched = ch.Items.Where(x => x.WatchState == WatchState.Watched).ToList();
                 if (watched.Any())
@@ -602,10 +602,9 @@ namespace v00v.ViewModel.Catalog
             }
 
             SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
-            return _channelRepository.DeleteChannel(deletedId).ContinueWith(x =>
+            return _channelRepository.DeleteChannel(deletedId).ContinueWith(_ =>
             {
                 IsWorking = false;
-                _setTitle?.Invoke(string.Empty.MakeTitle(x.GetAwaiter().GetResult(), sw));
                 _baseExplorerModel?.SetLog($"Deleted: {deletedId} - {title}");
                 _appLogRepository.SetStatus(AppStatus.ChannelDeleted, $"Delete channel: {deletedId} - {title}");
             });
@@ -680,11 +679,11 @@ namespace v00v.ViewModel.Catalog
             return _entries.Count > 1 ? _entries.Where(x => !x.IsStateChannel).Select(x => x.Order).Min() : 0;
         }
 
-        private Task GetRelatedChannels()
+        private async Task GetRelatedChannels()
         {
             if (SelectedEntry == null || SelectedEntry.IsNew)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             IsWorking = true;
@@ -692,35 +691,36 @@ namespace v00v.ViewModel.Catalog
             var oldId = SelectedEntry.Id;
             var channel = _entries.First(x => x.Id == oldId);
             _setTitle.Invoke($"Search related to {channel.Title}..");
-            return _youtubeService.GetRelatedChannelsAsync(channel.Id, _entries.Where(x => !x.IsStateChannel).Select(x => x.Id))
-                .ContinueWith(x =>
-                {
-                    IsWorking = false;
-                    if (x.Status == TaskStatus.Faulted)
-                    {
-                        _setTitle?.Invoke(x.Exception == null ? "Faulted" : $"{x.Exception.Message}");
-                    }
-                    else
-                    {
-                        var chs = x.GetAwaiter().GetResult();
-                        if (chs != null)
-                        {
-                            _setTitle?.Invoke(string.Empty.MakeTitle(chs.Length, sw));
-                            foreach (var ch in chs)
-                            {
-                                AddChannelToList(ch, false);
-                            }
+            try
+            {
+                var channels =
+                    await _youtubeService.GetRelatedChannelsAsync(channel.Id, _entries.Where(x => !x.IsStateChannel).Select(x => x.Id));
 
-                            All.AddOrUpdate(chs);
-                            SetSelected(_baseChannel.Id);
-                        }
-                        else
-                        {
-                            _setTitle?.Invoke(string.Empty.MakeTitle(0, sw));
-                            SetSelected(oldId);
-                        }
+                if (channels != null)
+                {
+                    _setTitle?.Invoke(string.Empty.MakeTitle(channels.Length, sw));
+                    foreach (var ch in channels)
+                    {
+                        AddChannelToList(ch, false);
                     }
-                });
+
+                    All.AddOrUpdate(channels);
+                    SetSelected(_baseChannel.Id);
+                }
+                else
+                {
+                    _setTitle?.Invoke(string.Empty.MakeTitle(0, sw));
+                    SetSelected(oldId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
+            {
+                IsWorking = false;
+            }
         }
 
         private void MarkHidden(Channel channel,
@@ -775,11 +775,11 @@ namespace v00v.ViewModel.Catalog
             }
         }
 
-        private Task ReloadStatistics()
+        private async Task ReloadStatistics()
         {
             if (SelectedEntry == null || SelectedEntry.IsNew)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             _setTitle.Invoke("Update statistics..");
@@ -789,42 +789,38 @@ namespace v00v.ViewModel.Catalog
             var oldId = SelectedEntry.Id;
             var ch = _entries.First(x => x.Id == oldId);
             var chId = ch.IsStateChannel ? null : ch.Id;
-            return _youtubeService.SetItemsStatistic(ch, false).ContinueWith(x =>
+            try
             {
-                IsWorking = false;
-
-                if (x.IsFaulted)
+                await _youtubeService.SetItemsStatistic(ch, false);
+                _setTitle?.Invoke(string.Empty.MakeTitle(ch.Items.Count, sw));
+                var csd = await _itemRepository.UpdateItemsStats(ch.Items, chId);
+                if (csd?.Count > 0)
                 {
-                    return;
+                    Parallel.ForEach(ch.Items,
+                                     z =>
+                                     {
+                                         z.ViewDiff = csd.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                     });
+                }
+                else
+                {
+                    Parallel.ForEach(ch.Items,
+                                     z =>
+                                     {
+                                         z.ViewDiff = 0;
+                                     });
                 }
 
-                _itemRepository.UpdateItemsStats(ch.Items, chId).ContinueWith(y =>
-                {
-                    _setTitle?.Invoke(y.Status == TaskStatus.Faulted
-                                          ? y.Exception == null ? "Faulted" : $"{y.Exception.Message}"
-                                          : string.Empty.MakeTitle(ch.Items.Count, sw));
-
-                    var csd = y.GetAwaiter().GetResult();
-                    if (csd?.Count > 0)
-                    {
-                        Parallel.ForEach(ch.Items,
-                                         z =>
-                                         {
-                                             z.ViewDiff = csd.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
-                                         });
-                    }
-                    else
-                    {
-                        Parallel.ForEach(ch.Items,
-                                         z =>
-                                         {
-                                             z.ViewDiff = 0;
-                                         });
-                    }
-
-                    (ch.IsStateChannel ? _baseExplorerModel : GetCachedExplorerModel(ch.ExCache))?.All.AddOrUpdate(ch.Items);
-                });
-            });
+                (ch.IsStateChannel ? _baseExplorerModel : GetCachedExplorerModel(ch.ExCache))?.All.AddOrUpdate(ch.Items);
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
+            {
+                IsWorking = false;
+            }
         }
 
         private void ResortList(int r)
@@ -842,35 +838,40 @@ namespace v00v.ViewModel.Catalog
             _baseExplorerModel?.SetLog($"Saved {r} rows");
         }
 
-        private Task RestoreChannels()
+        private async Task RestoreChannels()
         {
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            return _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
-                                          MassSync,
-                                          _setTitle,
-                                          UpdateList,
-                                          SetLog).ContinueWith(done =>
+            try
             {
-                IsWorking = false;
-                var res = done.GetAwaiter().GetResult();
-                _setTitle?.Invoke(done.Status == TaskStatus.Faulted
-                                      ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
-                                      : string.Empty.MakeTitle(res.ChannelsCount, sw));
+                var res = await _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
+                                                       MassSync,
+                                                       _setTitle,
+                                                       UpdateList,
+                                                       SetLog);
 
+                _setTitle?.Invoke(string.Empty.MakeTitle(res.ChannelsCount, sw));
                 var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
                 pl.Count += res.PlannedCount;
                 var wl = _baseChannel.Playlists.First(x => x.Id == "0");
                 wl.Count += res.WatchedCount;
                 _basePlaylistModel?.All.AddOrUpdate(new[] { pl, wl });
-            });
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
+            {
+                IsWorking = false;
+            }
         }
 
-        private Task SaveChannel()
+        private async Task SaveChannel()
         {
             if (SelectedEntry == null || !SelectedEntry.IsNew)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var oldId = SelectedEntry.Id;
@@ -880,29 +881,26 @@ namespace v00v.ViewModel.Catalog
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
-                                                                      {
-                                                                          _channelRepository.AddChannel(channel).ContinueWith(done =>
-                                                                          {
-                                                                              IsWorking = false;
-                                                                              _setTitle?.Invoke(done.Status == TaskStatus.Faulted
-                                                                                  ? done.Exception == null ? "Faulted" :
-                                                                                  $"{done.Exception.Message}"
-                                                                                  : string.Empty.MakeTitle(done.GetAwaiter().GetResult(), sw));
-                                                                          });
-
-                                                                          channel.IsNew = false;
-                                                                          channel.FontStyle = "Normal";
-                                                                          GetCachedExplorerModel(channel.ExCache)?.All
-                                                                              .AddOrUpdate(channel.Items);
-                                                                          UpdateList(channel);
-                                                                          UpdatePlaylist(channel);
-                                                                      },
-                                                                      TaskContinuationOptions.OnlyOnRanToCompletion).ContinueWith(_ =>
-             {
-                 SetSelected(oldId);
-             },
-             TaskScheduler.FromCurrentSynchronizationContext());
+            try
+            {
+                await _youtubeService.AddPlaylists(channel);
+                var rows = await _channelRepository.AddChannel(channel);
+                _setTitle?.Invoke(string.Empty.MakeTitle(rows, sw));
+                channel.IsNew = false;
+                channel.FontStyle = "Normal";
+                GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(channel.Items);
+                UpdateList(channel);
+                UpdatePlaylist(channel);
+                SetSelected(oldId);
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke(ex.Message);
+            }
+            finally
+            {
+                IsWorking = false;
+            }
         }
 
         private void SetLog(string log)
@@ -1091,7 +1089,7 @@ namespace v00v.ViewModel.Catalog
             var syncPls = SyncPls;
             var sw = Stopwatch.StartNew();
             await _appLogRepository.SetStatus(syncPls ? AppStatus.SyncPlaylistStarted : AppStatus.SyncWithoutPlaylistStarted,
-                                        $"Start sync: {_entries.Count(x => !x.IsNew) - 1}");
+                                              $"Start sync: {_entries.Count(x => !x.IsNew) - 1}");
 
             var res = new SyncDiff(syncPls);
             try
@@ -1121,6 +1119,7 @@ namespace v00v.ViewModel.Catalog
                 {
                     _setPageIndex?.Invoke(0);
                 }
+
                 SelectedEntry = _baseChannel;
                 UpdateChannels(res);
             }

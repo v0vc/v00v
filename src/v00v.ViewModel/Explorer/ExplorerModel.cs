@@ -213,12 +213,9 @@ namespace v00v.ViewModel.Explorer
 
         private static Func<Item, bool> BuildFilter(string searchText)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                return _ => true;
-            }
-
-            return x => x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return string.IsNullOrWhiteSpace(searchText)
+                ? _ => true
+                : x => x.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -366,23 +363,14 @@ namespace v00v.ViewModel.Explorer
 
         private Func<Item, bool> BuildPlFilter(string playlistId)
         {
-            if (playlistId == null || playlistId == "0" || playlistId == "-1" || playlistId == "-2" || playlistId == "-3"
-                || playlistId == "-4")
-            {
-                return _ => true;
-            }
-
-            return x => _catalogModel.PlaylistModel.Entries.First(y => y.Id == playlistId).Items.Contains(x.Id);
+            return playlistId is null or "0" or "-1" or "-2" or "-3" or "-4"
+                ? _ => true
+                : x => _catalogModel.PlaylistModel.Entries.First(y => y.Id == playlistId).Items.Contains(x.Id);
         }
 
         private Func<Item, bool> BuildTagFilter(KeyValuePair<int, string> tag)
         {
-            if (SelectedTag.Key == 0)
-            {
-                return _ => true;
-            }
-
-            return x => x.Tags.Contains(tag.Key);
+            return SelectedTag.Key == 0 ? _ => true : x => x.Tags.Contains(tag.Key);
         }
 
         private Task CopyItem(string par)
@@ -459,7 +447,7 @@ namespace v00v.ViewModel.Explorer
                 }
                 catch
                 {
-                    th = new byte[0];
+                    th = Array.Empty<byte>();
                 }
 
                 if (th.Length > 0)
@@ -571,11 +559,11 @@ namespace v00v.ViewModel.Explorer
             return SetItemState(WatchState.Watched);
         }
 
-        private Task SelectChannel()
+        private async Task SelectChannel()
         {
             if (SelectedEntry == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var oldId = SelectedEntry.ChannelId;
@@ -583,27 +571,23 @@ namespace v00v.ViewModel.Explorer
             if (ch == null)
             {
                 _setTitle?.Invoke($"Working: {oldId}..");
-                return _youtubeService.GetChannelAsync(oldId, true).ContinueWith(x =>
+                var channel = await _youtubeService.GetChannelAsync(oldId, true);
+                
+                if (channel != null && channel.Items.Count > 0)
                 {
-                    var channel = x.GetAwaiter().GetResult();
-                    if (channel.Items.Count > 0)
-                    {
-                        _catalogModel.AddChannelToList(channel, false);
-                        _setTitle?.Invoke($"Ready: {channel.Title}");
-                    }
-                    else
-                    {
-                        SetLog($"Empty channel: {channel.Title}");
-                    }
-                });
+                    _catalogModel.AddChannelToList(channel, false);
+                    _setTitle?.Invoke($"Ready: {channel.Title}");
+                }
+                else
+                {
+                    SetLog($"Empty channel: {channel.Title}");
+                }
             }
 
             if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
             {
                 _catalogModel.SelectedEntry = ch;
             }
-
-            return Task.CompletedTask;
         }
 
         private void SelectPlaylist()

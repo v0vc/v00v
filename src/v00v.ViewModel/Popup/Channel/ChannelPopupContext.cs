@@ -11,7 +11,6 @@ using DynamicData;
 using DynamicData.Binding;
 using ReactiveUI;
 using v00v.Model.Entities;
-using v00v.Model.Enums;
 using v00v.Services.ContentProvider;
 using v00v.Services.Persistence;
 
@@ -22,7 +21,6 @@ namespace v00v.ViewModel.Popup.Channel
         #region Static and Readonly Fields
 
         private readonly Action<Tag> _addNewTag;
-        private readonly IAppLogRepository _appLogRepository;
         private readonly IChannelRepository _channelRepository;
         private readonly Action<int> _deleteNewTag;
         private readonly ReadOnlyObservableCollection<Tag> _entries;
@@ -63,7 +61,6 @@ namespace v00v.ViewModel.Popup.Channel
             Action<int> resortList = null) : this(AvaloniaLocator.Current.GetService<IPopupController>(),
                                                   AvaloniaLocator.Current.GetService<ITagRepository>(),
                                                   AvaloniaLocator.Current.GetService<IChannelRepository>(),
-                                                  AvaloniaLocator.Current.GetService<IAppLogRepository>(),
                                                   AvaloniaLocator.Current.GetService<IYoutubeService>())
         {
             _getExistId = getExistId;
@@ -124,13 +121,11 @@ namespace v00v.ViewModel.Popup.Channel
         private ChannelPopupContext(IPopupController popupController,
             ITagRepository tagRepository,
             IChannelRepository channelRepository,
-            IAppLogRepository appLogRepository,
             IYoutubeService youtubeService)
         {
             _popupController = popupController;
             _tagRepository = tagRepository;
             _channelRepository = channelRepository;
-            _appLogRepository = appLogRepository;
             _youtubeService = youtubeService;
         }
 
@@ -175,23 +170,18 @@ namespace v00v.ViewModel.Popup.Channel
 
         private static Func<Tag, bool> BuildSearchFilter(string searchText)
         {
-            if (string.IsNullOrEmpty(searchText))
-            {
-                return _ => true;
-            }
-
-            return x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return string.IsNullOrEmpty(searchText) ? _ => true : x => x.Text.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
         #endregion
 
         #region Methods
 
-        private Task AddChannel()
+        private async Task AddChannel()
         {
             if (string.IsNullOrEmpty(ChannelId))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             IsWorking = true;
@@ -201,49 +191,41 @@ namespace v00v.ViewModel.Popup.Channel
             if (SetExisted(ChannelId))
             {
                 IsWorking = false;
-                return Task.CompletedTask;
+                return;
             }
 
-            return _youtubeService.GetChannelId(ChannelId).ContinueWith(x =>
+            var channelId = await _youtubeService.GetChannelId(ChannelId);
+            if (string.IsNullOrEmpty(channelId) || SetExisted(channelId))
             {
-                var res = x.GetAwaiter().GetResult();
-                if (string.IsNullOrEmpty(res) || SetExisted(res))
+                IsWorking = false;
+                return;
+            }
+
+            try
+            {
+                var channel = await _youtubeService.GetChannelAsync(channelId, false, ChannelTitle);
+                if (channel == null)
                 {
-                    IsWorking = false;
+                    _setTitle?.Invoke("Quota exceeded or banned channel");
                     return;
                 }
+                channel.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
+                channel.Order = _getMinOrder.Invoke() - 1;
+                _updateList?.Invoke(channel);
+                _setSelect?.Invoke(channel.Id);
+                var rows = await _channelRepository.AddChannel(channel);
+                _setTitle?.Invoke($"Added new channel: {channel.Title}. Saved {rows} rows");
 
-                _youtubeService.GetChannelAsync(res, false, ChannelTitle).ContinueWith(y =>
-                {
-                    IsWorking = false;
-                    if (y.Exception != null)
-                    {
-                        _popupController.Hide();
-                        _setTitle?.Invoke($"{y.Exception.Message}");
-                        return;
-                    }
-
-                    var re = y.GetAwaiter().GetResult();
-                    if (re == null)
-                    {
-                        _popupController.Hide();
-                        _setTitle?.Invoke("Quota exceeded or banned channel");
-                        return;
-                    }
-
-                    re.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
-                    re.Order = _getMinOrder.Invoke() - 1;
-                    _updateList?.Invoke(re);
-                    _popupController.Hide();
-                    _setSelect?.Invoke(re.Id);
-                    Task.WhenAll(_channelRepository.AddChannel(re),
-                                 _appLogRepository.SetStatus(AppStatus.ChannelAdd, $"Add channel:{re.Id}:{re.Title}"))
-                        .ContinueWith(done =>
-                        {
-                            _setTitle?.Invoke($"New channel: {re.Title}. Saved {done.GetAwaiter().GetResult()[0]} rows");
-                        });
-                });
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+            catch (Exception ex)
+            {
+                _setTitle?.Invoke($"{ex.Message}");
+            }
+            finally
+            {
+                _popupController.Hide();
+                IsWorking = false;
+            }
         }
 
         private void AddTag()
@@ -259,7 +241,7 @@ namespace v00v.ViewModel.Popup.Channel
             SelectedTag = tag;
         }
 
-        private Task EditChannel(Model.Entities.Channel channel)
+        private async Task EditChannel(Model.Entities.Channel channel)
         {
             IsWorking = true;
             CloseText = "Working...";
@@ -269,56 +251,30 @@ namespace v00v.ViewModel.Popup.Channel
             channel.Tags.Clear();
             channel.Tags.AddRange(All.Items.Where(y => y.IsEnabled));
 
+            var rows = await _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
+            IsWorking = false;
+            _setTitle?.Invoke($"Done: {channel.Title}. Saved {rows} rows");
+            _updateList?.Invoke(channel);
+            _updatePlList?.Invoke(channel);
             if (channel.IsNew)
             {
-                return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
-                {
-                    channel.IsNew = false;
-                    Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)),
-                                 _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}"))
-                        .ContinueWith(x =>
-                        {
-                            var res = x.GetAwaiter().GetResult();
-                            if (x.Status != TaskStatus.Faulted)
-                            {
-                                _setTitle?.Invoke($"Done: {channel.Title}. Saved {res[0]} rows");
-                            }
-
-                            _updateList?.Invoke(channel);
-                            _updatePlList?.Invoke(channel);
-                            _resortList?.Invoke(res[0]);
-                            _popupController.Hide();
-                        }).ContinueWith(x => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
-                });
+                await _youtubeService.AddPlaylists(channel);
+                channel.IsNew = false;
+                _resortList?.Invoke(rows);
             }
 
-            return Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)),
-                                _appLogRepository.SetStatus(AppStatus.ChannelEdited, $"Edit channel:{channel.Id}:{channel.Title}"))
-                .ContinueWith(x =>
-                {
-                    if (x.Status != TaskStatus.Faulted)
-                    {
-                        _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.GetAwaiter().GetResult()[0]} rows");
-                    }
-
-                    _updateList?.Invoke(channel);
-                    _updatePlList?.Invoke(channel);
-                    _popupController.Hide();
-                }).ContinueWith(x => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
+            _popupController.Hide();
+            _setSelect?.Invoke(channel.Id);
         }
 
-        private Task RemoveTag(Tag tag)
+        private async Task RemoveTag(Tag tag)
         {
             All.Remove(tag);
             if (tag.IsSaved && !string.IsNullOrEmpty(tag.Text))
             {
-                return _tagRepository.DeleteTag(tag.Text).ContinueWith(_ =>
-                                                                       {
-                                                                           _deleteNewTag?.Invoke(tag.Id);
-                                                                       },
-                                                                       TaskScheduler.FromCurrentSynchronizationContext());
+                await _tagRepository.DeleteTag(tag.Text);
+                _deleteNewTag?.Invoke(tag.Id);
             }
-            return Task.CompletedTask;
         }
 
         private void SaveTag()
