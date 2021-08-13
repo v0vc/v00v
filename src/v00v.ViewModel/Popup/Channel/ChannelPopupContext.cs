@@ -209,13 +209,13 @@ namespace v00v.ViewModel.Popup.Channel
                     _setTitle?.Invoke("Quota exceeded or banned channel");
                     return;
                 }
+
                 channel.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
                 channel.Order = _getMinOrder.Invoke() - 1;
                 _updateList?.Invoke(channel);
                 _setSelect?.Invoke(channel.Id);
                 var rows = await _channelRepository.AddChannel(channel);
                 _setTitle?.Invoke($"Added new channel: {channel.Title}. Saved {rows} rows");
-
             }
             catch (Exception ex)
             {

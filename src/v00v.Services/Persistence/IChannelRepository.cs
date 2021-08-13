@@ -18,9 +18,9 @@ namespace v00v.Services.Persistence
 
         IEnumerable<Channel> GetChannels();
 
-        IEnumerable<ChannelStruct> GetChannelsStructYield(bool syncPls, string channelId = null);
-
         Task<List<ChannelStruct>> GetChannelsStruct(bool syncPls, string channelId = null);
+
+        IEnumerable<ChannelStruct> GetChannelsStructYield(bool syncPls, string channelId = null);
 
         Task<Dictionary<string, int>> GetChannelStateCount(WatchState watchState);
 

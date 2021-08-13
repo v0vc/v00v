@@ -16,7 +16,7 @@ namespace v00v.Services.Dispatcher
     {
         #region Static and Readonly Fields
 
-        private static readonly object _locker = new();
+        private static readonly object s_locker = new();
 
         private readonly StdSchedulerFactory _factory;
 
@@ -45,11 +45,12 @@ namespace v00v.Services.Dispatcher
         public int RepeatBackup { private get; set; }
         public int RepeatParser { private get; set; }
         public int RepeatSync { private get; set; }
+
         private IScheduler Scheduler
         {
             get
             {
-                lock (_locker)
+                lock (s_locker)
                 {
                     return _scheduler ??= _factory.GetScheduler().GetAwaiter().GetResult();
                 }
@@ -65,9 +66,8 @@ namespace v00v.Services.Dispatcher
             await CheckSchedulerStarted();
 
             var job = JobBuilder.Create<BackupData>().WithIdentity(isRepeat ? BaseSync.PeriodicBackup : BaseSync.DailyBackup,
-                                                                        isRepeat
-                                                                            ? BaseSync.PeriodicBackupGroup
-                                                                            : BaseSync.DailyBackupGroup).Build();
+                                                                   isRepeat ? BaseSync.PeriodicBackupGroup : BaseSync.DailyBackupGroup)
+                .Build();
 
             job.JobDataMap[BaseSync.BackupService] = backupService;
             job.JobDataMap[BaseSync.Entries] = channels;

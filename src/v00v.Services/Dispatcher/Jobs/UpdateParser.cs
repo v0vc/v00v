@@ -16,6 +16,7 @@ namespace v00v.Services.Dispatcher.Jobs
             {
                 return;
             }
+
             var setLog = (Action<string>)context.JobDetail.JobDataMap[BaseSync.Log];
             var log = isRepeat ? BaseSync.PeriodicParser : BaseSync.DailyParser;
             setLog?.Invoke($"{DateTime.Now:HH:mm:ss}: -=start {log}=-");

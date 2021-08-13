@@ -38,8 +38,8 @@ namespace v00v.Model.SyncEntities
         public List<Item> NewItems { get; }
         public List<Playlist> NewPlaylists { get; }
         public List<string> NoUnlistedAgain { get; }
-        public List<string> UnlistedItems { get; }
         public bool SyncPls { get; }
+        public List<string> UnlistedItems { get; }
 
         #endregion
     }

@@ -9,11 +9,11 @@
     <IsPackable>False</IsPackable>
   </PropertyGroup>
 
-  <Import Project="..\..\build\Avalonia.props" />
-  <Import Project="..\..\build\EmbedXaml.props" />
-  
+  <Import Project="..\..\build\Avalonia.props"/>
+  <Import Project="..\..\build\EmbedXaml.props"/>
+
   <ItemGroup>
-    <Compile Include="**\*.cs" Exclude="obj\**" />
+    <Compile Include="**\*.cs" Exclude="obj\**"/>
   </ItemGroup>
 
 </Project>

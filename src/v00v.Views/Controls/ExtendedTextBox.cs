@@ -125,6 +125,30 @@ namespace v00v.Views.Controls
             }
         }
 
+        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+        {
+            base.OnApplyTemplate(e);
+
+            _presenter = e.NameScope.Get<TextPresenter>("PART_TextPresenter");
+
+            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls() };
+
+            Observable.FromEventPattern(ContextMenu, nameof(ContextMenu.MenuClosed)).ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(_ => Focus()).DisposeWith(Disposables);
+
+            var menuItems = (Avalonia.Controls.Controls)ContextMenu?.Items;
+            if (IsCopyEnabled)
+            {
+                menuItems?.Add(new MenuItem { Header = "Copy", Command = CopyCommand, Icon = GetCopyPresenter() });
+            }
+
+            if (!IsReadOnly)
+            {
+                CreatePasteItem();
+                menuItems?.Add(_pasteItem);
+            }
+        }
+
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
@@ -147,35 +171,6 @@ namespace v00v.Views.Controls
             });
         }
 
-        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-        {
-            base.OnApplyTemplate(e);
-
-            _presenter = e.NameScope.Get<TextPresenter>("PART_TextPresenter");
-
-            ContextMenu = new ContextMenu { DataContext = this, Items = new Avalonia.Controls.Controls() };
-
-            Observable.FromEventPattern(ContextMenu, nameof(ContextMenu.MenuClosed)).ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(_ => Focus()).DisposeWith(Disposables);
-
-            var menuItems = (Avalonia.Controls.Controls)ContextMenu?.Items;
-            if (IsCopyEnabled)
-            {
-                menuItems?.Add(new MenuItem
-                {
-                    Header = "Copy",
-                    Command = CopyCommand,
-                    Icon = GetCopyPresenter()
-                });
-            }
-
-            if (!IsReadOnly)
-            {
-                CreatePasteItem();
-                menuItems?.Add(_pasteItem);
-            }
-        }
-
         private void CreatePasteItem()
         {
             if (_pasteItem != null)
@@ -183,12 +178,7 @@ namespace v00v.Views.Controls
                 return;
             }
 
-            _pasteItem = new MenuItem
-            {
-                Header = "Paste",
-                Command = PasteCommand,
-                Icon = GetPastePresenter()
-            };
+            _pasteItem = new MenuItem { Header = "Paste", Command = PasteCommand, Icon = GetPastePresenter() };
         }
 
         private string GetSelection()

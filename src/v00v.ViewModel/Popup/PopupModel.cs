@@ -38,6 +38,7 @@ namespace v00v.ViewModel.Popup
                 {
                     return;
                 }
+
                 ExpandCommand = ReactiveCommand.Create(() => ExpandPopup(context), null, RxApp.MainThreadScheduler);
                 _popupController.ExpandUp ??= Convert.FromBase64String(_popupController.ExpandUpPopup).CreateThumb();
                 _popupController.ExpandDown ??= Convert.FromBase64String(_popupController.ExpandDownPopup).CreateThumb();

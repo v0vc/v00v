@@ -1,11 +1,10 @@
-<Application x:Class="v00v.MainApp.App"
-             xmlns="https://github.com/avaloniaui"
+<Application x:Class="v00v.MainApp.App" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Styles>
-        <StyleInclude Source="avares://Avalonia.Themes.Default/DefaultTheme.xaml"/>
-        <StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseLight.xaml"/>
+        <StyleInclude Source="avares://Avalonia.Themes.Default/DefaultTheme.xaml" />
+        <StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseLight.xaml" />
         <Style Selector="ScrollBar /template/ Thumb#thumb">
-            <Setter Property="Background" Value="#7190AD"/>
+            <Setter Property="Background" Value="#7190AD" />
         </Style>
         <Style Selector="ScrollBar:horizontal /template/ Thumb#thumb">
             <Setter Property="MinWidth" Value="10" />
@@ -37,9 +36,9 @@
         </Style>
 
         <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Margin" Value="0,0,3,0"/>
-            <Setter Property="Padding" Value="3,2,3,2"/>
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,0,3,0" />
+            <Setter Property="Padding" Value="3,2,3,2" />
         </Style>
 
         <Style Selector="Expander /template/ ToggleButton#PART_toggle:pointerover /template/ Border">

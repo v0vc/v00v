@@ -6,11 +6,15 @@ namespace v00v.Views.Application
 {
     public class MainWindow : Window
     {
+        #region Constructors
+
         public MainWindow()
         {
             AvaloniaXamlLoader.Load(this);
             DataContext = new MainWindowViewModel();
             //this.AttachDevTools();
         }
+
+        #endregion
     }
 }

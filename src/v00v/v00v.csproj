@@ -9,18 +9,18 @@
     <IsPackable>False</IsPackable>
   </PropertyGroup>
 
-  <Import Project="..\..\build\ExtJson.props" />
-  <Import Project="..\..\build\Avalonia.props" />
-  <Import Project="..\..\build\Avalonia.Desktop.props" />
-  <Import Project="..\..\build\Avalonia.ReactiveUI.props" />
+  <Import Project="..\..\build\ExtJson.props"/>
+  <Import Project="..\..\build\Avalonia.props"/>
+  <Import Project="..\..\build\Avalonia.Desktop.props"/>
+  <Import Project="..\..\build\Avalonia.ReactiveUI.props"/>
 
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Program.cs"/>
   </ItemGroup>
-  
+
   <ItemGroup>
-    <ProjectReference Include="..\v00v.MainApp\v00v.MainApp.csproj" />
-    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj" />
+    <ProjectReference Include="..\v00v.MainApp\v00v.MainApp.csproj"/>
+    <ProjectReference Include="..\v00v.Services\v00v.Services.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">

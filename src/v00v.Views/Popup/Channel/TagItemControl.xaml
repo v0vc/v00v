@@ -1,37 +1,36 @@
-﻿<UserControl
-    x:Class="v00v.Views.Popup.Channel.TagItemControl"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns="https://github.com/avaloniaui"
-    >
+﻿<UserControl x:Class="v00v.Views.Popup.Channel.TagItemControl" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns="https://github.com/avaloniaui">
     <Grid ColumnDefinitions="auto,auto,*,auto,auto">
-        <CheckBox Grid.Column="0" IsVisible="{Binding !IsSaved, Mode=OneWay}" IsChecked="False" IsEnabled="False"/>
-        <CheckBox Grid.Column="0" IsVisible="{Binding IsSaved, Mode=OneWay}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
-        <TextBlock Grid.Column="1" Text="{Binding Text, Mode=TwoWay}"/>
-        <TextBlock Grid.Column="2" IsVisible="{Binding !IsSaved, Mode=OneWay}" Text=" * "/>
-        <Button Grid.Column="4" IsVisible="{Binding IsRemovable, Mode=OneWay}" Command="{Binding RemoveCommand, Mode=OneWay}" CommandParameter="{Binding}" BorderThickness="0">
-            <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp"/>
+        <CheckBox Grid.Column="0" IsVisible="{Binding !IsSaved, Mode=OneWay}" IsChecked="False" IsEnabled="False" />
+        <CheckBox Grid.Column="0" IsVisible="{Binding IsSaved, Mode=OneWay}"
+                  IsChecked="{Binding IsEnabled, Mode=TwoWay}" />
+        <TextBlock Grid.Column="1" Text="{Binding Text, Mode=TwoWay}" />
+        <TextBlock Grid.Column="2" IsVisible="{Binding !IsSaved, Mode=OneWay}" Text=" * " />
+        <Button Grid.Column="4" IsVisible="{Binding IsRemovable, Mode=OneWay}"
+                Command="{Binding RemoveCommand, Mode=OneWay}" CommandParameter="{Binding}" BorderThickness="0">
+            <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp" />
         </Button>
     </Grid>
     <UserControl.Styles>
         <Style Selector="CheckBox">
             <Setter Property="Margin" Value="2,0,6,0" />
         </Style>
-        
+
         <Style Selector="TextBlock">
             <Setter Property="Margin" Value="0" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-        
+
         <Style Selector="RadioButton">
             <Setter Property="Margin" Value="2,0,6,0" />
         </Style>
-        
+
         <Style Selector="Button">
             <Setter Property="Padding" Value="6,0,6,0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
-        
+
         <Style Selector="Button Image">
             <Setter Property="Width" Value="16" />
             <Setter Property="Height" Value="16" />

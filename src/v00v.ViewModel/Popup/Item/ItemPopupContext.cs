@@ -244,7 +244,7 @@ namespace v00v.ViewModel.Popup.Item
             Working = true;
             var oldTitle = Title;
             Title += ", loading comments..";
-            
+
             All.AddRange(await _youtubeService.GetVideoCommentsAsync(_item.Id, _item.ChannelId));
             Title = oldTitle;
             if (!_comments.Any())
@@ -252,6 +252,7 @@ namespace v00v.ViewModel.Popup.Item
                 Watermark = " No comments...";
                 return;
             }
+
             SetOrder();
 
             if (_item.Comments != _comments.Count)

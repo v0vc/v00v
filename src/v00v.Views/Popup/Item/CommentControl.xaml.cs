@@ -13,6 +13,5 @@ namespace v00v.Views.Popup.Item
         }
 
         #endregion
-        
     }
 }

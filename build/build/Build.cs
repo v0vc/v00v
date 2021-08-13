@@ -9,27 +9,56 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 class Build : NukeBuild
 {
-    public static int Main() => Execute<Build>(x => x.Compile);
+    #region Static and Readonly Fields
 
     [Solution]
     readonly Solution Solution;
 
-    [Parameter("configuration")]
-    public string Configuration { get; set; }
+    #endregion
 
-    [Parameter("version-suffix")]
-    public string VersionSuffix { get; set; }
+    #region Properties
 
-    [Parameter("publish-framework")]
-    public string PublishFramework { get; set; }
+    [Parameter("configuration")] public string Configuration { get; set; }
 
-    [Parameter("publish-runtime")]
-    public string PublishRuntime { get; set; }
+    [Parameter("publish-framework")] public string PublishFramework { get; set; }
 
-    [Parameter("publish-project")]
-    public string PublishProject { get; set; }
+    [Parameter("publish-project")] public string PublishProject { get; set; }
+
+    [Parameter("publish-runtime")] public string PublishRuntime { get; set; }
+
+    [Parameter("version-suffix")] public string VersionSuffix { get; set; }
+
+    Target Clean =>
+        _ => _.Executes(() =>
+        {
+            DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
+            //EnsureCleanDirectory(ArtifactsDirectory);
+        });
+
+    Target Compile =>
+        _ => _.DependsOn(Restore).Executes(() =>
+        {
+            DotNetBuild(s => s.SetProjectFile(Solution).SetConfiguration(Configuration).SetVersionSuffix(VersionSuffix)
+                            .EnableNoRestore());
+        });
+
+    Target Restore =>
+        _ => _.DependsOn(Clean).Executes(() =>
+        {
+            DotNetRestore(s => s.SetProjectFile(Solution));
+        });
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
+
+    #endregion
+
+    #region Static Methods
+
+    public static int Main() => Execute<Build>(x => x.Compile);
+
+    #endregion
+
+    #region Methods
 
     //AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
 
@@ -47,31 +76,7 @@ class Build : NukeBuild
         }
     }
 
-    Target Clean => _ => _
-        .Executes(() =>
-        {
-            DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
-            //EnsureCleanDirectory(ArtifactsDirectory);
-        });
-
-    Target Restore => _ => _
-        .DependsOn(Clean)
-        .Executes(() =>
-        {
-            DotNetRestore(s => s
-                .SetProjectFile(Solution));
-        });
-
-    Target Compile => _ => _
-        .DependsOn(Restore)
-        .Executes(() =>
-        {
-            DotNetBuild(s => s
-                .SetProjectFile(Solution)
-                .SetConfiguration(Configuration)
-                .SetVersionSuffix(VersionSuffix)
-                .EnableNoRestore());
-        });
+    #endregion
 
     //Target Publish => _ => _
     //    .DependsOn(Compile)

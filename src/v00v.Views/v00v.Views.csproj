@@ -8,16 +8,16 @@
     <Nullable>disable</Nullable>
     <IsPackable>False</IsPackable>
   </PropertyGroup>
- 
-  <Import Project="..\..\build\Avalonia.props" />
-  <Import Project="..\..\build\EmbedXaml.props" />
+
+  <Import Project="..\..\build\Avalonia.props"/>
+  <Import Project="..\..\build\EmbedXaml.props"/>
 
   <ItemGroup>
-    <Compile Include="**\*.cs" Exclude="obj\**" />
+    <Compile Include="**\*.cs" Exclude="obj\**"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\v00v.ViewModel\v00v.ViewModel.csproj" />
+    <ProjectReference Include="..\v00v.ViewModel\v00v.ViewModel.csproj"/>
   </ItemGroup>
 
 </Project>

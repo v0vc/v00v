@@ -306,7 +306,7 @@ namespace v00v.ViewModel.Explorer
 
             PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
             PlaylistArrange(_catalogModel.GetCachedPlaylistModel(_channel.Id, true), par, oldState, item, false);
-            
+
             return _itemRepository.SetItemsWatchState(par, id, channelId);
         }
 
@@ -572,7 +572,7 @@ namespace v00v.ViewModel.Explorer
             {
                 _setTitle?.Invoke($"Working: {oldId}..");
                 var channel = await _youtubeService.GetChannelAsync(oldId, true);
-                
+
                 if (channel != null && channel.Items.Count > 0)
                 {
                     _catalogModel.AddChannelToList(channel, false);

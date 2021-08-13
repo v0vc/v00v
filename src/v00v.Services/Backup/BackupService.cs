@@ -165,8 +165,8 @@ namespace v00v.Services.Backup
 
                 var tasks = new ConcurrentBag<Task<Channel>>(backup.Items.Where(x => !existChannels.Contains(x.ChannelId))
                                                                  .Select(item => _youtubeService.GetChannelAsync(item.ChannelId,
-                                                                                                                 false,
-                                                                                                                 item.ChannelTitle)));
+                                                                          false,
+                                                                          item.ChannelTitle)));
                 if (tasks.Count > 0)
                 {
                     setLog?.Invoke($"Total channels: {tasks.Count}, working..");
@@ -206,8 +206,10 @@ namespace v00v.Services.Backup
             if (backup.ItemsState.Count > 0)
             {
                 await Task.WhenAll(backup.ItemsState.Select(x => _itemRepository.UpdateItemsWatchState(x.Key, x.Value)));
-                var counts = await Task.WhenAll(_channelRepository.GetChannelStateCount(WatchState.Planned), _channelRepository.GetChannelStateCount(WatchState.Watched));
-                await Task.WhenAll(counts[0].Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value)).Union(counts[1].Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value))));
+                var counts = await Task.WhenAll(_channelRepository.GetChannelStateCount(WatchState.Planned),
+                                                _channelRepository.GetChannelStateCount(WatchState.Watched));
+                await Task.WhenAll(counts[0].Select(x => _channelRepository.UpdatePlannedCount(x.Key, x.Value))
+                                       .Union(counts[1].Select(x => _channelRepository.UpdateWatchedCount(x.Key, x.Value))));
                 res.PlannedCount = counts[0].Sum(x => x.Value);
                 res.WatchedCount = counts[1].Sum(x => x.Value);
                 setLog?.Invoke($"Total planned: {res.PlannedCount}");
@@ -226,6 +228,7 @@ namespace v00v.Services.Backup
             {
                 return;
             }
+
             jsonObj[AppSettings][key] = value;
             File.WriteAllText(file, JsonConvert.SerializeObject(jsonObj, Formatting.Indented));
         }

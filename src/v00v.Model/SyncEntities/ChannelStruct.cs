@@ -9,8 +9,8 @@ namespace v00v.Model.SyncEntities
 
         public string ChannelId { get; set; }
         public string ChannelTitle { get; set; }
-        public IEnumerable<string> Playlists { get; set; }
         public IEnumerable<Tuple<string, int>> Items { get; set; }
+        public IEnumerable<string> Playlists { get; set; }
 
         #endregion
     }

@@ -10,13 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="5.3.0" />
+    <PackageReference Include="Nuke.Common" Version="5.3.0"/>
   </ItemGroup>
 
   <ItemGroup>
-    <NukeMetadata Include="**\*.json" Exclude="bin\**;obj\**" />
-    <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**" />
-    <None Remove="*.ref;*.txt" />
+    <NukeMetadata Include="**\*.json" Exclude="bin\**;obj\**"/>
+    <NukeExternalFiles Include="**\*.*.ext" Exclude="bin\**;obj\**"/>
+    <None Remove="*.ref;*.txt"/>
   </ItemGroup>
 
 </Project>

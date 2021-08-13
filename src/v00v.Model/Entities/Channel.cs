@@ -11,9 +11,9 @@ namespace v00v.Model.Entities
         #region Fields
 
         private int _count;
-        private string _title;
         private string _fontStyle;
         private bool _hasNew;
+        private string _title;
 
         #endregion
 

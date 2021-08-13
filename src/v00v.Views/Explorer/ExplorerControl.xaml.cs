@@ -23,11 +23,13 @@ namespace v00v.Views.Explorer
             this.FindControl<ListBox>("ItemList").AddHandler(Gestures.DoubleTappedEvent, ItemsDoubleTapped);
         }
 
+        #endregion
+
+        #region Event Handling
+
         private void ItemsDoubleTapped(object sender, RoutedEventArgs e)
         {
-            var listBoxItem = ((IVisual)e.Source).GetSelfAndVisualAncestors()
-                .OfType<ListBoxItem>()
-                .FirstOrDefault();
+            var listBoxItem = ((IVisual)e.Source).GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault();
 
             if (listBoxItem?.DataContext is not Item item)
             {
@@ -43,6 +45,7 @@ namespace v00v.Views.Explorer
             {
                 return;
             }
+
             if (this.FindControl<ExplorerControl>("explorer")?.DataContext is ExplorerModel expModel)
             {
                 expModel.SetItemState(WatchState.Watched);
