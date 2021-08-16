@@ -284,48 +284,46 @@ namespace v00v.ViewModel.Playlists
             playlist.StateItems = newItems?.ToList();
         }
 
-        private async Task ReloadStatistics()
+        private Task ReloadStatistics()
         {
             if (SelectedEntry == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var statePl = SelectedEntry.IsStatePlaylist;
             var stPl = statePl ? SelectedEntry.StateItems : _explorerModel.Items.ToList();
             _setTitle.Invoke($"Update statistics for {SelectedEntry.Title}..");
             var sw = Stopwatch.StartNew();
-            try
+            return _youtubeService.SetItemsStatistic(stPl).ContinueWith(_ =>
             {
-                await _youtubeService.SetItemsStatistic(stPl);
-                _setTitle?.Invoke(string.Empty.MakeTitle(stPl.Count, sw));
+                _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id).ContinueWith(done =>
+                {
+                    _setTitle?.Invoke(done.Status == TaskStatus.Faulted
+                                          ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
+                                          : string.Empty.MakeTitle(stPl.Count, sw));
 
-                var rows = await _itemRepository.UpdateItemsStats(stPl, statePl ? null : _channel.Id);
-                if (rows?.Count > 0)
-                {
-                    Parallel.ForEach(stPl,
-                                     z =>
-                                     {
-                                         z.ViewDiff = rows.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
-                                     });
-                }
-                else
-                {
-                    Parallel.ForEach(stPl,
-                                     z =>
-                                     {
-                                         z.ViewDiff = 0;
-                                     });
-                }
-            }
-            catch (Exception ex)
-            {
-                _setTitle?.Invoke(ex.Message);
-            }
-            finally
-            {
-                _explorerModel?.All.AddOrUpdate(stPl);
-            }
+                    var res = done.GetAwaiter().GetResult();
+                    if (res?.Count > 0)
+                    {
+                        Parallel.ForEach(stPl,
+                                         z =>
+                                         {
+                                             z.ViewDiff = res.TryGetValue(z.Id, out var vdiff) ? vdiff : 0;
+                                         });
+                    }
+                    else
+                    {
+                        Parallel.ForEach(stPl,
+                                         z =>
+                                         {
+                                             z.ViewDiff = 0;
+                                         });
+                    }
+
+                    _explorerModel?.All.AddOrUpdate(stPl);
+                });
+            });
         }
 
         private void SubscribePlChange(Action<byte> setPageIndex, Action<string> setSelect, Channel channel)

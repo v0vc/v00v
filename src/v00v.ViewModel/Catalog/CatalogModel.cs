@@ -734,17 +734,17 @@ namespace v00v.ViewModel.Catalog
                                  item.SyncState = syncState;
                              });
 
-            var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
-            if (unlistpl == null)
+            var unlistedPl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
+            if (unlistedPl == null)
             {
-                var unpl = UnlistedPlaylist.Instance;
-                unpl.IsStatePlaylist = false;
-                unpl.Id = channel.Id;
-                unpl.Order = channel.Playlists.Count;
-                unpl.Count = hiddenIds.Count;
-                unpl.Items.AddRange(hiddenIds);
-                channel.Playlists.Add(unpl);
-                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unpl);
+                var unPl = UnlistedPlaylist.Instance;
+                unPl.IsStatePlaylist = false;
+                unPl.Id = channel.Id;
+                unPl.Order = channel.Playlists.Count;
+                unPl.Count = hiddenIds.Count;
+                unPl.Items.AddRange(hiddenIds);
+                channel.Playlists.Add(unPl);
+                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unPl);
                 Parallel.ForEach(channel.Items.Where(x => hiddenIds.Contains(x.Id)),
                                  item =>
                                  {
@@ -753,10 +753,10 @@ namespace v00v.ViewModel.Catalog
             }
             else
             {
-                var ids = hiddenIds.Except(unlistpl.Items).ToHashSet();
-                unlistpl.Items.AddRange(ids);
-                unlistpl.Count += ids.Count;
-                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unlistpl);
+                var ids = hiddenIds.Except(unlistedPl.Items).ToHashSet();
+                unlistedPl.Items.AddRange(ids);
+                unlistedPl.Count += ids.Count;
+                GetCachedPlaylistModel(channel.PlCache)?.All.AddOrUpdate(unlistedPl);
                 Parallel.ForEach(channel.Items.Where(x => ids.Contains(x.Id)),
                                  item =>
                                  {
@@ -838,40 +838,35 @@ namespace v00v.ViewModel.Catalog
             _baseExplorerModel?.SetLog($"Saved {r} rows");
         }
 
-        private async Task RestoreChannels()
+        private Task RestoreChannels()
         {
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            try
+            return _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
+                                          MassSync,
+                                          _setTitle,
+                                          UpdateList,
+                                          SetLog).ContinueWith(done =>
             {
-                var res = await _backupService.Restore(_entries.Where(x => !x.IsStateChannel).Select(x => x.Id),
-                                                       MassSync,
-                                                       _setTitle,
-                                                       UpdateList,
-                                                       SetLog);
+                IsWorking = false;
+                var res = done.GetAwaiter().GetResult();
+                _setTitle?.Invoke(done.Status == TaskStatus.Faulted
+                                      ? done.Exception == null ? "Faulted" : $"{done.Exception.Message}"
+                                      : string.Empty.MakeTitle(res.ChannelsCount, sw));
 
-                _setTitle?.Invoke(string.Empty.MakeTitle(res.ChannelsCount, sw));
                 var pl = _baseChannel.Playlists.First(x => x.Id == "-1");
                 pl.Count += res.PlannedCount;
                 var wl = _baseChannel.Playlists.First(x => x.Id == "0");
                 wl.Count += res.WatchedCount;
                 _basePlaylistModel?.All.AddOrUpdate(new[] { pl, wl });
-            }
-            catch (Exception ex)
-            {
-                _setTitle?.Invoke(ex.Message);
-            }
-            finally
-            {
-                IsWorking = false;
-            }
+            });
         }
 
-        private async Task SaveChannel()
+        private Task SaveChannel()
         {
             if (SelectedEntry == null || !SelectedEntry.IsNew)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var oldId = SelectedEntry.Id;
@@ -881,26 +876,29 @@ namespace v00v.ViewModel.Catalog
             _setTitle.Invoke($"Working {channel.Title}..");
             IsWorking = true;
             var sw = Stopwatch.StartNew();
-            try
-            {
-                await _youtubeService.AddPlaylists(channel);
-                var rows = await _channelRepository.AddChannel(channel);
-                _setTitle?.Invoke(string.Empty.MakeTitle(rows, sw));
-                channel.IsNew = false;
-                channel.FontStyle = "Normal";
-                GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(channel.Items);
-                UpdateList(channel);
-                UpdatePlaylist(channel);
-                SetSelected(oldId);
-            }
-            catch (Exception ex)
-            {
-                _setTitle?.Invoke(ex.Message);
-            }
-            finally
-            {
-                IsWorking = false;
-            }
+            return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
+                                                                      {
+                                                                          _channelRepository.AddChannel(channel).ContinueWith(done =>
+                                                                          {
+                                                                              IsWorking = false;
+                                                                              _setTitle?.Invoke(done.Status == TaskStatus.Faulted
+                                                                                  ? done.Exception == null ? "Faulted" :
+                                                                                  $"{done.Exception.Message}"
+                                                                                  : string.Empty.MakeTitle(done.GetAwaiter().GetResult(),
+                                                                                   sw));
+                                                                          });
+
+                                                                          channel.IsNew = false;
+                                                                          channel.FontStyle = "Normal";
+                                                                          GetCachedExplorerModel(channel.ExCache)?.All.AddOrUpdate(channel.Items);
+                                                                          UpdateList(channel);
+                                                                          UpdatePlaylist(channel);
+                                                                      },
+                                                                      TaskContinuationOptions.OnlyOnRanToCompletion).ContinueWith(_ =>
+             {
+                 SetSelected(oldId);
+             },
+             TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void SetLog(string log)
@@ -1129,9 +1127,9 @@ namespace v00v.ViewModel.Catalog
         {
             if (diff.NoUnlistedAgain.Count > 0)
             {
-                var unlistedpl = _baseChannel.Playlists.First(x => x.Id == "-2");
-                unlistedpl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
-                unlistedpl.Count -= diff.NoUnlistedAgain.Count;
+                var unlistedPl = _baseChannel.Playlists.First(x => x.Id == "-2");
+                unlistedPl.StateItems?.RemoveAll(x => diff.NoUnlistedAgain.Contains(x.Id));
+                unlistedPl.Count -= diff.NoUnlistedAgain.Count;
                 Parallel.ForEach(_entries.Where(x => !x.IsStateChannel && !x.IsNew && x.Loaded),
                                  channel =>
                                  {

@@ -28,27 +28,27 @@ class Build : NukeBuild
 
     [Parameter("version-suffix")] public string VersionSuffix { get; set; }
 
-    Target Clean =>
+    private static Target Clean =>
         _ => _.Executes(() =>
         {
             DeleteDirectories(GlobDirectories(SourceDirectory, "**/bin", "**/obj"));
             //EnsureCleanDirectory(ArtifactsDirectory);
         });
 
-    Target Compile =>
+    private Target Compile =>
         _ => _.DependsOn(Restore).Executes(() =>
         {
             DotNetBuild(s => s.SetProjectFile(Solution).SetConfiguration(Configuration).SetVersionSuffix(VersionSuffix)
                             .EnableNoRestore());
         });
 
-    Target Restore =>
+    private Target Restore =>
         _ => _.DependsOn(Clean).Executes(() =>
         {
             DotNetRestore(s => s.SetProjectFile(Solution));
         });
 
-    AbsolutePath SourceDirectory => RootDirectory / "src";
+    private static AbsolutePath SourceDirectory => RootDirectory / "src";
 
     #endregion
 
@@ -68,7 +68,7 @@ class Build : NukeBuild
         VersionSuffix ??= string.Empty;
     }
 
-    private void DeleteDirectories(IReadOnlyCollection<string> directories)
+    private static void DeleteDirectories(IEnumerable<string> directories)
     {
         foreach (var directory in directories)
         {

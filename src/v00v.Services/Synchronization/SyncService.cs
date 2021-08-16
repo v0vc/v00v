@@ -181,8 +181,12 @@ namespace v00v.Services.Synchronization
                              });
 
             setLog?.Invoke("Saving to db..");
-            var rows = await _channelRepository.StoreDiff(res);
-            setLog?.Invoke($"Saved {rows} rows!");
+            var rows = _channelRepository.StoreDiff(res);
+            await Task.WhenAll(rows).ContinueWith(_ =>
+            {
+                setLog?.Invoke(rows.IsCompletedSuccessfully ? $"Saved {rows.GetAwaiter().GetResult()} rows." :
+                               rows.Exception == null ? "An saving error occurred." : $"An saving error occurred {rows.Exception.Message}.");
+            });
             return res;
         }
 

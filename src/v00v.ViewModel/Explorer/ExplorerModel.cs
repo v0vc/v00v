@@ -262,20 +262,18 @@ namespace v00v.ViewModel.Explorer
             });
         }
 
-        public async Task Download(string par, Item item)
+        public Task Download(string par, Item item)
         {
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
-            var downloaded = await item.Download(_settings.YouParser,
-                                                 _settings.YouParam,
-                                                 par,
-                                                 $"{_youtubeService.ItemLink}{item.Id}",
-                                                 skip,
-                                                 SetLog);
-            if (downloaded && !skip)
-            {
-                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-            }
+            return item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog)
+                .ContinueWith(x =>
+                {
+                    if (x.GetAwaiter().GetResult() && !skip)
+                    {
+                        _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+                    }
+                });
         }
 
         public Task SetItemState(WatchState par)
@@ -291,17 +289,17 @@ namespace v00v.ViewModel.Explorer
             var oldState = item.WatchState;
             item.WatchState = par;
 
-            var bitem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
-            if (bitem != null && bitem.WatchState != par)
+            var bItem = _catalogModel.GetBaseItems.FirstOrDefault(y => y.Id == id);
+            if (bItem != null && bItem.WatchState != par)
             {
-                bitem.WatchState = par;
+                bItem.WatchState = par;
             }
 
-            var citem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? channelId : null, true)?.All
+            var cItem = _catalogModel.GetCachedExplorerModel(_catalogModel.SelectedEntry.IsStateChannel ? channelId : null, true)?.All
                 .Items.FirstOrDefault(y => y.Id == id);
-            if (citem != null && citem.WatchState != par)
+            if (cItem != null && cItem.WatchState != par)
             {
-                citem.WatchState = par;
+                cItem.WatchState = par;
             }
 
             PlaylistArrange(_catalogModel.GetCachedPlaylistModel(null), par, oldState, item, true);
@@ -320,16 +318,16 @@ namespace v00v.ViewModel.Explorer
             GotoMenu = isSearch ? "Subscribe" : "Go to Channel";
         }
 
-        private void AddNewPl(PlaylistModel plmodel, Item item, WatchState par, bool isState, bool isPlanned)
+        private void AddNewPl(PlaylistModel plModel, Item item, WatchState par, bool isState, bool isPlanned)
         {
             Playlist plp;
             if (isState)
             {
-                plp = plmodel.Entries.Single(x => x.State == par);
+                plp = plModel.Entries.Single(x => x.State == par);
             }
             else
             {
-                plp = plmodel.Entries.FirstOrDefault(x => x.State == par);
+                plp = plModel.Entries.FirstOrDefault(x => x.State == par);
                 if (plp == null)
                 {
                     if (isPlanned)
@@ -346,7 +344,7 @@ namespace v00v.ViewModel.Explorer
                     plp.IsStatePlaylist = false;
                     plp.Order = _channel.Playlists.Count;
                     _channel.Playlists.Add(plp);
-                    plmodel.All.AddOrUpdate(plp);
+                    plModel.All.AddOrUpdate(plp);
                 }
             }
 
@@ -462,9 +460,9 @@ namespace v00v.ViewModel.Explorer
             _popupController.Show(new ItemPopupContext(item));
         }
 
-        private void PlaylistArrange(PlaylistModel plmodel, WatchState par, WatchState oldState, Item item, bool isState)
+        private void PlaylistArrange(PlaylistModel plModel, WatchState par, WatchState oldState, Item item, bool isState)
         {
-            if (plmodel == null)
+            if (plModel == null)
             {
                 return;
             }
@@ -473,7 +471,7 @@ namespace v00v.ViewModel.Explorer
             {
                 case WatchState.Notset:
 
-                    var pln = plmodel.Entries.Single(x => x.State == oldState);
+                    var pln = plModel.Entries.Single(x => x.State == oldState);
                     pln.Count -= 1;
 
                     if (isState)
@@ -488,40 +486,40 @@ namespace v00v.ViewModel.Explorer
                     if (!isState && pln.Count == 0)
                     {
                         _channel.Playlists.Remove(pln);
-                        plmodel.All.RemoveKey(pln.Id);
+                        plModel.All.RemoveKey(pln.Id);
                     }
 
                     break;
 
                 case WatchState.Watched:
 
-                    AddNewPl(plmodel, item, par, isState, false);
+                    AddNewPl(plModel, item, par, isState, false);
 
                     if (oldState == WatchState.Planned)
                     {
-                        RemovePrevPl(plmodel, item, oldState, isState);
+                        RemovePrevPl(plModel, item, oldState, isState);
                     }
 
                     break;
 
                 case WatchState.Planned:
 
-                    AddNewPl(plmodel, item, par, isState, true);
+                    AddNewPl(plModel, item, par, isState, true);
 
                     if (oldState == WatchState.Watched)
                     {
-                        RemovePrevPl(plmodel, item, oldState, isState);
+                        RemovePrevPl(plModel, item, oldState, isState);
                     }
 
                     break;
             }
         }
 
-        private void RemovePrevPl(PlaylistModel plmodel, Item item, WatchState oldState, bool isState)
+        private void RemovePrevPl(PlaylistModel plModel, Item item, WatchState oldState, bool isState)
         {
             var pl = isState
-                ? plmodel.Entries.Single(x => x.State == oldState)
-                : plmodel.Entries.FirstOrDefault(x => x.State == oldState);
+                ? plModel.Entries.Single(x => x.State == oldState)
+                : plModel.Entries.FirstOrDefault(x => x.State == oldState);
 
             if (pl == null)
             {
@@ -544,7 +542,7 @@ namespace v00v.ViewModel.Explorer
             }
 
             _channel.Playlists.Remove(pl);
-            plmodel.All.RemoveKey(pl.Id);
+            plModel.All.RemoveKey(pl.Id);
         }
 
         private Task RunItem()
@@ -559,11 +557,11 @@ namespace v00v.ViewModel.Explorer
             return SetItemState(WatchState.Watched);
         }
 
-        private async Task SelectChannel()
+        private Task SelectChannel()
         {
             if (SelectedEntry == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var oldId = SelectedEntry.ChannelId;
@@ -571,23 +569,27 @@ namespace v00v.ViewModel.Explorer
             if (ch == null)
             {
                 _setTitle?.Invoke($"Working: {oldId}..");
-                var channel = await _youtubeService.GetChannelAsync(oldId, true);
-
-                if (channel != null && channel.Items.Count > 0)
+                return _youtubeService.GetChannelAsync(oldId, true).ContinueWith(x =>
                 {
-                    _catalogModel.AddChannelToList(channel, false);
-                    _setTitle?.Invoke($"Ready: {channel.Title}");
-                }
-                else
-                {
-                    SetLog($"Empty channel: {channel.Title}");
-                }
+                    var channel = x.GetAwaiter().GetResult();
+                    if (channel.Items.Count > 0)
+                    {
+                        _catalogModel.AddChannelToList(channel, false);
+                        _setTitle?.Invoke($"Ready: {channel.Title}");
+                    }
+                    else
+                    {
+                        SetLog($"Empty channel: {channel.Title}");
+                    }
+                });
             }
 
             if (_catalogModel.SelectedEntry == null || _catalogModel.SelectedEntry.Id != oldId)
             {
                 _catalogModel.SelectedEntry = ch;
             }
+
+            return Task.CompletedTask;
         }
 
         private void SelectPlaylist()
