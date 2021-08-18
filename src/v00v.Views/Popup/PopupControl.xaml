@@ -5,7 +5,7 @@
              xmlns:channelmodel="clr-namespace:v00v.ViewModel.Popup.Channel;assembly=v00v.ViewModel"
              xmlns:channelview="clr-namespace:v00v.Views.Popup.Channel">
     <UserControl.KeyBindings>
-        <KeyBinding Command="{Binding CloseCommand, Mode=OneWay}" Gesture="Escape" x:CompileBindings="False"/>
+        <KeyBinding Command="{Binding CloseCommand, Mode=OneWay}" Gesture="Escape" x:CompileBindings="False" />
     </UserControl.KeyBindings>
     <Grid Name="grid" RowDefinitions="auto,*" ColumnDefinitions="*,auto,*">
         <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3" Fill="#000000" Opacity="0.75" />

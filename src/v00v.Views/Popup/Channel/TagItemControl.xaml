@@ -7,7 +7,8 @@
         <TextBlock Grid.Column="1" Text="{Binding Text, Mode=TwoWay}" />
         <TextBlock Grid.Column="2" IsVisible="{Binding !IsSaved, Mode=OneWay}" Text=" * " />
         <Button Grid.Column="4" IsVisible="{Binding IsRemovable, Mode=OneWay}"
-                Command="{Binding RemoveCommand, Mode=OneWay}" CommandParameter="{Binding}" BorderThickness="0" x:CompileBindings="False">
+                Command="{Binding RemoveCommand, Mode=OneWay}" CommandParameter="{Binding}" BorderThickness="0"
+                x:CompileBindings="False">
             <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp" />
         </Button>
     </Grid>
