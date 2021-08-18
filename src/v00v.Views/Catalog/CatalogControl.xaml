@@ -1,8 +1,8 @@
 ﻿<UserControl x:Class="v00v.Views.Catalog.CatalogControl" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:catalog="clr-namespace:v00v.Views.Catalog">
     <UserControl.KeyBindings>
-        <KeyBinding Command="{Binding SelectChannelCommand, Mode=OneWay}" Gesture="Home" />
-        <KeyBinding Command="{Binding ClearAddedCommand, Mode=OneWay}" Gesture="Delete" />
+        <KeyBinding Command="{Binding SelectChannelCommand, Mode=OneWay}" Gesture="Home" x:CompileBindings="False"/>
+        <KeyBinding Command="{Binding ClearAddedCommand, Mode=OneWay}" Gesture="Delete" x:CompileBindings="False"/>
     </UserControl.KeyBindings>
     <Grid Width="230" ColumnDefinitions="*,auto" RowDefinitions="46,*,auto" Background="#242e44">
         <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,9,8,9"
@@ -18,63 +18,63 @@
             </ListBox.ItemTemplate>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Save" Command="{Binding SaveChannelCommand, Mode=OneTime}"
+                    <MenuItem Header="Save" Command="{Binding SaveChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsVisible="{Binding SelectedEntry.IsNew, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Save32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Edit" Command="{Binding EditChannelCommand, Mode=OneTime}"
+                    <MenuItem Header="Edit" Command="{Binding EditChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}"
                               IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Edit32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Copy" Command="{Binding CopyChannelLinkCommand, Mode=OneTime}">
+                    <MenuItem Header="Copy" Command="{Binding CopyChannelLinkCommand, Mode=OneTime}">x:CompileBindings="False"
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Copy32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Sync" Command="{Binding SyncChannelCommand, Mode=OneTime}"
+                    <MenuItem Header="Sync" Command="{Binding SyncChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}"
                               IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Network32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Update" Command="{Binding ReloadCommand, Mode=OneTime}">
+                    <MenuItem Header="Update" Command="{Binding ReloadCommand, Mode=OneTime}">x:CompileBindings="False"
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Refresh32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Delete" Command="{Binding DeleteChannelCommand, Mode=OneTime}"
+                    <MenuItem Header="Delete" Command="{Binding DeleteChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}"
                               IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Trash32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Related" Command="{Binding GetRelatedChannelCommand, Mode=OneTime}"
+                    <MenuItem Header="Related" Command="{Binding GetRelatedChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsEnabled="{Binding !IsWorking, Mode=OneWay}"
                               IsVisible="{Binding !SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Book32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Backup" Command="{Binding BackupCommand, Mode=OneTime}"
+                    <MenuItem Header="Backup" Command="{Binding BackupCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Backup32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Restore" Command="{Binding RestoreCommand, Mode=OneTime}"
+                    <MenuItem Header="Restore" Command="{Binding RestoreCommand, Mode=OneTime}" x:CompileBindings="False"
                               IsVisible="{Binding SelectedEntry.IsStateChannel, Mode=OneWay}">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Restore32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Clear" Command="{Binding ClearAddedCommand, Mode=OneTime}">
+                    <MenuItem Header="Clear" Command="{Binding ClearAddedCommand, Mode=OneTime}" x:CompileBindings="False">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.Xmark32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>
@@ -85,7 +85,7 @@
         <Expander ExpandDirection="Up" Grid.Row="2" Grid.Column="0">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal" IsEnabled="{Binding !IsWorking, Mode=OneWay}" Height="29">
-                    <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}"
+                    <Button HorizontalAlignment="Left" Command="{Binding AddChannelCommand, Mode=OneTime}" x:CompileBindings="False"
                             ToolTip.Tip="Add">
                         <Panel>
                             <Ellipse />
@@ -101,7 +101,7 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Command="{Binding SyncChannelsCommand, Mode=OneTime}" ToolTip.Tip="Sync">
+                    <Button Command="{Binding SyncChannelsCommand, Mode=OneTime}" x:CompileBindings="False" ToolTip.Tip="Sync">
                         <Panel>
                             <Ellipse />
                             <Image Source="resm:v00v.MainApp.Icons.Light.Settings32.png?assembly=v00v.MainApp" />
@@ -124,23 +124,23 @@
             <Border BorderBrush="#000000" BorderThickness="0.2">
                 <StackPanel Orientation="Horizontal" Height="25">
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By title" Classes="sort" IsChecked="True"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Title" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Title" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Subs" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Subs" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="View" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="View" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By items count" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Count" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Count" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By date" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="LastDate" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="LastDate" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By watched" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Watched" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Watched" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By planned" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Planned" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="Planned" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By subs diff" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="SubsDiff" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="SubsDiff" x:CompileBindings="False"/>
                     <RadioButton GroupName="ChannelSort" ToolTip.Tip="By views diff" Classes="sort"
-                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="ViewDiff" />
+                                 Command="{Binding SetSortCommand, Mode=OneTime}" CommandParameter="ViewDiff" x:CompileBindings="False"/>
                 </StackPanel>
             </Border>
         </Expander>

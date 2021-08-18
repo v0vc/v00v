@@ -24,38 +24,38 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,10,0">
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By date" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Timestamp}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Timestamp" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Timestamp" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By views" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.View}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="View" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="View" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By likes" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Like}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Like" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Like" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By dislikes" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Dislike}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Dislike" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Dislike" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By comment" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Comment}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Comment" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Comment" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By duration" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Duration}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Duration" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Duration" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By file" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.File}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="File" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="File" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By title" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Title" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Title" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By channel" Margin="0,0,3,0"
                                  IsVisible="{Binding IsParentState, Mode=OneWay}"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Title}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Channel" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Channel" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By like/dislike*view" Margin="0,0,3,0"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Quality}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Quality" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Quality" x:CompileBindings="False"/>
                     <RadioButton GroupName="ItemSort" ToolTip.Tip="By view diff"
                                  IsChecked="{Binding Path=ItemSortBase, Mode=OneWay, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:ItemSort.Diff}}"
-                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Diff" />
+                                 Command="{Binding SetSortCommand, Mode=OneWay}" CommandParameter="Diff" x:CompileBindings="False"/>
                 </StackPanel>
                 <TextBlock Grid.Column="2" Text="{Binding Items.Count}" Margin="0,0,40,0" VerticalAlignment="Center"
                            Foreground="#92a3b3" />

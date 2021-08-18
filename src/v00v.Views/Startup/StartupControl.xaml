@@ -116,7 +116,7 @@
                         <controls:ExtendedTextBox Width="312" Margin="25,0,0,0" Watermark="Link..."
                                                   Text="{Binding DownloadUrl, Mode=TwoWay}" />
                         <Button Width="30" Content=">>" Margin="2,0,0,0"
-                                Command="{Binding DownloadCommand, Mode=OneTime}" />
+                                Command="{Binding DownloadCommand, Mode=OneTime}" x:CompileBindings="False"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="19" IsVisible="{Binding IsYoutubeLink, Mode=OneWay}">
                         <TextBlock Text="Options:" />

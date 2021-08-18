@@ -5,7 +5,7 @@
              xmlns:channelmodel="clr-namespace:v00v.ViewModel.Popup.Channel;assembly=v00v.ViewModel"
              xmlns:channelview="clr-namespace:v00v.Views.Popup.Channel">
     <UserControl.KeyBindings>
-        <KeyBinding Command="{Binding CloseCommand, Mode=OneWay}" Gesture="Escape" />
+        <KeyBinding Command="{Binding CloseCommand, Mode=OneWay}" Gesture="Escape" x:CompileBindings="False"/>
     </UserControl.KeyBindings>
     <Grid Name="grid" RowDefinitions="auto,*" ColumnDefinitions="*,auto,*">
         <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3" Fill="#000000" Opacity="0.75" />
@@ -17,13 +17,13 @@
                                VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
-                    <Button Command="{Binding ExpandCommand, Mode=OneWay}"
+                    <Button Command="{Binding ExpandCommand, Mode=OneWay}" x:CompileBindings="False"
                             IsVisible="{Binding Context.CanExpanded, Mode=OneWay}" Width="16" Height="16" Margin="8"
                             Background="Transparent" BorderThickness="0">
                         <Image Source="{Binding Context.ExpandThumb, Mode=OneWay}" Opacity="0.66" />
                     </Button>
                     <Button Command="{Binding CloseCommand, Mode=OneWay}" Width="16" Height="16" Margin="8"
-                            Background="Transparent" BorderThickness="0"
+                            Background="Transparent" BorderThickness="0" x:CompileBindings="False"
                             IsEnabled="{Binding !Context.IsWorking, Mode=OneWay}">
                         <Image Source="resm:v00v.MainApp.Icons.Dark.X32.png?assembly=v00v.MainApp" Width="16"
                                Height="16" Opacity="0.66" />

@@ -14,7 +14,7 @@
                   IsVisible="{Binding Path=WatchState, Converter={x:Static converters:EnumToBooleanConverter.s_instance}, ConverterParameter={x:Static enums:WatchState.Planned}, Mode=OneWay}" />
             <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Width="51" Height="51" VerticalAlignment="Top"
                     BorderThickness="0" Padding="0" Background="Transparent" BorderBrush="Transparent"
-                    Command="{Binding $parent[ListBox].DataContext.OpenCommand, Mode=OneTime}"
+                    Command="{Binding $parent[ListBox].DataContext.OpenCommand, Mode=OneTime}" x:CompileBindings="False"
                     CommandParameter="{Binding}">
                 <Image Source="{Binding Thumb, Mode=OneWay}" Opacity="{Binding OpacityThumb, Mode=OneWay}"
                        Stretch="Fill" VerticalAlignment="Center" HorizontalAlignment="Center" />
@@ -48,7 +48,7 @@
             </StackPanel>
             <Panel Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" Width="15"
                    IsVisible="{Binding !Downloaded, Mode=OneWay}">
-                <Button Background="#bdacd1" IsVisible="{Binding !IsWorking, Mode=OneWay}"
+                <Button Background="#bdacd1" IsVisible="{Binding !IsWorking, Mode=OneWay}" x:CompileBindings="False"
                         Command="{Binding $parent[ListBox].DataContext.DownloadCommand, Mode=OneTime}"
                         CommandParameter="{Binding}">
                     <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp" />
