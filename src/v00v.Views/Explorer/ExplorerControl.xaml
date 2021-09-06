@@ -69,8 +69,8 @@
                     <MenuItem.Icon>
                         <Image Source="resm:v00v.MainApp.Icons.Dark.Download32.png?assembly=v00v.MainApp" />
                     </MenuItem.Icon>
-                    <MenuItem Header="HD" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="hd">
-                        x:CompileBindings="False"
+                    <MenuItem Header="HD" Command="{Binding DownloadItemCommand, Mode=OneWay}" CommandParameter="hd"
+                              x:CompileBindings="False">
                         <MenuItem.Icon>
                             <Image Source="resm:v00v.MainApp.Icons.Dark.VideoHd32.png?assembly=v00v.MainApp" />
                         </MenuItem.Icon>

@@ -601,7 +601,7 @@ namespace v00v.ViewModel.Catalog
                 }
             }
 
-            SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
+            //SelectedEntry = All.Items.ElementAt(index == 0 ? 0 : index - 1) ?? _baseChannel;
             return _channelRepository.DeleteChannel(deletedId).ContinueWith(_ =>
             {
                 IsWorking = false;
