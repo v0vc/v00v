@@ -114,7 +114,7 @@ namespace v00v.Services.Backup
                 })),
                 ItemsState = await _itemRepository.GetItemsState()
             };
-            setLog?.Invoke($"Start backup {bcp.Items.Count} channels..");
+            setLog?.Invoke($"Start backup channels..");
             var fileName = GetBackupName();
             var tempFileName = fileName + ".new";
             var res = string.Empty;
@@ -170,7 +170,6 @@ namespace v00v.Services.Backup
                 if (tasks.Count > 0)
                 {
                     setLog?.Invoke($"Total channels: {tasks.Count}, working..");
-
                     var channels = new ConcurrentBag<Channel>();
                     var rowChannels = await Task.WhenAll(tasks);
                     Parallel.ForEach(rowChannels,

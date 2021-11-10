@@ -69,7 +69,7 @@ namespace v00v.ViewModel.Startup
             };
             Formats = new[] { "480p", "720p", "HD", "Audio only", "Video only", "Subtitles only" };
 
-            DownloadCommand = new Command(async () => await DownloadItem());
+            DownloadCommand = new Command(Execute);
 
             _downloadDir = backupService.DownloadDir;
             _enableCustomDb = backupService.CustomDbEnabled;
@@ -361,6 +361,11 @@ namespace v00v.ViewModel.Startup
             });
 
             _isInited = true;
+        }
+
+        private async void Execute()
+        {
+            await DownloadItem();
         }
 
         #endregion

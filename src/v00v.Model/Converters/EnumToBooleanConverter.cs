@@ -22,7 +22,7 @@ namespace v00v.Model.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value != null ? (bool)value ? parameter : new Binding(null) : new Binding(null);
+            return value != null ? (bool)value ? parameter : new Binding(null!) : new Binding(null!);
         }
 
         #endregion

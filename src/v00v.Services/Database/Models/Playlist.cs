@@ -2,13 +2,13 @@
 
 namespace v00v.Services.Database.Models
 {
-    public class Playlist
+    public sealed class Playlist
     {
         #region Properties
 
-        public virtual Channel Channel { get; set; }
+        public Channel Channel { get; set; }
 
-        public virtual List<ItemPlaylist> Items { get; } = new();
+        public List<ItemPlaylist> Items { get; } = new();
 
         public string ChannelId { get; set; }
 

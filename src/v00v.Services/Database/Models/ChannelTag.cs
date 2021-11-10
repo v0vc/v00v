@@ -5,7 +5,6 @@
         #region Properties
 
         public string ChannelId { get; set; }
-
         public int TagId { get; set; }
 
         #endregion

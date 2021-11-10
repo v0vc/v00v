@@ -2,11 +2,11 @@
 
 namespace v00v.Services.Database.Models
 {
-    public class Site
+    public sealed class Site
     {
         #region Properties
 
-        public virtual ICollection<Channel> Channels { get; } = new List<Channel>();
+        public ICollection<Channel> Channels { get; } = new List<Channel>();
 
         public string Cookie { get; set; }
 

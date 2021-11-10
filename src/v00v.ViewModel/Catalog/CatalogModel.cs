@@ -340,7 +340,7 @@ namespace v00v.ViewModel.Catalog
             return x => x.IsStateChannel || x.Tags.Select(y => y.Id).Contains(tag.Id);
         }
 
-        private static void MarkNoUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plmodel)
+        private static void MarkNoUnlisted(Channel channel, ICollection<string> noUnlisted, PlaylistModel plModel)
         {
             Parallel.ForEach(channel.Items.Where(x => noUnlisted.Contains(x.Id) && x.SyncState != SyncState.Notset),
                              item =>
@@ -348,21 +348,21 @@ namespace v00v.ViewModel.Catalog
                                  item.SyncState = SyncState.Notset;
                              });
 
-            var unlistpl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
-            if (unlistpl == null)
+            var unListPl = channel.Playlists.FirstOrDefault(x => x.Id == channel.Id);
+            if (unListPl == null)
             {
                 return;
             }
 
-            if (unlistpl.Count == noUnlisted.Count)
+            if (unListPl.Count == noUnlisted.Count)
             {
-                channel.Playlists.Remove(unlistpl);
-                plmodel?.All.RemoveKey(unlistpl.Id);
+                channel.Playlists.Remove(unListPl);
+                plModel?.All.RemoveKey(unListPl.Id);
             }
             else
             {
-                unlistpl.Items.RemoveAll(noUnlisted.Contains);
-                unlistpl.Count -= noUnlisted.Count;
+                unListPl.Items.RemoveAll(noUnlisted.Contains);
+                unListPl.Count -= noUnlisted.Count;
             }
         }
 
@@ -864,7 +864,7 @@ namespace v00v.ViewModel.Catalog
 
         private Task SaveChannel()
         {
-            if (SelectedEntry == null || !SelectedEntry.IsNew)
+            if (SelectedEntry is not { IsNew: true })
             {
                 return Task.CompletedTask;
             }

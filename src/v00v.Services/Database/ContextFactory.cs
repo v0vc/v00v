@@ -6,7 +6,7 @@
 
         public VideoContext CreateVideoContext()
         {
-            return new();
+            return new VideoContext();
         }
 
         #endregion

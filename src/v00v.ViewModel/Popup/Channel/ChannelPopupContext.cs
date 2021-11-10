@@ -49,7 +49,7 @@ namespace v00v.ViewModel.Popup.Channel
 
         public ChannelPopupContext(Model.Entities.Channel channel,
             Func<IEnumerable<string>> getExistId,
-            IReadOnlyCollection<Tag> alltags,
+            IReadOnlyCollection<Tag> allTags,
             Action<Tag> addNewTag,
             Action<int> deleteNewTag,
             Action<string> setTitle,
@@ -78,7 +78,7 @@ namespace v00v.ViewModel.Popup.Channel
             if (channel?.Tags.Count > 0)
             {
                 var ids = channel.Tags.Select(x => x.Id);
-                Parallel.ForEach(alltags,
+                Parallel.ForEach(allTags,
                                  tag =>
                                  {
                                      tag.IsEnabled = ids.Contains(tag.Id);
@@ -87,7 +87,7 @@ namespace v00v.ViewModel.Popup.Channel
             }
             else
             {
-                Parallel.ForEach(alltags.Where(x => x.IsEnabled || x.IsRemovable),
+                Parallel.ForEach(allTags.Where(x => x.IsEnabled || x.IsRemovable),
                                  tag =>
                                  {
                                      tag.IsEnabled = false;
@@ -95,7 +95,7 @@ namespace v00v.ViewModel.Popup.Channel
                                  });
             }
 
-            All.AddRange(alltags);
+            All.AddRange(allTags);
             All.Connect().Filter(this.WhenValueChanged(t => t.FilterTag).Select(BuildSearchFilter)).Bind(out _entries).DisposeMany()
                 .Subscribe();
 
@@ -104,7 +104,7 @@ namespace v00v.ViewModel.Popup.Channel
             ChannelId = channel?.Id;
             ChannelTitle = channel?.Title;
             IsChannelEnabled = channel == null;
-            if (channel != null && channel.SubTitle == null)
+            if (channel is { SubTitle: null })
             {
                 channel.SubTitle = _channelRepository.GetChannelSubtitle(channel.Id);
             }
@@ -310,16 +310,18 @@ namespace v00v.ViewModel.Popup.Channel
 
         private void SaveTag()
         {
-            Parallel.ForEach(All.Items.Where(x => !x.IsSaved),
-                             async tag =>
-                             {
-                                 if (All.Items.Count(x => x.Text == tag.Text) == 1)
-                                 {
-                                     tag.IsSaved = true;
-                                     tag.Id = await _tagRepository.Add(tag.Text);
-                                     _addNewTag?.Invoke(tag);
-                                 }
-                             });
+            Parallel.ForEach(All.Items.Where(x => !x.IsSaved), SaveTag);
+        }
+
+        private async void SaveTag(Tag tag)
+        {
+            if (All.Items.Count(x => x.Text == tag.Text) != 1)
+            {
+                return;
+            }
+            tag.IsSaved = true;
+            tag.Id = await _tagRepository.Add(tag.Text);
+            _addNewTag?.Invoke(tag);
         }
 
         private bool SetExisted(string channelId)

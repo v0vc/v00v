@@ -17,7 +17,7 @@ namespace v00v.Views.Startup
             {
                 var ofd = await new OpenFileDialog { Title = "Select file", Filters = GetFilters() }.ShowAsync(GetWindow());
 
-                if (ofd.Length == 1)
+                if (ofd is { Length: 1 })
                 {
                     AvaloniaLocator.Current.GetService<IStartupModel>().WatchApp = ofd[0];
                 }
@@ -48,7 +48,7 @@ namespace v00v.Views.Startup
 
         private static List<FileDialogFilter> GetFilters()
         {
-            return new() { new FileDialogFilter { Name = "Application (.exe)", Extensions = new List<string> { "exe" } } };
+            return new List<FileDialogFilter> { new() { Name = "Application (.exe)", Extensions = new List<string> { "exe" } } };
         }
 
         #endregion

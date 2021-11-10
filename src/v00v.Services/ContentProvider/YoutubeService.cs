@@ -60,9 +60,9 @@ namespace v00v.Services.ContentProvider
 
         private static async Task<JArray> GetAll(string zap)
         {
-            var rawzap = zap;
+            var rawZap = zap;
             var res = new JArray();
-            object pagetoken;
+            object pageToken;
             do
             {
                 var record = await GetJsonObjectAsync(new Uri(zap));
@@ -72,13 +72,13 @@ namespace v00v.Services.ContentProvider
                 }
 
                 res.Add(record);
-                pagetoken = record.SelectToken("nextPageToken");
-                if (pagetoken != null)
+                pageToken = record.SelectToken("nextPageToken");
+                if (pageToken != null)
                 {
-                    zap = $"{rawzap}&pageToken={pagetoken}";
+                    zap = $"{rawZap}&pageToken={pageToken}";
                 }
             }
-            while (pagetoken != null);
+            while (pageToken != null);
 
             return res;
         }
@@ -114,7 +114,7 @@ namespace v00v.Services.ContentProvider
 
         private static Item MakeItem(JToken x, string channelId, string cTitle)
         {
-            return new()
+            return new Item
             {
                 Id = x.SelectToken("id")?.Value<string>(),
                 ChannelId = channelId,
@@ -136,7 +136,7 @@ namespace v00v.Services.ContentProvider
 
         private static Item MakeItem(JToken x, string cTitle)
         {
-            return new()
+            return new Item
             {
                 Id = x.SelectToken("snippet.resourceId.videoId")?.Value<string>(),
                 ChannelTitle = cTitle,
@@ -325,7 +325,7 @@ namespace v00v.Services.ContentProvider
                 ThumbnailLink = upload?.SelectToken("items[0].snippet.thumbnails.default.url", false)?.Value<string>(),
             };
 
-            var itemms = withoutPl
+            var itemMs = withoutPl
                 ? new JArray
                 {
                     await
@@ -335,7 +335,7 @@ namespace v00v.Services.ContentProvider
                 : await
                     GetAll($"{Url}playlistItems?&key={_key}&playlistId={plu.Id}&part=snippet,contentDetails&order=date&fields=nextPageToken,items(snippet(publishedAt,channelId,title,description,thumbnails(default(url)),resourceId(videoId)),contentDetails(videoPublishedAt))&maxResults={ItemsPerPage}&{PrintType}");
 
-            channel.Items.AddRange(itemms.SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)));
+            channel.Items.AddRange(itemMs.SelectTokens("$..items.[*]").Select(x => MakeItem(x, channel.Title)));
 
             plu.Items.AddRange(channel.Items.Select(x => x.Id));
 
@@ -364,9 +364,9 @@ namespace v00v.Services.ContentProvider
 
             var plBag = new ConcurrentBag<Playlist>();
             Parallel.ForEach(playlists,
-                             plid =>
+                             pLid =>
                              {
-                                 var pid = plid.SelectToken("id")?.Value<string>();
+                                 var pid = pLid.SelectToken("id")?.Value<string>();
                                  var vids = plTasks.First(x => x.Item1 == pid).Item2.GetAwaiter().GetResult().SelectTokens("$..items.[*]")
                                      .Select(rec => rec.SelectToken("snippet.resourceId.videoId")?.Value<string>()).Where(x => x != null)
                                      .Distinct().ToHashSet();
@@ -378,8 +378,8 @@ namespace v00v.Services.ContentProvider
                                      {
                                          Id = pid,
                                          ChannelId = channel.Id,
-                                         Title = plid.SelectToken("snippet.title")?.Value<string>(),
-                                         ThumbnailLink = plid.SelectToken("snippet.thumbnails.default.url")?.Value<string>()
+                                         Title = pLid.SelectToken("snippet.title")?.Value<string>(),
+                                         ThumbnailLink = pLid.SelectToken("snippet.thumbnails.default.url")?.Value<string>()
                                      };
 
                                      plc.Items.AddRange(vids);
@@ -436,13 +436,13 @@ namespace v00v.Services.ContentProvider
             channel.Timestamp = channel.Items.OrderByDescending(x => x.Timestamp).First().Timestamp;
             if (channel.Items.Any(x => x.SyncState == SyncState.Unlisted))
             {
-                var unpl = UnlistedPlaylist.Instance;
-                unpl.IsStatePlaylist = false;
-                unpl.Id = channel.Id;
-                unpl.Order = channel.Playlists.Count;
-                unpl.Items.AddRange(channel.Items.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id));
-                unpl.Count = unpl.Items.Count;
-                channel.Playlists.Add(unpl);
+                var unPl = UnlistedPlaylist.Instance;
+                unPl.IsStatePlaylist = false;
+                unPl.Id = channel.Id;
+                unPl.Order = channel.Playlists.Count;
+                unPl.Items.AddRange(channel.Items.Where(x => x.SyncState == SyncState.Unlisted).Select(x => x.Id));
+                unPl.Count = unPl.Items.Count;
+                channel.Playlists.Add(unPl);
             }
 
             return channel;
@@ -477,16 +477,16 @@ namespace v00v.Services.ContentProvider
 
             var upId = record.SelectToken("items[0].contentDetails.relatedPlaylists")?.SelectToken("uploads")!.Value<string>();
 
-            var uploadvids =
+            var uploadVids =
                 (await
                     GetAll($"{Url}playlistItems?&key={_key}&playlistId={upId}&part=snippet&order=date&fields=nextPageToken,items(snippet(resourceId(videoId)))&maxResults={ItemsPerPage}&{PrintType}"))
                 .SelectTokens("$..items.[*]").Select(rec => rec.SelectToken("snippet.resourceId.videoId")?.Value<string>())
                 .Where(x => x != null).Distinct().ToHashSet();
 
-            diff.UploadedIds.AddRange(uploadvids);
-            diff.AddedItems.AddRange(uploadvids.Except(cs.Items.Select(x => x.Item1))
+            diff.UploadedIds.AddRange(uploadVids);
+            diff.AddedItems.AddRange(uploadVids.Except(cs.Items.Select(x => x.Item1))
                                          .Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }));
-            diff.DeletedItems.AddRange(cs.Items.Select(x => x.Item1).Except(uploadvids));
+            diff.DeletedItems.AddRange(cs.Items.Select(x => x.Item1).Except(uploadVids));
 
             setLog?.Invoke($"{diff.ChannelTitle}, added: {diff.AddedItems.Count}, deleted: {diff.DeletedItems.Count}");
 
@@ -513,9 +513,9 @@ namespace v00v.Services.ContentProvider
             await Task.WhenAll(plTasks.Select(x => x.Item2));
 
             Parallel.ForEach(playlists,
-                             plid =>
+                             plId =>
                              {
-                                 var pid = plid.SelectToken("id")?.Value<string>();
+                                 var pid = plId.SelectToken("id")?.Value<string>();
 
                                  var vids = plTasks.First(x => x.Item1 == pid).Item2.GetAwaiter().GetResult().SelectTokens("$..items.[*]")
                                      .Select(x => new
@@ -539,8 +539,8 @@ namespace v00v.Services.ContentProvider
                                                               {
                                                                   Id = pid,
                                                                   ChannelId = cs.ChannelId,
-                                                                  Title = plid.SelectToken("snippet.title")?.Value<string>(),
-                                                                  ThumbnailLink = plid.SelectToken("snippet.thumbnails.default.url")
+                                                                  Title = plId.SelectToken("snippet.title")?.Value<string>(),
+                                                                  ThumbnailLink = plId.SelectToken("snippet.thumbnails.default.url")
                                                                       ?.Value<string>()
                                                               },
                                                               vids.Select(x => new ItemPrivacy { Id = x.Key, Status = GetState(x.Value) })
@@ -549,7 +549,7 @@ namespace v00v.Services.ContentProvider
                                  }
                              });
 
-            diff.ExistPls.TryAdd(upId, uploadvids.Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }).ToList());
+            diff.ExistPls.TryAdd(upId, uploadVids.Select(x => new ItemPrivacy { Id = x, Status = SyncState.Added }).ToList());
             diff.DeletedPls.AddRange(cs.Playlists.Where(z => z != upId)
                                          .Except(diff.ExistPls.Select(x => x.Key).Union(diff.AddedPls.Select(x => x.Key.Id))));
 
@@ -573,7 +573,7 @@ namespace v00v.Services.ContentProvider
 
             var trueAdded = unlisted.Union(cs.Items.Select(x => x.Item1)).Union(diff.AddedItems.Select(x => x.Id));
 
-            if (diff.AddedPls.Count > 0)
+            if (diff.AddedPls.IsEmpty)
             {
                 Parallel.ForEach(diff.AddedPls,
                                  pair =>
@@ -582,7 +582,7 @@ namespace v00v.Services.ContentProvider
                                  });
             }
 
-            if (diff.ExistPls.Count > 0)
+            if (diff.ExistPls.IsEmpty)
             {
                 Parallel.ForEach(diff.ExistPls.Where(x => x.Key != upId),
                                  pair =>
@@ -786,15 +786,15 @@ namespace v00v.Services.ContentProvider
             return await GetItems(ids);
         }
 
-        public async Task<byte[]> GetStreamFromUrl(string dataurl)
+        public async Task<byte[]> GetStreamFromUrl(string dataUrl)
         {
-            if (string.IsNullOrEmpty(dataurl))
+            if (string.IsNullOrEmpty(dataUrl))
             {
                 return Array.Empty<byte>();
             }
 
-            using var wc = new WebClient();
-            var res = await wc.DownloadDataTaskAsync(dataurl);
+            using var wc = new HttpClient();
+            var res = await wc.GetByteArrayAsync(dataUrl);
             await using var ms = new MemoryStream(res);
             try
             {
@@ -962,14 +962,14 @@ namespace v00v.Services.ContentProvider
 
         private async Task GetTrueDeleted(ChannelDiff diff)
         {
-            var nonPlunl = diff.DeletedItems.Split()
+            var nonPl = diff.DeletedItems.Split()
                 .Select(id =>
                             GetJsonObjectAsync(new
                                                    Uri($"{Url}videos?id={string.Join(",", id)}&key={_key}&part=id&fields=items(id)&{PrintType}")))
                 .ToHashSet();
 
-            await Task.WhenAll(nonPlunl);
-            diff.UnlistedItems.AddRange(nonPlunl.SelectMany(x => x.GetAwaiter().GetResult()?.SelectTokens("items.[*]")
+            await Task.WhenAll(nonPl);
+            diff.UnlistedItems.AddRange(nonPl.SelectMany(x => x.GetAwaiter().GetResult()?.SelectTokens("items.[*]")
                                                                 .Select(z => z.SelectToken("id")?.Value<string>())));
             diff.DeletedItems.RemoveAll(x => diff.UnlistedItems.Contains(x));
         }

@@ -115,10 +115,10 @@ namespace v00v
 
         private static void Shutdown()
         {
-            var applog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
-            applog.SetStatus(AppStatus.AppClosed, "App closed");
+            var appLog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
+            appLog.SetStatus(AppStatus.AppClosed, "App closed");
             var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
-            var closedCount = applog.GetStatusCount(AppStatus.AppClosed);
+            var closedCount = appLog.GetStatusCount(AppStatus.AppClosed);
             if (closedCount % 10 == 0 && closedCount != 0)
             {
                 context.Database.ExecuteSqlRaw("VACUUM");

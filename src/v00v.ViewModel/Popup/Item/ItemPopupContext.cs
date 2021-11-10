@@ -212,9 +212,9 @@ namespace v00v.ViewModel.Popup.Item
                 i++;
             }
 
-            foreach (var parcomm in _comments.Skip(comment.Order + 1))
+            foreach (var parComm in _comments.Skip(comment.Order + 1))
             {
-                parcomm.Order += comment.Replies.Count;
+                parComm.Order += comment.Replies.Count;
             }
 
             All.AddRange(comment.Replies);

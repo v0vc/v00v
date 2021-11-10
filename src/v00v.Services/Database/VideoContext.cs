@@ -29,23 +29,23 @@ namespace v00v.Services.Database
             //optionsBuilder.EnableSensitiveDataLogging();
             //optionsBuilder.UseLazyLoadingProxies();
 
-            var backupservice = AvaloniaLocator.Current.GetService<IBackupService>();
-            if (!backupservice.UseSqliteInit)
+            var backupService = AvaloniaLocator.Current.GetService<IBackupService>();
+            if (!backupService.UseSqliteInit)
             {
-                if (backupservice.CustomDbEnabled)
+                if (backupService.CustomDbEnabled)
                 {
-                    var dir = new DirectoryInfo(backupservice.CustomDbPath);
-                    backupservice.UseSqlite = dir.Exists ? $"Data Source={dir.FullName}\\data.db" : "Data Source=data.db";
+                    var dir = new DirectoryInfo(backupService.CustomDbPath);
+                    backupService.UseSqlite = dir.Exists ? $"Data Source={dir.FullName}\\data.db" : "Data Source=data.db";
                 }
                 else
                 {
-                    backupservice.UseSqlite = "Data Source=data.db";
+                    backupService.UseSqlite = "Data Source=data.db";
                 }
 
-                backupservice.UseSqliteInit = true;
+                backupService.UseSqliteInit = true;
             }
 
-            optionsBuilder.UseSqlite(backupservice.UseSqlite);
+            optionsBuilder.UseSqlite(backupService.UseSqlite);
             //optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
         }
 

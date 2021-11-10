@@ -117,13 +117,13 @@ namespace v00v.Model.Entities
 
         #region Methods
 
-        public async Task<bool> Download(string youdl, string youparam, string par, string link, bool skip, Action<string> setLog)
+        public async Task<bool> Download(string youDl, string youParam, string par, string link, bool skip, Action<string> setLog)
         {
             _numRegex ??= new Regex(@"[0-9][0-9]{0,2}\.[0-9]%", RegexOptions.Compiled);
             _setLog ??= setLog;
             IsWorking = true;
 
-            var startInfo = new ProcessStartInfo(youdl, MakeParam(par, youparam, link))
+            var startInfo = new ProcessStartInfo(youDl, MakeParam(par, youParam, link))
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 UseShellExecute = false,

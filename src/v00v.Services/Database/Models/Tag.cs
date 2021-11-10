@@ -2,11 +2,11 @@
 
 namespace v00v.Services.Database.Models
 {
-    public class Tag
+    public sealed class Tag
     {
         #region Properties
 
-        public virtual ICollection<ChannelTag> Channels { get; } = new List<ChannelTag>();
+        public IEnumerable<ChannelTag> Channels { get; } = new List<ChannelTag>();
 
         public int Id { get; set; }
 

@@ -90,7 +90,7 @@ namespace v00v.ViewModel.Playlists
 
                     if (res.Any())
                     {
-                        int i = 0;
+                        var i = 0;
                         foreach (var pl in res.SkipLast(1).OrderBy(y => y.Title))
                         {
                             pl.Order = i;
@@ -130,13 +130,13 @@ namespace v00v.ViewModel.Playlists
                         var unlisted = channel.Items.Where(x => x.SyncState is SyncState.Unlisted or SyncState.Deleted).ToHashSet();
                         if (unlisted.Count > 0)
                         {
-                            var unpl = UnlistedPlaylist.Instance;
-                            unpl.IsStatePlaylist = false;
-                            unpl.Id = channel.Id;
-                            unpl.Order = channel.Playlists.Count;
-                            unpl.Count = unlisted.Count;
-                            unpl.Items.AddRange(unlisted.Select(x => x.Id));
-                            channel.Playlists.Add(unpl);
+                            var unPl = UnlistedPlaylist.Instance;
+                            unPl.IsStatePlaylist = false;
+                            unPl.Id = channel.Id;
+                            unPl.Order = channel.Playlists.Count;
+                            unPl.Count = unlisted.Count;
+                            unPl.Items.AddRange(unlisted.Select(x => x.Id));
+                            channel.Playlists.Add(unPl);
                         }
 
                         All.AddOrUpdate(channel.Playlists);
@@ -241,11 +241,13 @@ namespace v00v.ViewModel.Playlists
 
                 Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id) && x.Downloaded),
                                  new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                                 async x =>
-                                 {
-                                     await _explorerModel.DeleteItem(x);
-                                 });
+                                 DeleteItem);
             });
+        }
+
+        private async void DeleteItem(Item x)
+        {
+            await _explorerModel.DeleteItem(x);
         }
 
         private Task DownloadItem(string par)
@@ -255,12 +257,14 @@ namespace v00v.ViewModel.Playlists
                 return Task.CompletedTask;
             }
 
+            async void Download(Item x)
+            {
+                await _explorerModel.Download(par, x);
+            }
+
             Parallel.ForEach(_explorerModel.All.Items.Where(x => SelectedEntry.Items.Contains(x.Id)),
                              new ParallelOptions { MaxDegreeOfParallelism = SelectedEntry.Count },
-                             async x =>
-                             {
-                                 await _explorerModel.Download(par, x);
-                             });
+                             Download);
 
             return Task.CompletedTask;
         }
