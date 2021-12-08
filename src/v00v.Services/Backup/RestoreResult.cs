@@ -1,6 +1,6 @@
 ﻿namespace v00v.Services.Backup
 {
-    public class RestoreResult
+    public record struct RestoreResult
     {
         #region Properties
 

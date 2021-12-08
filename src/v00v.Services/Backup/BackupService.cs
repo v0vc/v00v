@@ -167,7 +167,7 @@ namespace v00v.Services.Backup
                                                                  .Select(item => _youtubeService.GetChannelAsync(item.ChannelId,
                                                                           false,
                                                                           item.ChannelTitle)));
-                if (tasks.Count > 0)
+                if (!tasks.IsEmpty)
                 {
                     setLog?.Invoke($"Total channels: {tasks.Count}, working..");
                     var channels = new ConcurrentBag<Channel>();

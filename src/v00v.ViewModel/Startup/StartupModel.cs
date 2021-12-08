@@ -373,183 +373,144 @@ namespace v00v.ViewModel.Startup
         #region Properties
 
         public bool DailyBackupParsed { get; }
-
         public TimeSpan DailyBackupTime { get; set; }
-
         public bool DailyParserUpdateParsed { get; }
-
         public TimeSpan DailyParserUpdateTime { get; set; }
-
         public bool DailySyncParsed { get; }
-
         public TimeSpan DailySyncTime { get; set; }
-
         public string DbDir
         {
             get => _dbDir;
             set => Update(ref _dbDir, value);
         }
-
         public ICommand DownloadCommand { get; }
-
         public string DownloadDir
         {
             get => _downloadDir;
             set => Update(ref _downloadDir, value);
         }
-
         public string DownloadUrl
         {
             get => _downloadUrl;
             set => Update(ref _downloadUrl, value);
         }
-
         public bool EnableCustomDb
         {
             get => _enableCustomDb;
             set => Update(ref _enableCustomDb, value);
         }
-
         public bool EnableDailyBackupSchedule
         {
             get => _enableDailyBackupSchedule;
             set => Update(ref _enableDailyBackupSchedule, value);
         }
-
         public bool EnableDailyParserUpdateSchedule
         {
             get => _enableDailyParserUpdateSchedule;
             set => Update(ref _enableDailyParserUpdateSchedule, value);
         }
-
         public bool EnableDailySyncSchedule
         {
             get => _enableDailySyncSchedule;
             set => Update(ref _enableDailySyncSchedule, value);
         }
-
         public bool EnableRepeatBackupSchedule
         {
             get => _enableRepeatBackupSchedule;
             set => Update(ref _enableRepeatBackupSchedule, value);
         }
-
         public bool EnableRepeatParserUpdateSchedule
         {
             get => _enableRepeatParserUpdateSchedule;
             set => Update(ref _enableRepeatParserUpdateSchedule, value);
         }
-
         public bool EnableRepeatSyncSchedule
         {
             get => _enableRepeatSyncSchedule;
             set => Update(ref _enableRepeatSyncSchedule, value);
         }
-
         public IEnumerable<string> Formats { get; }
-
         public IEnumerable<string> Hours { get; }
-
         public bool IsYoutubeLink
         {
             get => _isYoutubeLink;
             set => Update(ref _isYoutubeLink, value);
         }
-
         public IEnumerable<string> Minutes { get; }
-
         public int RepeatBackupMin
         {
             get => _repeatBackupMin;
             set => Update(ref _repeatBackupMin, value);
         }
-
         public bool RepeatBackupParsed { get; }
-
         public int RepeatParserMin
         {
             get => _repeatParserMin;
             set => Update(ref _repeatParserMin, value);
         }
-
         public bool RepeatParserUpdateParsed { get; }
-
         public int RepeatSyncMin
         {
             get => _repeatSyncMin;
             set => Update(ref _repeatSyncMin, value);
         }
-
         public bool RepeatSyncParsed { get; }
-
         public string SelectedBackupHour
         {
             get => _selectedBackupHour;
             set => Update(ref _selectedBackupHour, value);
         }
-
         public string SelectedBackupMinute
         {
             get => _selectedBackupMinute;
             set => Update(ref _selectedBackupMinute, value);
         }
-
         public string SelectedFormat
         {
             get => _selectedFormat;
             set => Update(ref _selectedFormat, value);
         }
-
         public string SelectedParserHour
         {
             get => _selectedParserHour;
             set => Update(ref _selectedParserHour, value);
         }
-
         public string SelectedParserMinute
         {
             get => _selectedParserMinute;
             set => Update(ref _selectedParserMinute, value);
         }
-
         public string SelectedSyncHour
         {
             get => _selectedSyncHour;
             set => Update(ref _selectedSyncHour, value);
         }
-
         public string SelectedSyncMinute
         {
             get => _selectedSyncMinute;
             set => Update(ref _selectedSyncMinute, value);
         }
-
         public bool SubsEnabled
         {
             get => _subsEnabled;
             set => Update(ref _subsEnabled, value);
         }
-
         public string WatchApp
         {
             get => _watchApp;
             set => Update(ref _watchApp, value);
         }
-
         public bool WithSubs
         {
             get => _withSubs;
             set => Update(ref _withSubs, value);
         }
-
         public string YouApiKey
         {
             get => _youApiKey;
             set => Update(ref _youApiKey, value);
         }
-
         public string YouParam { get; }
-
         public string YouParser { get; }
 
         #endregion

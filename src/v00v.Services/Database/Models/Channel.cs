@@ -19,9 +19,7 @@ namespace v00v.Services.Database.Models
         public long SubsCount { get; set; }
         public long SubsCountDiff { get; set; }
         public string SubTitle { get; set; }
-        
         public byte Sync { get; set; }
-        
         public byte[] Thumbnail { get; set; }
         public DateTime Timestamp { get; set; }
         public string Title { get; set; }

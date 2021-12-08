@@ -13,7 +13,6 @@ namespace v00v.Services.Database.Models
         #region Properties
 
         public string ItemId { get; set; }
-
         public string PlaylistId { get; set; }
 
         #endregion
@@ -28,9 +27,9 @@ namespace v00v.Services.Database.Models
             {
                 if (ReferenceEquals(x, y))
                     return true;
-                if (ReferenceEquals(x, null))
+                if (x is null)
                     return false;
-                if (ReferenceEquals(y, null))
+                if (y is null)
                     return false;
                 if (x.GetType() != y.GetType())
                     return false;

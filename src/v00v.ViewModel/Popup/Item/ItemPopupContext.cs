@@ -185,21 +185,15 @@ namespace v00v.ViewModel.Popup.Item
         {
             return this.WhenValueChanged(x => x.CommentSort).Select(x =>
             {
-                switch (x)
+                return x switch
                 {
-                    case CommentSort.ReplyCount:
-                        return SortExpressionComparer<Comment>.Descending(t => t.CommentReplyCount);
-                    case CommentSort.LikeCount:
-                        return SortExpressionComparer<Comment>.Descending(t => t.LikeCount);
-                    case CommentSort.TimeStamp:
-                        return SortExpressionComparer<Comment>.Descending(t => t.Timestamp);
-                    case CommentSort.Author:
-                        return SortExpressionComparer<Comment>.Ascending(t => t.Author);
-                    case CommentSort.Order:
-                        return SortExpressionComparer<Comment>.Ascending(t => t.Order);
-                    default:
-                        return SortExpressionComparer<Comment>.Descending(t => t.Timestamp);
-                }
+                    CommentSort.ReplyCount => SortExpressionComparer<Comment>.Descending(t => t.CommentReplyCount),
+                    CommentSort.LikeCount => SortExpressionComparer<Comment>.Descending(t => t.LikeCount),
+                    CommentSort.TimeStamp => SortExpressionComparer<Comment>.Descending(t => t.Timestamp),
+                    CommentSort.Author => SortExpressionComparer<Comment>.Ascending(t => t.Author),
+                    CommentSort.Order => SortExpressionComparer<Comment>.Ascending(t => t.Order),
+                    _ => SortExpressionComparer<Comment>.Descending(t => t.Timestamp),
+                };
             });
         }
 

@@ -101,15 +101,12 @@ namespace v00v.Services.ContentProvider
 
         private static SyncState GetState(string res)
         {
-            switch (res)
+            return res switch
             {
-                case "unlisted":
-                    return SyncState.Unlisted;
-                case "public":
-                    return SyncState.Added;
-                default:
-                    return SyncState.Notset;
-            }
+                "unlisted" => SyncState.Unlisted,
+                "public" => SyncState.Added,
+                _ => SyncState.Notset,
+            };
         }
 
         private static Item MakeItem(JToken x, string channelId, string cTitle)

@@ -402,33 +402,21 @@ namespace v00v.ViewModel.Explorer
         {
             return this.WhenValueChanged(x => x.ItemSort).Select(x =>
             {
-                switch (x)
+                return x switch
                 {
-                    case ItemSort.Timestamp:
-                        return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
-                    case ItemSort.View:
-                        return SortExpressionComparer<Item>.Descending(t => t.ViewCount);
-                    case ItemSort.Like:
-                        return SortExpressionComparer<Item>.Descending(t => t.LikeCount);
-                    case ItemSort.Dislike:
-                        return SortExpressionComparer<Item>.Descending(t => t.DislikeCount);
-                    case ItemSort.Comment:
-                        return SortExpressionComparer<Item>.Descending(t => t.Comments);
-                    case ItemSort.Channel:
-                        return SortExpressionComparer<Item>.Descending(t => t.ChannelId);
-                    case ItemSort.Duration:
-                        return SortExpressionComparer<Item>.Ascending(t => t.Duration);
-                    case ItemSort.Diff:
-                        return SortExpressionComparer<Item>.Descending(t => t.ViewDiff);
-                    case ItemSort.File:
-                        return SortExpressionComparer<Item>.Descending(t => t.Downloaded);
-                    case ItemSort.Title:
-                        return SortExpressionComparer<Item>.Ascending(t => t.Title);
-                    case ItemSort.Quality:
-                        return SortExpressionComparer<Item>.Descending(t => t.Quality);
-                    default:
-                        return SortExpressionComparer<Item>.Descending(t => t.Timestamp);
-                }
+                    ItemSort.Timestamp => SortExpressionComparer<Item>.Descending(t => t.Timestamp),
+                    ItemSort.View => SortExpressionComparer<Item>.Descending(t => t.ViewCount),
+                    ItemSort.Like => SortExpressionComparer<Item>.Descending(t => t.LikeCount),
+                    ItemSort.Dislike => SortExpressionComparer<Item>.Descending(t => t.DislikeCount),
+                    ItemSort.Comment => SortExpressionComparer<Item>.Descending(t => t.Comments),
+                    ItemSort.Channel => SortExpressionComparer<Item>.Descending(t => t.ChannelId),
+                    ItemSort.Duration => SortExpressionComparer<Item>.Ascending(t => t.Duration),
+                    ItemSort.Diff => SortExpressionComparer<Item>.Descending(t => t.ViewDiff),
+                    ItemSort.File => SortExpressionComparer<Item>.Descending(t => t.Downloaded),
+                    ItemSort.Title => SortExpressionComparer<Item>.Ascending(t => t.Title),
+                    ItemSort.Quality => SortExpressionComparer<Item>.Descending(t => t.Quality),
+                    _ => SortExpressionComparer<Item>.Descending(t => t.Timestamp),
+                };
             });
         }
 
