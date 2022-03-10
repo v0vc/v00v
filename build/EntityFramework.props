@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="10.1.1"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.1"/>
+    <PackageReference Include="AutoMapper" Version="11.0.1"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.2"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.2"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0"/>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0"/>
   </ItemGroup>
