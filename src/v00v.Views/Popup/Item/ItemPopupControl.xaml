@@ -7,7 +7,7 @@
                 <Image Grid.Row="0" Source="{Binding Thumb, Mode=OneTime}" Stretch="Fill" VerticalAlignment="Center"
                        HorizontalAlignment="Left" Width="{Binding ImageWidth, Mode=OneTime}"
                        Height="{Binding ImageHeight, Mode=OneTime}" />
-                <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="0,3,0,0"
+                <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="1,0,1,3"
                                           IsReadOnly="True" IsVisible="True" Watermark="Description"
                                           Text="{Binding Description, Mode=OneTime}" TextWrapping="Wrap"
                                           TextAlignment="Left" ScrollViewer.VerticalScrollBarVisibility="Auto"

@@ -1,9 +1,7 @@
 ﻿<UserControl x:Class="v00v.Views.Popup.Channel.TagItemControl" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns="https://github.com/avaloniaui">
     <Grid ColumnDefinitions="auto,auto,*,auto,auto">
-        <CheckBox Grid.Column="0" IsVisible="{Binding !IsSaved, Mode=OneWay}" IsChecked="False" IsEnabled="False" />
-        <CheckBox Grid.Column="0" IsVisible="{Binding IsSaved, Mode=OneWay}"
-                  IsChecked="{Binding IsEnabled, Mode=TwoWay}" />
+        <CheckBox Grid.Column="0" IsVisible="{Binding IsSaved, Mode=OneWay}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
         <TextBlock Grid.Column="1" Text="{Binding Text, Mode=TwoWay}" />
         <TextBlock Grid.Column="2" IsVisible="{Binding !IsSaved, Mode=OneWay}" Text=" * " />
         <Button Grid.Column="4" IsVisible="{Binding IsRemovable, Mode=OneWay}"

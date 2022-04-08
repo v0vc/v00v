@@ -182,8 +182,8 @@ namespace v00v.ViewModel.Catalog
             AddChannelCommand = ReactiveCommand.Create(AddChannel, null, RxApp.MainThreadScheduler);
             EditChannelCommand = ReactiveCommand.Create(EditChannel, null, RxApp.MainThreadScheduler);
             CopyChannelLinkCommand = ReactiveCommand.CreateFromTask(CopyItem, null, RxApp.MainThreadScheduler);
-            SyncChannelCommand = ReactiveCommand.CreateFromTask(SyncChannel, null, RxApp.MainThreadScheduler);
-            SyncChannelsCommand = ReactiveCommand.CreateFromTask(SyncChannels, null, RxApp.MainThreadScheduler);
+            SyncChannelCommand = ReactiveCommand.Create(SyncChannel, null, RxApp.MainThreadScheduler);
+            SyncChannelsCommand = ReactiveCommand.Create(SyncChannels, null, RxApp.MainThreadScheduler);
             SaveChannelCommand = ReactiveCommand.CreateFromTask(SaveChannel, null, RxApp.MainThreadScheduler);
             ReloadCommand = ReactiveCommand.CreateFromTask(ReloadStatistics, null, RxApp.MainThreadScheduler);
             DeleteChannelCommand = ReactiveCommand.CreateFromTask(DeleteChannel, null, RxApp.MainThreadScheduler);
@@ -302,8 +302,8 @@ namespace v00v.ViewModel.Catalog
 
         public ICommand SetSortCommand { get; }
 
-        public ReactiveCommand<Unit, Unit> SyncChannelCommand { get; }
-        public ReactiveCommand<Unit, Unit> SyncChannelsCommand { get; }
+        public ReactiveCommand<Unit, Task> SyncChannelCommand { get; }
+        public ReactiveCommand<Unit, Task> SyncChannelsCommand { get; }
 
         public bool SyncPls
         {

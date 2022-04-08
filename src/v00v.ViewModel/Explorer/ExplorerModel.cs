@@ -99,7 +99,7 @@ namespace v00v.ViewModel.Explorer
             OpenCommand = ReactiveCommand.CreateFromTask((Item item) => OpenItem(item), null, RxApp.MainThreadScheduler);
             DownloadCommand = ReactiveCommand.Create((Item item) => Download("simple", item), null, RxApp.MainThreadScheduler);
             DownloadItemCommand =
-                ReactiveCommand.CreateFromTask((string par) => Download(par, SelectedEntry), null, RxApp.MainThreadScheduler);
+                ReactiveCommand.Create((string par) => Download(par, SelectedEntry), null, RxApp.MainThreadScheduler);
             RunItemCommand = ReactiveCommand.CreateFromTask(RunItem, null, RxApp.MainThreadScheduler);
             CopyItemCommand = ReactiveCommand.CreateFromTask((string par) => CopyItem(par), null, RxApp.MainThreadScheduler);
             DeleteItemCommand = ReactiveCommand.CreateFromTask(DeleteItem, null, RxApp.MainThreadScheduler);
@@ -262,18 +262,15 @@ namespace v00v.ViewModel.Explorer
             });
         }
 
-        public Task Download(string par, Item item)
+        public async Task Download(string par, Item item)
         {
             var skip = par == "subs";
             item.SaveDir = $"{Path.Combine(_settings.DownloadDir, item.ChannelId)}";
-            return item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog)
-                .ContinueWith(x =>
-                {
-                    if (x.GetAwaiter().GetResult() && !skip)
-                    {
-                        _itemRepository.UpdateItemFileName(item.Id, item.FileName);
-                    }
-                });
+            var ok = await item.Download(_settings.YouParser, _settings.YouParam, par, $"{_youtubeService.ItemLink}{item.Id}", skip, SetLog);
+            if (ok && !skip)
+            {
+                await _itemRepository.UpdateItemFileName(item.Id, item.FileName);
+            }
         }
 
         public Task SetItemState(WatchState par)

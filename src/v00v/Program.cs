@@ -30,7 +30,7 @@ namespace v00v
         {
             Register();
 
-            PreAppStart(true);
+            PreAppStart(false);
 
             //BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 

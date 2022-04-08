@@ -1,6 +1,6 @@
 ﻿<UserControl x:Class="v00v.Views.Popup.Item.CommentControl" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border BorderBrush="#242e44" BorderThickness="0.2">
+    <Border BorderThickness="0.2" BorderBrush="#2a2b2e" CornerRadius="2">
         <Grid RowDefinitions="auto,auto" ColumnDefinitions="*,auto">
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal"
                         Background="{Binding BackgroundReply, Mode=OneWay}">
