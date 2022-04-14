@@ -122,7 +122,7 @@ namespace v00v.Services.ContentProvider
                 ViewCount = x.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0,
                 Comments = x.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0,
                 LikeCount = x.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0,
-                DislikeCount = x.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0,
+                DislikeCount = 0,
                 ThumbnailLink = x.SelectToken("snippet.thumbnails.default.url")?.Value<string>(),
                 Duration = x.SelectToken("contentDetails.duration") != null
                     ? (int)XmlConvert.ToTimeSpan(x.SelectToken("contentDetails.duration")?.Value<string>()!).TotalSeconds
@@ -235,7 +235,7 @@ namespace v00v.Services.ContentProvider
                 var tasks = unlisted.Split()
                     .Select(vid =>
                                 GetJsonObjectAsync(new
-                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount))&{PrintType}")))
                     .ToHashSet();
 
                 await Task.WhenAll(tasks);
@@ -411,7 +411,7 @@ namespace v00v.Services.ContentProvider
                 var tasks = unlisted.Split()
                     .Select(vid =>
                                 GetJsonObjectAsync(new
-                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                       Uri($"{Url}videos?id={string.Join(",", vid)}&key={_key}&&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount))&{PrintType}")))
                     .ToHashSet();
 
                 await Task.WhenAll(tasks);
@@ -649,7 +649,7 @@ namespace v00v.Services.ContentProvider
         {
             var tasks = privacyItems.Select(x => x.Key).ToList().Split()
                 .Select(vid =>
-                            $"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")
+                            $"{Url}videos?id={string.Join(",", vid)}&key={_key}&part=snippet,contentDetails,statistics&fields=items(id,snippet(publishedAt,title,description,thumbnails(default(url))),contentDetails(duration),statistics(viewCount,commentCount,likeCount))&{PrintType}")
                 .Select(zap => GetJsonObjectAsync(new Uri(zap))).ToHashSet();
 
             await Task.WhenAll(tasks);
@@ -667,7 +667,7 @@ namespace v00v.Services.ContentProvider
                     ViewCount = x.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0,
                     Comments = x.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0,
                     LikeCount = x.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0,
-                    DislikeCount = x.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0,
+                    DislikeCount = 0,
                     ThumbnailLink = x.SelectToken("snippet.thumbnails.default.url")?.Value<string>(),
                     Duration = x.SelectToken("contentDetails.duration") != null
                         ? (int)XmlConvert.ToTimeSpan(x.SelectToken("contentDetails.duration")!.Value<string>()!).TotalSeconds
@@ -883,8 +883,8 @@ namespace v00v.Services.ContentProvider
             ids ??= channel.Items.Select(x => x.Id);
 
             var uploadTasks = ids.ToList().Split().Select(s => GetJsonObjectAsync(new Uri(isDur
-                                                                                              ? $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=contentDetails,statistics&fields=items(id,contentDetails(duration),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}"
-                                                                                              : $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                                                              ? $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=contentDetails,statistics&fields=items(id,contentDetails(duration),statistics(viewCount,commentCount,likeCount))&{PrintType}"
+                                                                                              : $"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(uploadTasks);
@@ -898,7 +898,7 @@ namespace v00v.Services.ContentProvider
                                      item.ViewCount = rec.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0;
                                      item.Comments = rec.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0;
                                      item.LikeCount = rec.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0;
-                                     item.DislikeCount = rec.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0;
+                                     item.DislikeCount = 0;
                                      item.Description = rec.SelectToken("snippet.description")?.Value<string>();
                                      if (isDur)
                                      {
@@ -916,7 +916,7 @@ namespace v00v.Services.ContentProvider
             var uploadTasks = items.Select(x => x.Id).ToList().Split()
                 .Select(s =>
                             GetJsonObjectAsync(new
-                                                   Uri($"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount,dislikeCount))&{PrintType}")))
+                                                   Uri($"{Url}videos?id={string.Join(",", s)}&key={_key}&part=snippet,statistics&fields=items(id,snippet(description),statistics(viewCount,commentCount,likeCount))&{PrintType}")))
                 .ToHashSet();
 
             await Task.WhenAll(uploadTasks);
@@ -930,7 +930,7 @@ namespace v00v.Services.ContentProvider
                                      item.ViewCount = rec.SelectToken("statistics.viewCount")?.Value<long?>() ?? 0;
                                      item.Comments = rec.SelectToken("statistics.commentCount")?.Value<long?>() ?? 0;
                                      item.LikeCount = rec.SelectToken("statistics.likeCount")?.Value<long?>() ?? 0;
-                                     item.DislikeCount = rec.SelectToken("statistics.dislikeCount")?.Value<long?>() ?? 0;
+                                     item.DislikeCount = 0;
                                      item.Description = rec.SelectToken("snippet.description")?.Value<string>();
                                  }
                              });

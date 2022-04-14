@@ -238,6 +238,7 @@ namespace v00v.Services.Persistence.Repositories
                     context.Entry(item).Property(x => x.Duration).IsModified = false;
                     context.Entry(item).Property(x => x.Id).IsModified = false;
                     context.Entry(item).Property(x => x.FileName).IsModified = false;
+                    context.Entry(item).Property(x => x.DislikeCount).IsModified = false;
                 }
 
                 await context.SaveChangesAsync();
