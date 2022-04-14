@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -790,8 +789,17 @@ namespace v00v.Services.ContentProvider
                 return Array.Empty<byte>();
             }
 
+            byte[] res;
             using var wc = new HttpClient();
-            var res = await wc.GetByteArrayAsync(dataUrl);
+            try
+            {
+                res = await wc.GetByteArrayAsync(dataUrl);
+            }
+            catch
+            {
+                res = Array.Empty<byte>();
+            }
+            
             await using var ms = new MemoryStream(res);
             try
             {
@@ -804,13 +812,13 @@ namespace v00v.Services.ContentProvider
             }
         }
 
-        public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId)
+        public async Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemId, string channelId)
         {
             InitKey();
 
             var record =
                 await
-                    GetAll($"{Url}commentThreads?videoId={itemlId}&key={_key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}");
+                    GetAll($"{Url}commentThreads?videoId={itemId}&key={_key}&part=id,snippet&fields=nextPageToken,items(id,snippet(topLevelComment(snippet(authorChannelId,authorDisplayName,textDisplay,likeCount,publishedAt)),totalReplyCount))&maxResults={ItemsPerPage}&{PrintType}");
 
             if (record.Count == 0)
             {

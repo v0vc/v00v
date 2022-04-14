@@ -40,9 +40,9 @@ namespace v00v.Services.ContentProvider
 
         Task<List<Item>> GetSearchedItems(string searchText, IEnumerable<string> existChannelsIds, string region);
 
-        Task<byte[]> GetStreamFromUrl(string dataurl);
+        Task<byte[]> GetStreamFromUrl(string dataUrl);
 
-        Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemlId, string channelId);
+        Task<IEnumerable<Comment>> GetVideoCommentsAsync(string itemId, string channelId);
 
         bool IsYoutubeLink(string link, out string videoId);
 
