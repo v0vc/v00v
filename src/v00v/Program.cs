@@ -42,7 +42,7 @@ namespace v00v
             }
             catch (Exception e)
             {
-                AvaloniaLocator.Current.GetService<IAppLogRepository>().SetStatus(AppStatus.ExceptionFired, e.Message);
+                AvaloniaLocator.Current.GetService<IAppLogRepository>()?.SetStatus(AppStatus.ExceptionFired, e.Message);
             }
             finally
             {
@@ -54,11 +54,15 @@ namespace v00v
         {
             if (needMigrate)
             {
-                using var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
-                context.Database.Migrate();
+                using var context = AvaloniaLocator.Current.GetService<IContextFactory>()?.CreateVideoContext();
+                context?.Database.Migrate();
             }
 
             var appLog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
+            if (appLog == null)
+            {
+                return;
+            }
             appLog.AppId = Guid.NewGuid().ToString();
             appLog.SetStatus(AppStatus.AppStarted, "App started");
         }
@@ -116,21 +120,24 @@ namespace v00v
         private static void Shutdown()
         {
             var appLog = AvaloniaLocator.Current.GetService<IAppLogRepository>();
-            appLog.SetStatus(AppStatus.AppClosed, "App closed");
-            var context = AvaloniaLocator.Current.GetService<IContextFactory>().CreateVideoContext();
-            var closedCount = appLog.GetStatusCount(AppStatus.AppClosed);
-            if (closedCount % 10 == 0 && closedCount != 0)
+            appLog?.SetStatus(AppStatus.AppClosed, "App closed");
+            var context = AvaloniaLocator.Current.GetService<IContextFactory>()?.CreateVideoContext();
+            if (appLog != null)
             {
-                context.Database.ExecuteSqlRaw("VACUUM");
-            }
-            else
-            {
-                context.Database.ExecuteSqlRaw("PRAGMA optimize");
+                var closedCount = appLog.GetStatusCount(AppStatus.AppClosed);
+                if (closedCount % 10 == 0 && closedCount != 0)
+                {
+                    context?.Database.ExecuteSqlRaw("VACUUM");
+                }
+                else
+                {
+                    context?.Database.ExecuteSqlRaw("PRAGMA optimize");
+                }
             }
 
-            context.Dispose();
-            AvaloniaLocator.Current.GetService<IPopupController>().Trigger?.Dispose();
-            AvaloniaLocator.Current.GetService<ITaskDispatcher>().Stop();
+            context?.Dispose();
+            AvaloniaLocator.Current.GetService<IPopupController>()?.Trigger?.Dispose();
+            AvaloniaLocator.Current.GetService<ITaskDispatcher>()?.Stop();
         }
 
         #endregion

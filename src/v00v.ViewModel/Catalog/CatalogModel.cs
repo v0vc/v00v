@@ -543,7 +543,7 @@ namespace v00v.ViewModel.Catalog
 
             var res = $"{_youtubeService.ChannelLink}{SelectedEntry.Id}";
 
-            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
+            return !string.IsNullOrEmpty(res) ? Application.Current?.Clipboard?.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private Task DeleteChannel()

@@ -227,7 +227,7 @@ namespace v00v.ViewModel.Playlists
                     break;
             }
 
-            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
+            return !string.IsNullOrEmpty(res) ? Application.Current?.Clipboard?.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private IObservable<Unit> DeleteFiles()

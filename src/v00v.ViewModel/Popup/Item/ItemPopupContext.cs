@@ -178,7 +178,7 @@ namespace v00v.ViewModel.Popup.Item
                     break;
             }
 
-            return !string.IsNullOrEmpty(res) ? Application.Current.Clipboard.SetTextAsync(res) : Task.CompletedTask;
+            return !string.IsNullOrEmpty(res) ? Application.Current?.Clipboard?.SetTextAsync(res) : Task.CompletedTask;
         }
 
         private IObservable<SortExpressionComparer<Comment>> GetCommentSorter()
