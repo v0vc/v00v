@@ -15,11 +15,11 @@
     <ListBox Name="ItemList" BorderThickness="0" Items="{Binding Items, Mode=OneWay}"
              SelectedItem="{Binding SelectedEntry, Mode=TwoWay}" VirtualizationMode="Simple"
              ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-        <ListBox.DataTemplates>
+        <ListBox.ItemTemplate>
             <DataTemplate>
                 <explorer:ItemControl />
             </DataTemplate>
-        </ListBox.DataTemplates>
+        </ListBox.ItemTemplate>
         <ListBox.ContextMenu>
             <ContextMenu>
                 <MenuItem Header="Run" Command="{Binding RunItemCommand, Mode=OneWay}" x:CompileBindings="False">

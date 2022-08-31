@@ -50,11 +50,9 @@ namespace v00v.Views.Controls
                     return;
                 }
 
-                var items = ContextMenu.Items as Avalonia.Controls.Controls;
-
                 if (isReadOnly)
                 {
-                    if (items == null || !items.Contains(_pasteItem))
+                    if (ContextMenu.Items is not Avalonia.Controls.Controls items || !items.Contains(_pasteItem))
                     {
                         return;
                     }
@@ -64,7 +62,7 @@ namespace v00v.Views.Controls
                 }
                 else
                 {
-                    if (items == null || items.Contains(_pasteItem))
+                    if (ContextMenu.Items is not Avalonia.Controls.Controls items || items.Contains(_pasteItem))
                     {
                         return;
                     }

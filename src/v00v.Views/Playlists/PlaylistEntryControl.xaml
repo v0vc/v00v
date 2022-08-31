@@ -5,13 +5,13 @@
         <Image Grid.Row="0" Grid.Column="0" Width="{Binding ThumbSize, Mode=OneWay}"
                Height="{Binding ThumbSize, Mode=OneWay}" Source="{Binding Thumb, Mode=OneWay}" Stretch="Fill" />
         <TextBox Grid.Column="1" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" Margin="60,0,0,0"
-                 ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="12" Height="26"
+                 ScrollViewer.VerticalScrollBarVisibility="Disabled" FontSize="12"
                  VerticalAlignment="Center" HorizontalAlignment="Stretch" Watermark=". . ."
                  Text="{Binding SearchText, Mode=TwoWay}" />
         <CheckBox Grid.Column="2" IsVisible="{Binding IsSearchPlaylist, Mode=OneWay}" Margin="0,0,8,0"
                   VerticalAlignment="Center" IsChecked="{Binding EnableGlobalSearch, Mode=TwoWay}" ToolTip.Tip="Global" />
         <ComboBox Grid.Column="2" IsVisible="{Binding IsPopularPlaylist, Mode=OneWay}" Margin="0,0,8,0"
-                  VerticalAlignment="Center" Height="24" Width="45" Items="{Binding Countries, Mode=OneTime}"
+                  VerticalAlignment="Center" Width="45" Items="{Binding Countries, Mode=OneTime}"
                   SelectedItem="{Binding SelectedCountry, Mode=TwoWay}" ToolTip.Tip="Country">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
