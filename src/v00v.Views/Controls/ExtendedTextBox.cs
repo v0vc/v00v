@@ -119,7 +119,7 @@ namespace v00v.Views.Controls
 
             if (!string.IsNullOrWhiteSpace(selection))
             {
-                await Avalonia.Application.Current.Clipboard.SetTextAsync(selection);
+                await Avalonia.Application.Current?.Clipboard?.SetTextAsync(selection)!;
             }
         }
 
@@ -204,7 +204,7 @@ namespace v00v.Views.Controls
 
         private async Task<string> PasteAsync()
         {
-            var text = await Avalonia.Application.Current.Clipboard.GetTextAsync();
+            var text = await Avalonia.Application.Current?.Clipboard?.GetTextAsync()!;
 
             OnTextInput(new TextInputEventArgs { Text = text });
             return text;

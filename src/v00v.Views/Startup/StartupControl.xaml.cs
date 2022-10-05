@@ -13,31 +13,31 @@ namespace v00v.Views.Startup
         public StartupControl()
         {
             AvaloniaXamlLoader.Load(this);
-            this.FindControl<Button>("OpenFile").Click += async delegate
+            this.FindControl<Button>("OpenFile")!.Click += async delegate
             {
                 var ofd = await new OpenFileDialog { Title = "Select file", Filters = GetFilters() }.ShowAsync(GetWindow());
 
                 if (ofd is { Length: 1 })
                 {
-                    AvaloniaLocator.Current.GetService<IStartupModel>().WatchApp = ofd[0];
+                    AvaloniaLocator.Current.GetService<IStartupModel>()!.WatchApp = ofd[0];
                 }
             };
-            this.FindControl<Button>("SelectFolder").Click += async delegate
+            this.FindControl<Button>("SelectFolder")!.Click += async delegate
             {
                 var ofd = await new OpenFolderDialog { Title = "Select folder" }.ShowAsync(GetWindow());
 
                 if (!string.IsNullOrWhiteSpace(ofd))
                 {
-                    AvaloniaLocator.Current.GetService<IStartupModel>().DownloadDir = ofd;
+                    AvaloniaLocator.Current.GetService<IStartupModel>()!.DownloadDir = ofd;
                 }
             };
-            this.FindControl<Button>("SelectDbFolder").Click += async delegate
+            this.FindControl<Button>("SelectDbFolder")!.Click += async delegate
             {
                 var ofd = await new OpenFolderDialog { Title = "Select folder" }.ShowAsync(GetWindow());
 
                 if (!string.IsNullOrWhiteSpace(ofd))
                 {
-                    AvaloniaLocator.Current.GetService<IStartupModel>().DbDir = ofd;
+                    AvaloniaLocator.Current.GetService<IStartupModel>()!.DbDir = ofd;
                 }
             };
         }

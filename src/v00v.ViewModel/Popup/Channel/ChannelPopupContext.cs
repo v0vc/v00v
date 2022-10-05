@@ -177,11 +177,11 @@ namespace v00v.ViewModel.Popup.Channel
 
         #region Methods
 
-        private Task AddChannel()
+        private async Task AddChannel()
         {
             if (string.IsNullOrEmpty(ChannelId))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             IsWorking = true;
@@ -191,47 +191,32 @@ namespace v00v.ViewModel.Popup.Channel
             if (SetExisted(ChannelId))
             {
                 IsWorking = false;
-                return Task.CompletedTask;
+                return;
             }
 
-            return _youtubeService.GetChannelId(ChannelId).ContinueWith(x =>
+            var channelId = await _youtubeService.GetChannelId(ChannelId);
+            if (string.IsNullOrEmpty(channelId) || SetExisted(channelId))
             {
-                var res = x.GetAwaiter().GetResult();
-                if (string.IsNullOrEmpty(res) || SetExisted(res))
-                {
-                    IsWorking = false;
-                    return;
-                }
+                IsWorking = false;
+                return;
+            }
 
-                _youtubeService.GetChannelAsync(res, false, ChannelTitle).ContinueWith(y =>
-                {
-                    IsWorking = false;
-                    if (y.Exception != null)
-                    {
-                        _popupController.Hide();
-                        _setTitle?.Invoke($"{y.Exception.Message}");
-                        return;
-                    }
+            var channel = await _youtubeService.GetChannelAsync(channelId, false, ChannelTitle);
 
-                    var re = y.GetAwaiter().GetResult();
-                    if (re == null)
-                    {
-                        _popupController.Hide();
-                        _setTitle?.Invoke("Quota exceeded or banned channel");
-                        return;
-                    }
+            if (channel == null)
+            {
+                _popupController.Hide();
+                _setTitle?.Invoke("Quota exceeded or banned channel");
+                return;
+            }
 
-                    re.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
-                    re.Order = _getMinOrder.Invoke() - 1;
-                    _updateList?.Invoke(re);
-                    _popupController.Hide();
-                    _setSelect?.Invoke(re.Id);
-                    Task.WhenAll(_channelRepository.AddChannel(re)).ContinueWith(done =>
-                    {
-                        _setTitle?.Invoke($"New channel: {re.Title}. Saved {done.GetAwaiter().GetResult()[0]} rows");
-                    });
-                });
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            channel.Tags.AddRange(All.Items.Where(z => z.IsEnabled));
+            channel.Order = _getMinOrder.Invoke() - 1;
+            _updateList?.Invoke(channel);
+            _popupController.Hide();
+            _setSelect?.Invoke(channel.Id);
+            var bd = await _channelRepository.AddChannel(channel);
+            _setTitle?.Invoke($"New channel: {channel.Title}. Saved {bd} rows");
         }
 
         private void AddTag()
@@ -247,7 +232,7 @@ namespace v00v.ViewModel.Popup.Channel
             SelectedTag = tag;
         }
 
-        private Task EditChannel(Model.Entities.Channel channel)
+        private async Task EditChannel(Model.Entities.Channel channel)
         {
             IsWorking = true;
             CloseText = "Working...";
@@ -259,38 +244,24 @@ namespace v00v.ViewModel.Popup.Channel
 
             if (channel.IsNew)
             {
-                return _youtubeService.AddPlaylists(channel).ContinueWith(_ =>
-                {
-                    channel.IsNew = false;
-                    Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)))
-                        .ContinueWith(x =>
-                        {
-                            var res = x.GetAwaiter().GetResult();
-                            if (x.Status != TaskStatus.Faulted)
-                            {
-                                _setTitle?.Invoke($"Done: {channel.Title}. Saved {res[0]} rows");
-                            }
+                await _youtubeService.AddPlaylists(channel);
+                channel.IsNew = false;
 
-                            _updateList?.Invoke(channel);
-                            _updatePlList?.Invoke(channel);
-                            _resortList?.Invoke(res[0]);
-                            _popupController.Hide();
-                        }).ContinueWith(_ => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
-                });
+                var res = await _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
+                _setTitle?.Invoke($"Done: {channel.Title}. Saved {res} rows");
+                _updateList?.Invoke(channel);
+                _updatePlList?.Invoke(channel);
+                _resortList?.Invoke(res);
+                _popupController.Hide();
+                _setSelect?.Invoke(channel.Id);
             }
 
-            return Task.WhenAll(_channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id)))
-                .ContinueWith(x =>
-                {
-                    if (x.Status != TaskStatus.Faulted)
-                    {
-                        _setTitle?.Invoke($"Done: {channel.Title}. Saved {x.GetAwaiter().GetResult()[0]} rows");
-                    }
-
-                    _updateList?.Invoke(channel);
-                    _updatePlList?.Invoke(channel);
-                    _popupController.Hide();
-                }).ContinueWith(_ => { _setSelect?.Invoke(channel.Id); }, TaskScheduler.FromCurrentSynchronizationContext());
+            var bd = await _channelRepository.SaveChannel(channel.Id, channel.Title, channel.Tags.Select(x => x.Id));
+            _setTitle?.Invoke($"Done: {channel.Title}. Saved {bd} rows");
+            _updateList?.Invoke(channel);
+            _updatePlList?.Invoke(channel);
+            _popupController.Hide();
+            _setSelect?.Invoke(channel.Id);
         }
 
         private Task RemoveTag(Tag tag)

@@ -392,7 +392,7 @@ namespace v00v.ViewModel.Explorer
 
         private Task DeleteItem()
         {
-            return SelectedEntry != null && SelectedEntry.Downloaded ? DeleteItem(SelectedEntry) : Task.CompletedTask;
+            return SelectedEntry is { Downloaded: true } ? DeleteItem(SelectedEntry) : Task.CompletedTask;
         }
 
         private IObservable<SortExpressionComparer<Item>> GetSorter()

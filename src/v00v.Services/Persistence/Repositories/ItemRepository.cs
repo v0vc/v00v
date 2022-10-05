@@ -138,11 +138,11 @@ namespace v00v.Services.Persistence.Repositories
                         switch (state)
                         {
                             case WatchState.Planned:
-                                channel.PlannedCount += 1;
+                                channel!.PlannedCount += 1;
                                 context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                                 break;
                             case WatchState.Watched:
-                                channel.WatchedCount += 1;
+                                channel!.WatchedCount += 1;
                                 context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
                                 break;
                         }
@@ -153,11 +153,11 @@ namespace v00v.Services.Persistence.Repositories
                         switch (state)
                         {
                             case WatchState.Notset:
-                                channel.PlannedCount -= 1;
+                                channel!.PlannedCount -= 1;
                                 context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                                 break;
                             case WatchState.Watched:
-                                channel.WatchedCount += 1;
+                                channel!.WatchedCount += 1;
                                 channel.PlannedCount -= 1;
                                 context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                                 context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
@@ -170,11 +170,11 @@ namespace v00v.Services.Persistence.Repositories
                         switch (state)
                         {
                             case WatchState.Notset:
-                                channel.WatchedCount -= 1;
+                                channel!.WatchedCount -= 1;
                                 context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;
                                 break;
                             case WatchState.Planned:
-                                channel.PlannedCount += 1;
+                                channel!.PlannedCount += 1;
                                 channel.WatchedCount -= 1;
                                 context.Entry(channel).Property(x => x.PlannedCount).IsModified = true;
                                 context.Entry(channel).Property(x => x.WatchedCount).IsModified = true;

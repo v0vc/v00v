@@ -21,11 +21,11 @@
                          SelectedItem="{Binding SelectedComment, Mode=TwoWay}" VirtualizationMode="Simple"
                          ScrollViewer.VerticalScrollBarVisibility="Auto"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.DataTemplates>
+                    <ListBox.ItemTemplate>
                         <DataTemplate>
                             <item:CommentControl />
                         </DataTemplate>
-                    </ListBox.DataTemplates>
+                    </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Copy Link" Command="{Binding CopyItemCommand, Mode=OneWay}"

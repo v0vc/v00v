@@ -124,7 +124,7 @@ namespace v00v.ViewModel.Catalog
 
                         if (_baseExplorerModel?.SelectedTag.Key != 0)
                         {
-                            _baseExplorerModel.SelectedTag = _baseExplorerModel.Tags.FirstOrDefault();
+                            _baseExplorerModel!.SelectedTag = _baseExplorerModel.Tags.FirstOrDefault();
                         }
                     }
                     else
@@ -642,30 +642,19 @@ namespace v00v.ViewModel.Catalog
         {
             return this.WhenValueChanged(x => x.ChannelSort).Select(x =>
             {
-                switch (x)
+                return x switch
                 {
-                    case ChannelSort.Title:
-                        return SortExpressionComparer<Channel>.Ascending(t => t.Order);
-                    case ChannelSort.Subs:
-                        return SortExpressionComparer<Channel>.Descending(t => t.SubsCount);
-                    case ChannelSort.SubsDiff:
-                        return SortExpressionComparer<Channel>.Descending(t => t.SubsCountDiff);
-                    case ChannelSort.View:
-                        return SortExpressionComparer<Channel>.Descending(t => t.ViewCount);
-                    case ChannelSort.ViewDiff:
-                        return SortExpressionComparer<Channel>.Descending(t => t.ViewCountDiff);
-                    case ChannelSort.Count:
-                        return SortExpressionComparer<Channel>.Descending(t => t.ItemsCount);
-                    case ChannelSort.LastDate:
-                        return SortExpressionComparer<Channel>.Descending(t => t.Timestamp);
-                    case ChannelSort.Watched:
-                        return SortExpressionComparer<Channel>.Descending(t => t.WatchedCount);
-                    case ChannelSort.Planned:
-                        return SortExpressionComparer<Channel>.Descending(t => t.PlannedCount);
-
-                    default:
-                        return SortExpressionComparer<Channel>.Ascending(t => t.Title);
-                }
+                    ChannelSort.Title => SortExpressionComparer<Channel>.Ascending(t => t.Order),
+                    ChannelSort.Subs => SortExpressionComparer<Channel>.Descending(t => t.SubsCount),
+                    ChannelSort.SubsDiff => SortExpressionComparer<Channel>.Descending(t => t.SubsCountDiff),
+                    ChannelSort.View => SortExpressionComparer<Channel>.Descending(t => t.ViewCount),
+                    ChannelSort.ViewDiff => SortExpressionComparer<Channel>.Descending(t => t.ViewCountDiff),
+                    ChannelSort.Count => SortExpressionComparer<Channel>.Descending(t => t.ItemsCount),
+                    ChannelSort.LastDate => SortExpressionComparer<Channel>.Descending(t => t.Timestamp),
+                    ChannelSort.Watched => SortExpressionComparer<Channel>.Descending(t => t.WatchedCount),
+                    ChannelSort.Planned => SortExpressionComparer<Channel>.Descending(t => t.PlannedCount),
+                    _ => SortExpressionComparer<Channel>.Ascending(t => t.Title)
+                };
             });
         }
 

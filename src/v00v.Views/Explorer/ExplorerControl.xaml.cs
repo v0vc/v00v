@@ -37,9 +37,10 @@ namespace v00v.Views.Explorer
             }
 
             var settings = AvaloniaLocator.Current.GetService<IStartupModel>();
-            item.RunItem(settings.WatchApp,
-                         settings.DownloadDir,
-                         $"{AvaloniaLocator.Current.GetService<IYoutubeService>().ItemLink}{item.Id}");
+            if (settings != null)
+                item.RunItem(settings.WatchApp,
+                             settings.DownloadDir,
+                             $"{AvaloniaLocator.Current.GetService<IYoutubeService>()?.ItemLink}{item.Id}");
 
             if (item.WatchState == WatchState.Watched)
             {

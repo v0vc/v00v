@@ -182,7 +182,7 @@ namespace v00v.Services.Synchronization
 
             setLog?.Invoke("Saving to db..");
             var rows = _channelRepository.StoreDiff(res);
-            await Task.WhenAll(rows).ContinueWith(_ =>
+            await rows.ContinueWith(_ =>
             {
                 setLog?.Invoke(rows.IsCompletedSuccessfully ? $"Saved {rows.GetAwaiter().GetResult()} rows." :
                                rows.Exception == null ? "An saving error occurred." : $"An saving error occurred {rows.Exception.Message}.");

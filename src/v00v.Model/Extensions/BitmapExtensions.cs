@@ -9,7 +9,7 @@ namespace v00v.Model.Extensions
 
         public static Bitmap CreateThumb(this byte[] thumbnail)
         {
-            if (thumbnail == null || thumbnail.Length <= 0)
+            if (thumbnail is not { Length: > 0 })
             {
                 return null;
             }

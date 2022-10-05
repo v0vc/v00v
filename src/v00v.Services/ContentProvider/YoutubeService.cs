@@ -986,7 +986,7 @@ namespace v00v.Services.ContentProvider
                 return;
             }
 
-            _key = AvaloniaLocator.Current.GetService<IBackupService>().YouApiKey;
+            _key = AvaloniaLocator.Current.GetService<IBackupService>()?.YouApiKey;
             _inited = true;
         }
 

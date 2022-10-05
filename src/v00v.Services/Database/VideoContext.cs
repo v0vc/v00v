@@ -30,7 +30,7 @@ namespace v00v.Services.Database
             //optionsBuilder.UseLazyLoadingProxies();
 
             var backupService = AvaloniaLocator.Current.GetService<IBackupService>();
-            if (!backupService.UseSqliteInit)
+            if (backupService is { UseSqliteInit: false })
             {
                 if (backupService.CustomDbEnabled)
                 {
@@ -45,8 +45,12 @@ namespace v00v.Services.Database
                 backupService.UseSqliteInit = true;
             }
 
-            optionsBuilder.UseSqlite(backupService.UseSqlite);
-            //optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
+            if (backupService != null)
+            {
+                optionsBuilder.UseSqlite(backupService.UseSqlite);
+                //optionsBuilder.UseSqlite("Data Source=data.db" /*, x => x.SuppressForeignKeyEnforcement()*/);
+            }
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
