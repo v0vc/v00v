@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:v00v.Model.Converters;assembly=v00v.Model"
              xmlns:enums="clr-namespace:v00v.Model.Enums;assembly=v00v.Model">
-    <Border BorderThickness="0.2" BorderBrush="#2a2b2e" CornerRadius="2">
+    <Border BorderThickness="0.4" BorderBrush="#d3d3d3" CornerRadius="1">
         <Grid RowDefinitions="auto,auto" ColumnDefinitions="auto,*,auto,auto">
             <Path Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
                   Data="F1 M 46.479,0.587 C 45.064,2.731 43.659,4.881 42.233,7.018 C 34.590,18.476 26.954,29.938 19.287,41.380 C 16.541,45.479 16.412,45.484 13.178,42.022 C 9.187,37.750 5.308,33.373 1.255,29.163 C -1.890,25.897 1.704,24.784 3.060,22.970 C 4.534,20.998 6.058,20.783 7.758,22.862 C 9.236,24.668 11.106,26.173 12.457,28.058 C 14.160,30.435 15.412,30.149 17.309,28.225 C 25.700,19.712 34.212,11.316 42.688,2.886 C 43.681,1.898 44.725,0.961 45.746,0.000 C 45.990,0.196 46.235,0.391 46.479,0.587 Z"
@@ -31,7 +31,7 @@
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Title, Mode=OneWay}" Margin="5,0,0,0"
                        TextWrapping="NoWrap" VerticalAlignment="Center" FontSize="19" />
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-                <Border BorderBrush="#FF000000" BorderThickness="0.3" CornerRadius="3" Margin="5,0,0,2"
+                <Border BorderBrush="#808080" BorderThickness="0.4" CornerRadius="3" Margin="5,0,0,2"
                         VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding DurationString, Mode=OneWay}" FontSize="15" Margin="5,0,5,0" />
                 </Border>

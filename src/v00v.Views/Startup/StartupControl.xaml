@@ -113,8 +113,8 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Row="17">
                         <TextBlock Text="Download file:" ToolTip.Tip="Any url" />
-                        <controls:ExtendedTextBox Width="312" Margin="25,0,0,0" Watermark="Link..."
-                                                  Text="{Binding DownloadUrl, Mode=TwoWay}" />
+                        <TextBox Width="312" Margin="25,0,0,0" Watermark="Link..."
+                                 Text="{Binding DownloadUrl, Mode=TwoWay}" />
                         <Button Width="30" Content=">>" Margin="2,0,0,0"
                                 Command="{Binding DownloadCommand, Mode=OneTime}" x:CompileBindings="False" />
                     </StackPanel>
@@ -127,25 +127,25 @@
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="2">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True"
-                                              Text="https://chocolatey.org/docs/installation"
-                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                    <TextBox Width="450" IsReadOnly="True"
+                             Text="https://chocolatey.org/docs/installation"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                     <TextBlock Text="Install chocolatey" Margin="10,0,0,0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install ffmpeg"
-                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                    <TextBox Width="450" IsReadOnly="True" Text="choco install ffmpeg"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                     <TextBlock Text="Install ffmpeg" Margin="10,0,0,0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True" Text="choco install youtube-dl"
-                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                    <TextBox Width="450" IsReadOnly="True" Text="choco install yt-dlp"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                     <TextBlock Text="Install youtube-dl" Margin="10,0,0,0" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5">
-                    <controls:ExtendedTextBox Width="450" IsReadOnly="True"
-                                              Text="https://www.videohelp.com/software/MPC-BE"
-                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                    <TextBox Width="450" IsReadOnly="True"
+                             Text="https://www.videohelp.com/software/MPC-BE"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
                     <TextBlock Text="Install mpc-be" Margin="10,0,0,0" />
                 </StackPanel>
             </Grid>

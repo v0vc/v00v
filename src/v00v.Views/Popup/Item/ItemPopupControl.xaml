@@ -1,5 +1,5 @@
 ﻿<UserControl x:Class="v00v.Views.Popup.Item.ItemPopupControl" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns="https://github.com/avaloniaui" xmlns:controls="clr-namespace:v00v.Views.Controls"
+             xmlns="https://github.com/avaloniaui"
              xmlns:item="clr-namespace:v00v.Views.Popup.Item">
     <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
         <TabItem Header="Information">
@@ -7,11 +7,11 @@
                 <Image Grid.Row="0" Source="{Binding Thumb, Mode=OneTime}" Stretch="Fill" VerticalAlignment="Center"
                        HorizontalAlignment="Left" Width="{Binding ImageWidth, Mode=OneTime}"
                        Height="{Binding ImageHeight, Mode=OneTime}" />
-                <controls:ExtendedTextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="1,0,1,3"
-                                          IsReadOnly="True" IsVisible="True" Watermark="Description"
-                                          Text="{Binding Description, Mode=OneTime}" TextWrapping="Wrap"
-                                          TextAlignment="Left" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Hidden" />
+                <TextBox Grid.Row="1" Height="{Binding DescrHeight, Mode=OneWay}" Margin="1,0,1,3"
+                         IsReadOnly="True" IsVisible="True" Watermark="Description" BorderBrush="#808080" BorderThickness="0.4"
+                         Text="{Binding Description, Mode=OneTime}" TextWrapping="Wrap"
+                         TextAlignment="Left" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Hidden" />
             </Grid>
         </TabItem>
         <TabItem Header="Comments">
@@ -50,7 +50,7 @@
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
-                <Border Grid.Row="1" Margin="2,2,0,2" BorderBrush="#242e44" BorderThickness="0.2"
+                <Border Grid.Row="1" Margin="2,2,0,2" BorderBrush="#bbbbbb" BorderThickness="0.4"
                         Background="AliceBlue">
                     <Grid ColumnDefinitions="*,auto,auto" IsEnabled="{Binding !Working, Mode=OneWay}">
                         <TextBox Grid.Column="0" Text="{Binding SearchText, Mode=TwoWay}"
