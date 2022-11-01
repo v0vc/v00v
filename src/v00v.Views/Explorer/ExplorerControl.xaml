@@ -111,6 +111,12 @@
         </ListBox.ContextMenu>
     </ListBox>
     <UserControl.Styles>
+        <Style Selector="MenuItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#E6E6FA" />
+            <Setter Property="BorderThickness" Value="0.4" />
+            <Setter Property="BorderBrush" Value="#bbbbbb" />
+        </Style>
+
         <Style Selector="TextBox">
             <Setter Property="Height" Value="25" />
             <Setter Property="Width" Value="150" />
@@ -144,11 +150,11 @@
         </Style>
 
         <Style Selector="ListBoxItem Grid">
-            <Setter Property="Height" Value="51" />
+            <Setter Property="Height" Value="50" />
         </Style>
 
         <Style Selector="ListBoxItem">
-            <Setter Property="Padding" Value="1,0,1,1" />
+            <Setter Property="Padding" Value="0.7,0,1,0.7" />
         </Style>
     </UserControl.Styles>
 </UserControl>

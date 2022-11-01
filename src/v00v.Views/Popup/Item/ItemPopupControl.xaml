@@ -77,6 +77,12 @@
         </TabItem>
     </TabControl>
     <UserControl.Styles>
+        <Style Selector="MenuItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#E6E6FA" />
+            <Setter Property="BorderThickness" Value="0.4" />
+            <Setter Property="BorderBrush" Value="#bbbbbb" />
+        </Style>
+
         <Style Selector="TextBox /template/ Border">
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="BorderThickness" Value="0" />
