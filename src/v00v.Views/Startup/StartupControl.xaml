@@ -1,5 +1,5 @@
 ﻿<UserControl x:Class="v00v.Views.Startup.StartupControl" xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:v00v.Views.Controls">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border BorderThickness="1" BorderBrush="#bdacd1">
         <Panel>
             <Grid ColumnDefinitions="32,auto,auto" RowDefinitions="25,*,25,25,25,25,10">
