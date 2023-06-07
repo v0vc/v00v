@@ -19,7 +19,7 @@ using v00v.Services.Backup;
 
 namespace v00v.Services.ContentProvider
 {
-    public class YoutubeService : IYoutubeService
+    public partial class YoutubeService : IYoutubeService
     {
         #region Constants
 
@@ -29,13 +29,16 @@ namespace v00v.Services.ContentProvider
         private const string CommentUp =
             "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAwUlEQVRYR+3VvQrCMBSG4bdSFycXb7WDzjp4k15AB90VkUCFDGnOTwpZTtZAv6dfwskAPIAjfdZrAJ4B6N3AAdj1uQJ80x3ougLQ2sB5Ob+b9xxbACn8ugRfABfCC8jD/z/vQngApXA3wgqohbsQFoAm3IzQAizhJoQG4AlXIyRAS7gKUQNsES4i1gBbhlcRJcCUTbjShB2Fsfup7Kdhdc/3pTtQ+tYbWEOk8L3lXQhANBANRAPRgKeBWRjFJ8so/gFrRzjXxWFROwAAAABJRU5ErkJggg==";
 
-        private const string HrefRegex = @"<a\s+(?:[^>]*?\s+)?href=([""'])(.*?)\1>";
         private const int ItemsPerPage = 50;
         private const string PrintType = "prettyPrint=false";
         private const string Url = "https://www.googleapis.com/youtube/v3/";
         private const string YouChannel = "channel";
-        private const string YouRegex = @"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)";
         private const string YouUser = "user";
+        [GeneratedRegex("youtu(?:\\.be|be\\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.None)]
+        private static partial Regex YouRegex();
+
+        [GeneratedRegex("<a\\s+(?:[^>]*?\\s+)?href=([\"'])(.*?)\\1>", RegexOptions.Compiled)]
+        private static partial Regex HrefRegex();
 
         #endregion
 
@@ -738,7 +741,7 @@ namespace v00v.Services.ContentProvider
                 return new HashSet<Comment>(0);
             }
 
-            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
+            var hrefRegex = HrefRegex();
             return record.SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
             {
                 CommentId = x.SelectToken("id")?.Value<string>(),
@@ -804,7 +807,7 @@ namespace v00v.Services.ContentProvider
             try
             {
                 var bitmap = new Bitmap(ms);
-                return bitmap.Size != Size.Empty ? res : Array.Empty<byte>();
+                return bitmap.Size != default ? res : Array.Empty<byte>();
             }
             catch
             {
@@ -826,7 +829,7 @@ namespace v00v.Services.ContentProvider
                 return Array.Empty<Comment>();
             }
 
-            var hrefRegex = new Regex(HrefRegex, RegexOptions.Compiled);
+            var hrefRegex = HrefRegex();
             return record.SelectTokens("$..items.[*]").Select(x => new Comment(channelId)
             {
                 CommentId = x.SelectToken("id")?.Value<string>(),
@@ -877,7 +880,7 @@ namespace v00v.Services.ContentProvider
 
         public bool IsYoutubeLink(string link, out string videoId)
         {
-            var regex = new Regex(YouRegex, RegexOptions.None);
+            var regex = YouRegex();
             var match = regex.Match(link);
             var res = match.Success;
             videoId = res ? match.Groups[1].Value : null;
